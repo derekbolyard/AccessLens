@@ -1,0 +1,6 @@
+@AccessLensApi_HostAddress = http://localhost:5261
+
+GET {{AccessLensApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
