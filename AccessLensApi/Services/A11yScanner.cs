@@ -1,4 +1,6 @@
-﻿using Microsoft.Playwright;
+﻿using AccessLensApi.Storage;
+using AccessLensApi.Utilities;
+using Microsoft.Playwright;
 using System.Text.Json.Nodes;
 
 namespace AccessLensApi.Services
@@ -6,51 +8,72 @@ namespace AccessLensApi.Services
     public sealed class A11yScanner : IA11yScanner, IAsyncDisposable
     {
         private readonly IBrowser _browser;
+        private readonly IStorage _storage;
+        private readonly ILogger<A11yScanner> _log;
         private const string AxeCdn = "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.9.0/axe.min.js";
 
-        private A11yScanner(IBrowser browser) => _browser = browser;
-
-        public static async Task<A11yScanner> CreateAsync()
+        public A11yScanner(
+            IBrowser browser,
+            IStorage storage,
+            ILogger<A11yScanner> log)
         {
-            var pw = await Playwright.CreateAsync();
-            var browser = await pw.Chromium.LaunchAsync(new() { Headless = true });
-            return new A11yScanner(browser);
+            _browser = browser;
+            _storage = storage;
+            _log = log;
         }
 
-        public async Task<JsonArray> ScanFivePagesAsync(string rootUrl)
+        public async Task<JsonObject> ScanFivePagesAsync(string rootUrl)
         {
             var ctx = await _browser.NewContextAsync(new() { IgnoreHTTPSErrors = true });
             var queue = new Queue<string>();
             var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var allPages = new JsonArray();                        // ← what PdfService needs
+            var pagesArr = new JsonArray();
+            string? teaserUrl = null;
 
             queue.Enqueue(rootUrl);
 
-            while (queue.Count > 0 && allPages.Count < 5)
+            while (queue.Count > 0 && pagesArr.Count < 5)
             {
-                string url = queue.Dequeue();
-                if (!visited.Add(url)) continue;                    // skip duplicates
+                var url = queue.Dequeue();
+                if (!visited.Add(url)) continue;
 
-                /* ---------- open page & run axe ---------- */
                 var page = await ctx.NewPageAsync();
                 await page.GotoAsync(url, new() { WaitUntil = WaitUntilState.NetworkIdle });
 
+                // ── 1️⃣  run axe ───────────────────────────────────────────────
                 await page.AddScriptTagAsync(new() { Url = AxeCdn });
                 string axeJson = await page.EvaluateAsync<string>(
-                    @"async () => JSON.stringify(
-                        await axe.run({ resultTypes:['violations'] })
-                      )");
+                    @"async () => JSON.stringify(await axe.run({ resultTypes:['violations'] }))",
+                    null);
 
+                // ── 2️⃣  teaser on FIRST page ─────────────────────────────────
+                if (pagesArr.Count == 0)
+                {
+                    var axeObj = (JsonObject)JsonNode.Parse(axeJson)!;
+                    var violations = axeObj["violations"]!.AsArray();
 
-                /* ---------- transform to “Shape A” ---------- */
-                allPages.Add(ConvertToShapeA(url, axeJson));
+                    int crit = violations.Count(v => v?["impact"]?.ToString() == "critical");
+                    int seri = violations.Count(v => v?["impact"]?.ToString() == "serious");
+                    int score = A11yScore.From(axeObj);
 
-                /* ---------- harvest internal links ---------- */
+                    byte[] teaserBytes = await TeaserBuilder.BuildAsync(
+                                            page, violations, score, crit, seri);
+
+                    string key = $"teasers/{Guid.NewGuid()}.png";
+                    await _storage.UploadAsync(key, teaserBytes);
+                    teaserUrl = _storage.GetUrl(key, TimeSpan.FromDays(30));
+                }
+
+                // ── 3️⃣  add Shape-A JSON for this page ───────────────────────
+                pagesArr.Add(ConvertToShapeA(url, axeJson));
+
+                // ── 4️⃣  enqueue internal links ──────────────────────────────
                 var hrefs = await page.EvaluateAsync<string[]>(
                     "Array.from(document.querySelectorAll('a[href]'))" +
-                    ".map(a => new URL(a.href, document.baseURI).href)");
+                    ".map(a => new URL(a.href, document.baseURI).href)",
+                    null);
 
-                foreach (var href in hrefs.Take(30))                // cap fan-out
+                foreach (var href in hrefs.Take(30))
                     if (href.StartsWith(rootUrl, StringComparison.OrdinalIgnoreCase) &&
                         !visited.Contains(href))
                         queue.Enqueue(href);
@@ -59,7 +82,12 @@ namespace AccessLensApi.Services
             }
 
             await ctx.CloseAsync();
-            return allPages;
+
+            return new JsonObject
+            {
+                ["pages"] = pagesArr,
+                ["teaserUrl"] = teaserUrl ?? string.Empty
+            };
         }
         private static JsonObject ConvertToShapeA(string pageUrl, string axeJson)
         {

@@ -4,6 +4,6 @@ namespace AccessLensApi.Services
 {
     public interface IPdfService
     {
-        byte[] GeneratePdf(string siteName, JsonNode json);
+        Task<string> GenerateAndUploadPdf(string siteName, JsonNode json);
     }
 }

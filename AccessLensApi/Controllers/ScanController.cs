@@ -24,19 +24,20 @@ namespace AccessLensApi.Controllers
             if (!Uri.IsWellFormedUriString(req.Url, UriKind.Absolute))
                 return BadRequest("Invalid URL.");
 
-            var siteName = "Test Site";
+            var json = await _scanner.ScanFivePagesAsync(req.Url);
 
-            var jsonArr = await _scanner.ScanFivePagesAsync(req.Url);
-            var pdf = _pdf.GeneratePdf(siteName, jsonArr);
+            // credit/payment checks already done inside scanner or middleware
+            int score = A11yScore.From(json["pages"]![0]!);      // or pass upfront
+            string pdfUrl = await _pdf.GenerateAndUploadPdf(req.Url, json["pages"]![0]!);
 
-            //return Ok(new
-            //{
-            //    score = A11yScore.From(jsonArr),
-            //    pdfUrl = pdf,
-            //    raw = jsonArr
-            //});
+            return Ok(new
+            {
+                score,
+                pdfUrl,
+                teaserUrl = (string?)json["teaserUrl"] ?? ""
+            });
 
-            return File(pdf, "application/pdf", "accesslens-report.pdf");
+            //return File(pdf, "application/pdf", "accesslens-report.pdf");
         }
     }
 }

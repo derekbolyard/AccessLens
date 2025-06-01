@@ -1,4 +1,5 @@
 ﻿using AccessLensApi.PdfDocuments;
+using AccessLensApi.Storage;
 using QuestPDF.Fluent;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -8,7 +9,16 @@ namespace AccessLensApi.Services
     public class PdfService : IPdfService
     {
         private const int TOTAL_RULES_TESTED = 68;
-        public byte[] GeneratePdf(string siteName, JsonNode json)
+        private readonly IStorage _storage;
+        private readonly ILogger<PdfService> _log;
+
+        public PdfService(IStorage storage, ILogger<PdfService> log)
+        {
+            _storage = storage;
+            _log = log;
+        }
+
+        public async Task<string> GenerateAndUploadPdf(string siteName, JsonNode json)
         {
             var issues = LoadIssues(json);
 
@@ -21,16 +31,21 @@ namespace AccessLensApi.Services
 
             int distinctPagesCrawled = issues.Select(i => i.Page).Distinct().Count();
 
-            var document = new AccessibilityReportDocument(
-               siteName,
-               summary,
-               rulesPassed,
-               uniqueFailedRules,
-               TOTAL_RULES_TESTED,
-               distinctPagesCrawled
-           );
+            var doc = new AccessibilityReportDocument(
+                    siteName, summary, rulesPassed,
+                    uniqueFailedRules, TOTAL_RULES_TESTED,
+                    distinctPagesCrawled);
 
-            return document.GeneratePdf();
+            byte[] bytes = doc.GeneratePdf();
+
+            /* ---------- store & return URL ---------- */
+            string key = $"reports/{Guid.NewGuid()}.pdf";
+
+            await _storage.UploadAsync(key, bytes);
+            _log.LogInformation("PDF uploaded as {Key} ({Bytes} bytes)", key, bytes.Length);
+
+            // 30-day presigned URL
+            return _storage.GetUrl(key, TimeSpan.FromDays(30));
         }
 
         private List<Issue> LoadIssues(JsonNode? raw)
