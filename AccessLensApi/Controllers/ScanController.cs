@@ -1,7 +1,14 @@
-﻿using AccessLensApi.Models;
-using AccessLensApi.Services;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
+using AccessLensApi.Data;
+using AccessLensApi.Models;
+using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Utilities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AccessLensApi.Controllers
 {
@@ -9,35 +16,204 @@ namespace AccessLensApi.Controllers
     [Route("api/[controller]")]
     public class ScanController : ControllerBase
     {
+        private readonly ApplicationDbContext _dbContext;
+        private readonly ICreditManager _creditManager;
         private readonly IA11yScanner _scanner;
         private readonly IPdfService _pdf;
+        private readonly ILogger<ScanController> _logger;
 
-        public ScanController(IA11yScanner scanner, IPdfService pdf)
+        public ScanController(
+            ApplicationDbContext dbContext,
+            ICreditManager creditManager,
+            IA11yScanner scanner,
+            IPdfService pdf,
+            ILogger<ScanController> logger)
         {
+            _dbContext = dbContext;
+            _creditManager = creditManager;
             _scanner = scanner;
             _pdf = pdf;
+            _logger = logger;
         }
 
+        /// <summary>
+        /// POST /api/scan/starter
+        /// Body: { url, email }
+        /// 
+        /// 1) Validate URL and email.
+        /// 2) Ensure User record exists.
+        /// 3) If not verified & not firstScan: return needVerify.
+        /// 4) If no quota: return needPayment.
+        /// 5) Flip firstScan if this is the user’s first scan.
+        /// 6) Run the a11y scanner (up to 5 pages).
+        /// 7) Compute score from the first page’s results.
+        /// 8) Generate and upload a PDF from the first page’s JSON.
+        /// 9) Return { score, pdfUrl, teaserUrl }.
+        /// </summary>
         [HttpPost("starter")]
         public async Task<IActionResult> Starter([FromBody] ScanRequest req)
         {
-            if (!Uri.IsWellFormedUriString(req.Url, UriKind.Absolute))
-                return BadRequest("Invalid URL.");
+            var validationError = ValidateRequest(req);
+            if (validationError != null)
+                return validationError;
 
-            var json = await _scanner.ScanFivePagesAsync(req.Url);
+            var email = req.Email.Trim().ToLowerInvariant();
+            var url = req.Url.Trim();
 
-            // credit/payment checks already done inside scanner or middleware
-            int score = A11yScore.From(json["pages"]![0]!);      // or pass upfront
-            string pdfUrl = await _pdf.GenerateAndUploadPdf(req.Url, json["pages"]![0]!);
+            var user = await GetOrCreateUserAsync(email);
 
-            return Ok(new
+            // 3) If not verified & not firstScan: return needVerify
+            var verifyError = CheckVerification(user);
+            if (verifyError != null)
+                return verifyError;
+
+            // 4) If no quota: return needPayment
+            var paymentError = await CheckQuotaAsync(email);
+            if (paymentError != null)
+                return paymentError;
+
+            // 5) Flip firstScan if needed
+            await UpdateFirstScanAsync(user);
+
+            // 6) Run the a11y scanner
+            JsonObject scanResult;
+            try
             {
-                score,
-                pdfUrl,
-                teaserUrl = (string?)json["teaserUrl"] ?? ""
-            });
+                scanResult = await _scanner.ScanFivePagesAsync(url);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "A11y scan failed for URL: {Url}", url);
+                return StatusCode(500, new { error = "Accessibility scan failed." });
+            }
 
-            //return File(pdf, "application/pdf", "accesslens-report.pdf");
+            // 7) Compute score from the first page’s results
+            int score;
+            try
+            {
+                score = ComputeScore(scanResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to compute score for URL: {Url}", url);
+                return StatusCode(500, new { error = "Failed to compute accessibility score." });
+            }
+
+            // 8) Generate and upload PDF from the first page’s JSON
+            string pdfUrl;
+            try
+            {
+                pdfUrl = await GeneratePdfUrlAsync(url, scanResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "PDF generation failed for URL: {Url}", url);
+                return StatusCode(500, new { error = "PDF generation failed." });
+            }
+
+            var teaserUrl = ExtractTeaser(scanResult);
+
+            return Ok(new { score, pdfUrl, teaserUrl });
+        }
+
+        // ---------- Private helper methods ----------
+
+        private IActionResult? ValidateRequest(ScanRequest req)
+        {
+            if (req == null
+                || string.IsNullOrWhiteSpace(req.Url)
+                || !Uri.IsWellFormedUriString(req.Url.Trim(), UriKind.Absolute))
+            {
+                return BadRequest(new { error = "Invalid URL." });
+            }
+
+            if (string.IsNullOrWhiteSpace(req.Email)
+                || !new EmailAddressAttribute().IsValid(req.Email.Trim()))
+            {
+                return BadRequest(new { error = "Invalid email." });
+            }
+
+            return null;
+        }
+
+        private async Task<User> GetOrCreateUserAsync(string email)
+        {
+            var user = await _dbContext.Users.FindAsync(email);
+            if (user != null)
+                return user;
+
+            user = new User
+            {
+                Email = email,
+                EmailVerified = false,
+                FirstScan = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync();
+            return user;
+        }
+
+        private IActionResult? CheckVerification(User user)
+        {
+            if (!user.EmailVerified && !user.FirstScan)
+            {
+                return Ok(new { needVerify = true });
+            }
+            return null;
+        }
+
+        private async Task<IActionResult?> CheckQuotaAsync(string email)
+        {
+            var hasQuota = await _creditManager.HasQuotaAsync(email);
+            if (!hasQuota)
+                return Ok(new { needPayment = true });
+            return null;
+        }
+
+        private async Task UpdateFirstScanAsync(User user)
+        {
+            if (!user.FirstScan)
+                return;
+
+            user.FirstScan = false;
+            _dbContext.Users.Update(user);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        private int ComputeScore(JsonObject scanResult)
+        {
+            if (!scanResult.TryGetPropertyValue("pages", out var pagesNode)
+                || pagesNode is not JsonArray pages
+                || pages.Count == 0
+                || pages[0] is not JsonObject firstPage)
+            {
+                throw new InvalidOperationException("Scan result did not contain any pages.");
+            }
+
+            return A11yScore.From(firstPage);
+        }
+
+        private async Task<string> GeneratePdfUrlAsync(string url, JsonObject scanResult)
+        {
+            var firstPage = ((JsonArray)scanResult["pages"]!)[0] as JsonObject;
+            if (firstPage == null)
+                throw new InvalidOperationException("First page JSON missing.");
+
+            // Assume GenerateAndUploadPdf returns a public URL
+            return await _pdf.GenerateAndUploadPdf(url, firstPage);
+        }
+
+        private string ExtractTeaser(JsonObject scanResult)
+        {
+            if (scanResult.TryGetPropertyValue("teaserUrl", out var teaserNode)
+                && teaserNode is JsonValue teaserValue
+                && teaserValue.TryGetValue<string>(out var teaserStr))
+            {
+                return teaserStr ?? "";
+            }
+
+            return "";
         }
     }
 }

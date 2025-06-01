@@ -8,12 +8,12 @@ namespace AccessLensApi.Storage;
 /// Stores files in S3 under {bucket}/{key} and returns a presigned URL
 /// valid for the requested TTL.
 /// </summary>
-public sealed class S3Storage : IStorage
+public sealed class S3StorageService : IStorageService
 {
     private readonly IAmazonS3 _s3;
     private readonly string _bucket;
 
-    public S3Storage(IAmazonS3 s3, IConfiguration cfg)
+    public S3StorageService(IAmazonS3 s3, IConfiguration cfg)
     {
         _s3 = s3;
         _bucket = cfg["S3:Bucket"] ?? throw new ArgumentException("S3:Bucket missing");
@@ -21,7 +21,7 @@ public sealed class S3Storage : IStorage
 
     public async Task UploadAsync(string key, byte[] bytes, CancellationToken ct = default)
     {
-        var put = new PutObjectRequest
+        var put = new Amazon.S3.Model.PutObjectRequest
         {
             BucketName = _bucket,
             Key = key,
@@ -32,7 +32,7 @@ public sealed class S3Storage : IStorage
         await _s3.PutObjectAsync(put, ct);
     }
 
-    public string GetUrl(string key, TimeSpan ttl)
+    public string GetPresignedUrl(string key, TimeSpan ttl)
     {
         var req = new GetPreSignedUrlRequest
         {
@@ -51,4 +51,15 @@ public sealed class S3Storage : IStorage
             ".png" => "image/png",
             _ => "application/octet-stream"
         };
+
+    private static string GetExtensionFromContentType(string contentType)
+    {
+        return contentType switch
+        {
+            "application/pdf" => ".pdf",
+            "image/png" => ".png",
+            "image/jpeg" => ".jpg",
+            _ => ""
+        };
+    }
 }

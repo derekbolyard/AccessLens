@@ -1,4 +1,5 @@
 ﻿using AccessLensApi.PdfDocuments;
+using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Storage;
 using QuestPDF.Fluent;
 using System.Text.Json.Nodes;
@@ -9,10 +10,10 @@ namespace AccessLensApi.Services
     public class PdfService : IPdfService
     {
         private const int TOTAL_RULES_TESTED = 68;
-        private readonly IStorage _storage;
+        private readonly IStorageService _storage;
         private readonly ILogger<PdfService> _log;
 
-        public PdfService(IStorage storage, ILogger<PdfService> log)
+        public PdfService(IStorageService storage, ILogger<PdfService> log)
         {
             _storage = storage;
             _log = log;
@@ -45,7 +46,7 @@ namespace AccessLensApi.Services
             _log.LogInformation("PDF uploaded as {Key} ({Bytes} bytes)", key, bytes.Length);
 
             // 30-day presigned URL
-            return _storage.GetUrl(key, TimeSpan.FromDays(30));
+            return _storage.GetPresignedUrl(key, TimeSpan.FromDays(30));
         }
 
         private List<Issue> LoadIssues(JsonNode? raw)

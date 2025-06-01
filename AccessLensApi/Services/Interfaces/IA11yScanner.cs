@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 
-namespace AccessLensApi.Services
+namespace AccessLensApi.Services.Interfaces
 {
     public interface IA11yScanner
     {

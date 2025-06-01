@@ -1,10 +1,10 @@
 ﻿namespace AccessLensApi.Storage;
 
 /// <summary>Abstraction so scanners / PDF code stay storage-agnostic.</summary>
-public interface IStorage
+public interface IStorageService
 {
     Task UploadAsync(string key, byte[] bytes, CancellationToken ct = default);
 
     /// <param name="ttl">Time-to-live for the returned URL.</param>
-    string GetUrl(string key, TimeSpan ttl);
+    string GetPresignedUrl(string key, TimeSpan ttl);
 }

@@ -7,7 +7,7 @@ namespace AccessLensApi.Storage;
 /// Writes files to wwwroot/teasers/ and returns absolute URLs like
 /// https://localhost:7048/teasers/{file}.png
 /// </summary>
-public sealed class LocalStorage : IStorage
+public sealed class LocalStorage : IStorageService
 {
     private readonly string _basePath;
     private readonly string _baseUrl;  // e.g. https://localhost:7088
@@ -30,6 +30,6 @@ public sealed class LocalStorage : IStorage
         await File.WriteAllBytesAsync(filePath, bytes, ct);
     }
 
-    public string GetUrl(string key, TimeSpan ttl)
+    public string GetPresignedUrl(string key, TimeSpan ttl)
         => $"{_baseUrl.TrimEnd('/')}/teasers/{Path.GetFileName(key)}";
 }

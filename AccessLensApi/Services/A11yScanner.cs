@@ -1,4 +1,5 @@
-﻿using AccessLensApi.Storage;
+﻿using AccessLensApi.Services.Interfaces;
+using AccessLensApi.Storage;
 using AccessLensApi.Utilities;
 using Microsoft.Playwright;
 using System.Text.Json.Nodes;
@@ -8,13 +9,13 @@ namespace AccessLensApi.Services
     public sealed class A11yScanner : IA11yScanner, IAsyncDisposable
     {
         private readonly IBrowser _browser;
-        private readonly IStorage _storage;
+        private readonly IStorageService _storage;
         private readonly ILogger<A11yScanner> _log;
         private const string AxeCdn = "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.9.0/axe.min.js";
 
         public A11yScanner(
             IBrowser browser,
-            IStorage storage,
+            IStorageService storage,
             ILogger<A11yScanner> log)
         {
             _browser = browser;
@@ -67,7 +68,7 @@ namespace AccessLensApi.Services
                     /* ---- upload & URL ---- */
                     string key = $"teasers/{Guid.NewGuid()}.png";
                     await _storage.UploadAsync(key, finalTeaser);
-                    teaserUrl = _storage.GetUrl(key, TimeSpan.FromDays(30));
+                    teaserUrl = _storage.GetPresignedUrl(key, TimeSpan.FromDays(30));
 
                     _log.LogInformation("Teaser built (zoomed={Zoom}, crit={Crit}, ser={Ser})", zoomed, crit, seri);
                 }
