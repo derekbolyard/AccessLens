@@ -54,14 +54,22 @@ namespace AccessLensApi.Services
 
                     int crit = violations.Count(v => v?["impact"]?.ToString() == "critical");
                     int seri = violations.Count(v => v?["impact"]?.ToString() == "serious");
+                    int moderate = violations.Count(v => v?["impact"]?.ToString() == "moderate");
                     int score = A11yScore.From(axeObj);
 
-                    byte[] teaserBytes = await TeaserBuilder.BuildAsync(
-                                            page, violations, score, crit, seri);
+                    /* ---- capture (crop if possible) ---- */
+                    (byte[] raw, bool zoomed) =
+                        await ScreenshotHelper.CaptureAsync(page, violations);
 
+                    /* ---- overlay bar + circles ---- */
+                    byte[] finalTeaser = TeaserOverlay.AddOverlay(raw, score, crit, seri, moderate);
+
+                    /* ---- upload & URL ---- */
                     string key = $"teasers/{Guid.NewGuid()}.png";
-                    await _storage.UploadAsync(key, teaserBytes);
+                    await _storage.UploadAsync(key, finalTeaser);
                     teaserUrl = _storage.GetUrl(key, TimeSpan.FromDays(30));
+
+                    _log.LogInformation("Teaser built (zoomed={Zoom}, crit={Crit}, ser={Ser})", zoomed, crit, seri);
                 }
 
                 // ── 3️⃣  add Shape-A JSON for this page ───────────────────────
