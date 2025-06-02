@@ -33,7 +33,7 @@ namespace AccessLensApi.Data
                 .HasMaxLength(256);
 
             modelBuilder.Entity<EmailVerification>()
-                .HasKey(ev => ev.Email);
+                .HasKey(ev => ev.Id);
 
             modelBuilder.Entity<EmailVerification>()
                 .Property(ev => ev.Email)

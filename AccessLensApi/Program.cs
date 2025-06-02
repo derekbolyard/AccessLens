@@ -8,7 +8,7 @@ using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.SimpleEmail;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
@@ -23,6 +23,17 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     WebRootPath = "wwwroot"          // ← set here, not later
 });
 
+//builder.Configuration
+//    .SetBasePath(builder.Environment.ContentRootPath)
+//    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+//    .AddJsonFile(
+//        $"appsettings.{builder.Environment.EnvironmentName}.json",
+//        optional: true,
+//        reloadOnChange: true
+//    )
+//    .AddEnvironmentVariables()
+//    .AddCommandLine(args);
+
 QuestPDF.Settings.License = LicenseType.Community;
 builder.Host.UseSerilog((ctx, lc) => lc
     .WriteTo.Console()
@@ -31,14 +42,18 @@ builder.Host.UseSerilog((ctx, lc) => lc
 );
 
 var configuration = builder.Configuration;
-var defaultConn = configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(defaultConn)
-);
-builder.Services.AddScoped<IDbConnection>(sp =>
+var sqliteConnString = builder.Configuration.GetConnectionString("SqliteConnection");
+
+// (2) Register a transient IDbConnection that opens a SqliteConnection
+builder.Services.AddTransient<IDbConnection>(sp =>
 {
-    return new SqlConnection(defaultConn);
+    var conn = new SqliteConnection(sqliteConnString);
+    conn.Open();
+    return conn;
 });
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(sqliteConnString));
 
 builder.Services
     // 1) bind options from config
@@ -86,27 +101,29 @@ builder.Services.AddSingleton<IPdfService, PdfService>();
 var awsRegion = RegionEndpoint.GetBySystemName(configuration["AWS:Region"]);
 builder.Services.AddSingleton<IAmazonS3>(sp =>
 {
-    var awsCreds = new EnvironmentVariablesAWSCredentials();
-    return new AmazonS3Client(awsCreds, awsRegion);
+    return new AmazonS3Client(awsRegion);
 });
-builder.Services.AddSingleton<IAmazonSimpleEmailService>(sp =>
-{
-    var awsCreds = new EnvironmentVariablesAWSCredentials();
-    return new AmazonSimpleEmailServiceClient(awsCreds, awsRegion);
-});
+//builder.Services.AddSingleton<IAmazonSimpleEmailService>(sp =>
+//{
+//    var awsCreds = new EnvironmentVariablesAWSCredentials();
+//    return new AmazonSimpleEmailServiceClient(awsCreds, awsRegion);
+//});
 
-#if DEBUG
-builder.Services.AddSingleton<IStorageService, LocalStorage>();
-#else
-builder.Services.AddSingleton<IStorage, S3Storage>();
-#endif
+builder.Services.AddSingleton<IEmailService, GmailEmailService>();
+
+//#if DEBUG
+//builder.Services.AddSingleton<IStorageService, LocalStorage>();
+//#else
+builder.Services.AddSingleton<IStorageService, S3StorageService>();
+//#endif
 
 StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
 builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimiting"));
 builder.Services.Configure<CaptchaOptions>(configuration.GetSection("Captcha"));
 
 builder.Services.AddScoped<ICreditManager, CreditManager>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+//builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddControllers()
     .AddJsonOptions(opts =>

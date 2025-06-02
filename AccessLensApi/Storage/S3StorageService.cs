@@ -16,7 +16,7 @@ public sealed class S3StorageService : IStorageService
     public S3StorageService(IAmazonS3 s3, IConfiguration cfg)
     {
         _s3 = s3;
-        _bucket = cfg["S3:Bucket"] ?? throw new ArgumentException("S3:Bucket missing");
+        _bucket = cfg["AWS:S3Bucket"] ?? throw new ArgumentException("S3:Bucket missing");
     }
 
     public async Task UploadAsync(string key, byte[] bytes, CancellationToken ct = default)

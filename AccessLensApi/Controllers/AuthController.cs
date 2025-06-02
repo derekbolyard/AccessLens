@@ -1,17 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using AccessLensApi.Data;
+﻿using AccessLensApi.Data;
+using AccessLensApi.Middleware;
 using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
-using AccessLensApi.Middleware;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
-using System.Net.Http;
 
 namespace AccessLensApi.Controllers
 {
@@ -42,52 +35,38 @@ namespace AccessLensApi.Controllers
         /// Generates or reuses a 6-digit code (if not expired) and emails it.
         /// </summary>
         [HttpPost("send-code")]
-        public async Task<IActionResult> SendCode([FromBody] JsonElement body)
+        public async Task<IActionResult> SendCode([FromBody] SendCodeRequest body)
         {
-            if (!body.TryGetProperty("email", out var emailProp) || !emailProp.GetString()?.Contains("@") == true)
+            if (string.IsNullOrWhiteSpace(body?.Email))
                 return BadRequest(new { error = "Invalid email." });
 
-            var email = emailProp.GetString().Trim().ToLowerInvariant();
-
             // Ensure user exists
-            var user = await _dbContext.Users.FindAsync(email);
+            var user = await _dbContext.Users.FindAsync(body.Email);
             if (user == null)
             {
-                user = new User { Email = email };
+                user = new User { Email = body.Email };
                 _dbContext.Users.Add(user);
                 await _dbContext.SaveChangesAsync();
             }
 
             // Check if there’s an existing code that hasn’t expired
             var now = DateTime.UtcNow;
-            var existing = await _dbContext.EmailVerifications
-                .AsNoTracking()
-                .FirstOrDefaultAsync(ev => ev.Email == email && ev.ExpiresUtc > now);
 
-            string code;
-            if (existing != null)
+            // Generate new 6-digit code
+            var code = new Random().Next(100000, 999999).ToString();
+            var expires = now.AddMinutes(15);
+
+            // Upsert
+            var evEntity = new EmailVerification
             {
-                code = existing.Code;
-            }
-            else
-            {
-                // Generate new 6-digit code
-                code = new Random().Next(100000, 999999).ToString();
-                var expires = now.AddMinutes(15);
+                Email = body.Email,
+                Code = code,
+                ExpiresUtc = expires
+            };
+            _dbContext.EmailVerifications.Add(evEntity);
+            await _dbContext.SaveChangesAsync();
 
-                // Upsert
-                var evEntity = new EmailVerification
-                {
-                    Email = email,
-                    Code = code,
-                    ExpiresUtc = expires
-                };
-                _dbContext.EmailVerifications.Update(evEntity);
-                await _dbContext.SaveChangesAsync();
-            }
-
-            // Send via SES
-            await _emailService.SendVerificationCodeAsync(email, code);
+            await _emailService.SendVerificationCodeAsync(body.Email, code);
 
             return Ok(new { message = "Verification code sent." });
         }

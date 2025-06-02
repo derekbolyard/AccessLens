@@ -8,3 +8,4 @@ public interface IStorageService
     /// <param name="ttl">Time-to-live for the returned URL.</param>
     string GetPresignedUrl(string key, TimeSpan ttl);
 }
+
