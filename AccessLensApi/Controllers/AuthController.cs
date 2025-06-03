@@ -78,18 +78,17 @@ namespace AccessLensApi.Controllers
         /// If 3 invalid attempts have occurred, requires hCaptcha.
         /// </summary>
         [HttpPost("verify")]
-        public async Task<IActionResult> Verify([FromBody] JsonElement body)
+        public async Task<IActionResult> Verify([FromBody] VerifyEmailRequest body)
         {
-            if (!body.TryGetProperty("email", out var emailProp) || !body.TryGetProperty("code", out var codeProp))
+            if (string.IsNullOrWhiteSpace(body?.Email) || string.IsNullOrWhiteSpace(body?.Code))
                 return BadRequest(new { error = "Missing email or code." });
 
-            var email = emailProp.GetString().Trim().ToLowerInvariant();
-            var code = codeProp.GetString().Trim();
+            var email = body.Email;
+            var code = body.Code.Trim();
 
             var now = DateTime.UtcNow;
 
-            // Check stored code
-            var ev = await _dbContext.EmailVerifications.FindAsync(email);
+            var ev = _dbContext.EmailVerifications.Last(x => x.Email == email);
             if (ev == null || ev.ExpiresUtc < now)
             {
                 return BadRequest(new { error = "Code expired or not found." });
@@ -102,13 +101,12 @@ namespace AccessLensApi.Controllers
 
             if (failCount >= 3)
             {
-                if (!body.TryGetProperty("hcaptchaToken", out var tokenProp))
+                if (string.IsNullOrEmpty(body.HcaptchaToken))
                 {
                     return BadRequest(new { error = "hCaptcha required." });
                 }
 
-                var token = tokenProp.GetString();
-                var validCaptcha = await VerifyHCaptchaAsync(token);
+                var validCaptcha = await VerifyHCaptchaAsync(body.HcaptchaToken);
                 if (!validCaptcha)
                 {
                     return BadRequest(new { error = "hCaptcha failed." });
