@@ -30,11 +30,13 @@ namespace AccessLensApi.Services
 
             // 2) Attempt atomic decrement of one SnapshotPass credit
             const string sql = @"
-                UPDATE SnapshotPass
-                SET CreditsLeft = CreditsLeft - 1,
-                    UpdatedAt = SYSDATETIME()
-                OUTPUT deleted.CreditsLeft
-                WHERE Email = @Email AND CreditsLeft > 0;
+                    UPDATE SnapshotPasses
+                    SET    CreditsLeft = CreditsLeft - 1,
+                            UpdatedAt   = CURRENT_TIMESTAMP
+                    WHERE  Email = @Email
+                        AND  CreditsLeft > 0
+                    RETURNING CreditsLeft;
+
             ";
 
             var oldCredits = await _dbConnection.QuerySingleOrDefaultAsync<int?>(sql, new { Email = email });
