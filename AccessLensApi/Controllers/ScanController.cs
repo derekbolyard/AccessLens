@@ -1,8 +1,19 @@
-﻿using AccessLensApi.Data;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using Microsoft.AspNetCore.Http;
+using AccessLensApi.Data;
 using AccessLensApi.Middleware;
 using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Utilities;
+using AccessLensApi.Middleware;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -24,19 +35,31 @@ namespace AccessLensApi.Controllers
         private readonly IA11yScanner _scanner;
         private readonly IPdfService _pdf;
         private readonly ILogger<ScanController> _logger;
+        private readonly IRateLimiter _rateLimiter;
+        private readonly RateLimitingOptions _rateOptions;
+        private readonly CaptchaOptions _captchaOptions;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public ScanController(
             ApplicationDbContext dbContext,
             ICreditManager creditManager,
             IA11yScanner scanner,
             IPdfService pdf,
-            ILogger<ScanController> logger)
+            ILogger<ScanController> logger,
+            IRateLimiter rateLimiter,
+            IOptions<RateLimitingOptions> rateOptions,
+            IOptions<CaptchaOptions> captchaOptions,
+            IHttpClientFactory httpClientFactory)
         {
             _dbContext = dbContext;
             _creditManager = creditManager;
             _scanner = scanner;
             _pdf = pdf;
             _logger = logger;
+            _rateLimiter = rateLimiter;
+            _rateOptions = rateOptions.Value;
+            _captchaOptions = captchaOptions.Value;
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <summary>
@@ -54,6 +77,7 @@ namespace AccessLensApi.Controllers
         /// 9) Return { score, pdfUrl, teaserUrl }.
         /// </summary>
         [HttpPost("starter")]
+        [RequestSizeLimit(1_048_576)]
         public async Task<IActionResult> Starter([FromBody] ScanRequest req)
         {
             try
@@ -62,10 +86,19 @@ namespace AccessLensApi.Controllers
                 if (validationError != null)
                     return validationError;
 
-                var email = req.Email.Trim().ToLowerInvariant();
-                var url = req.Url.Trim();
+            if (string.IsNullOrEmpty(req.HcaptchaToken))
+                return BadRequest(new { error = "hCaptcha token required." });
 
-                var user = await GetOrCreateUserAsync(email);
+            if (!await VerifyHCaptchaAsync(req.HcaptchaToken))
+                return BadRequest(new { error = "hCaptcha failed." });
+
+            var email = req.Email.Trim().ToLowerInvariant();
+            var url = req.Url.Trim();
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || !IsUrlAllowed(uri))
+                return BadRequest(new { error = "URL not allowed." });
+
+            var user = await GetOrCreateUserAsync(email);
 
                 // 3) If not verified & not firstScan: return needVerify
                 var verifyError = CheckVerification(user);
@@ -80,17 +113,29 @@ namespace AccessLensApi.Controllers
                 // 5) Flip firstScan if needed
                 await UpdateFirstScanAsync(user);
 
-                // 6) Run the a11y scanner
-                JsonObject scanResult;
-                try
-                {
-                    scanResult = await _scanner.ScanFivePagesAsync(url);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "A11y scan failed for URL: {Url}", url);
-                    return StatusCode(500, new { error = "Accessibility scan failed." });
-                }
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            if (!await _rateLimiter.TryAcquireStarterAsync(ip, email, user.EmailVerified))
+                return StatusCode(429, new { error = "Rate limit exceeded" });
+
+            JsonObject scanResult;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_rateOptions.MaxScanDurationSeconds));
+            try
+            {
+                scanResult = await _scanner.ScanFivePagesAsync(url, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(500, new { error = "Scan timed out." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "A11y scan failed for URL: {Url}", url);
+                return StatusCode(500, new { error = "Accessibility scan failed." });
+            }
+            finally
+            {
+                _rateLimiter.ReleaseStarter();
+            }
 
                 // 7) Compute score from the first page’s results
                 int score;
@@ -399,6 +444,56 @@ namespace AccessLensApi.Controllers
             }
 
             return "";
+        }
+
+        private bool IsUrlAllowed(Uri uri)
+        {
+            if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+                return false;
+
+            if (uri.HostNameType == UriHostNameType.IPv4 || uri.HostNameType == UriHostNameType.IPv6)
+            {
+                var ip = System.Net.IPAddress.Parse(uri.Host);
+                if (System.Net.IPAddress.IsLoopback(ip)) return false;
+
+                var bytes = ip.GetAddressBytes();
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    if (bytes[0] == 10 ||
+                        (bytes[0] == 192 && bytes[1] == 168) ||
+                        (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31))
+                        return false;
+                }
+                if (ip.IsIPv6LinkLocal) return false;
+            }
+
+            return true;
+        }
+
+        private async Task<bool> VerifyHCaptchaAsync(string token)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var values = new Dictionary<string, string>
+                {
+                    { "secret", _captchaOptions.hCaptchaSecret },
+                    { "response", token }
+                };
+                using var content = new FormUrlEncodedContent(values);
+                using var resp = await client.PostAsync("https://hcaptcha.com/siteverify", content);
+                if (!resp.IsSuccessStatusCode)
+                    return false;
+
+                var json = await resp.Content.ReadAsStringAsync();
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                return doc.RootElement.TryGetProperty("success", out var s) && s.GetBoolean();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "hCaptcha verification failed");
+                return false;
+            }
         }
     }
 }

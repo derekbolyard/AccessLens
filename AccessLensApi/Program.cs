@@ -121,6 +121,10 @@ StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
 builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimiting"));
 builder.Services.Configure<CaptchaOptions>(configuration.GetSection("Captcha"));
 
+builder.Services.AddHttpClient();
+
+builder.Services.AddSingleton<IRateLimiter, RateLimiterService>();
+
 builder.Services.AddScoped<ICreditManager, CreditManager>();
 //builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddMemoryCache();
