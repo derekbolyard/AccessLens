@@ -199,11 +199,11 @@ namespace AccessLensApi.Controllers
                 var hasFullAccess = await _creditManager.HasPremiumAccessAsync(email);
                 if (!hasFullAccess)
                     return BadRequest(new { error = "Full site scanning requires premium access." });
-
-                var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                if (!await _rateLimiter.TryAcquireFullScanAsync(ip, email))
-                    return StatusCode(429, new { error = "Rate limit exceeded for full scans" });
             }
+
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            if (!await _rateLimiter.TryAcquireFullScanAsync(ip, email))
+                return StatusCode(429, new { error = "Rate limit exceeded for full scans" });
 
             JsonObject scanResult;
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(req.Options?.TimeoutMinutes ?? 30));

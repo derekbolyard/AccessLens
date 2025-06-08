@@ -61,28 +61,29 @@ namespace AccessLensApi.Services
                 ["minor"] = ("Minor", 4),
                 ["info"] = ("Info", 5)
             };
+
             var issues = new List<Issue>();
-            if (raw is JsonArray arr) // Shape A
+
+            // Normalize all inputs to JsonArray for consistent processing
+            var normalizedData = NormalizeToArrays(raw);
+
+            foreach (var item in normalizedData)
             {
-                foreach (var page in arr)
-                    issues.AddRange(ParsePage(page, severityMap));
+                issues.AddRange(ParsePage(item, severityMap));
             }
-            else if (raw?["issues"] is JsonArray) // Shape B
-            {
-                issues.AddRange(ParsePage(raw, severityMap));
-            }
-            else if (raw?["results"] is JsonObject results) // Shape C
-            {
-                foreach (var kv in results)
-                {
-                    // kv.Key is the URL, kv.Value is the array of issues
-                    if (kv.Value is JsonArray issuesArray)
-                    {
-                        issues.AddRange(ParsePage(kv.Key, issuesArray, severityMap));
-                    }
-                }
-            }
+
             return issues;
+        }
+
+        private IEnumerable<JsonNode> NormalizeToArrays(JsonNode? raw)
+        {
+            return raw switch
+            {
+                JsonArray arr => arr,                           // Shape A: Already an array
+                JsonObject obj when obj["issues"] is JsonArray => [obj],  // Shape B: Wrap object with issues array
+                JsonObject obj when obj["pages"] is JsonArray pages => pages.Where(x => x != null) as IEnumerable<JsonNode>,
+                _ => []                                         // Handle null or unexpected types
+            };
         }
 
         // For Shape A and B: page node contains "pageUrl"/"url" and "issues" array
@@ -101,22 +102,6 @@ namespace AccessLensApi.Services
                     string html = TrimHtml(iss?["context"]?.ToString() ?? "");
                     list.Add(new Issue(rule, message, html, sevLabel, sevRank, pageUrl));
                 }
-            }
-            return list;
-        }
-
-        // For Shape C: pageUrl and issues array are provided directly
-        private List<Issue> ParsePage(string pageUrl, JsonArray issuesArray, Dictionary<string, (string, int)> severityMap)
-        {
-            var list = new List<Issue>();
-            foreach (var iss in issuesArray)
-            {
-                var type = iss?["type"]?.ToString()?.ToLower() ?? "";
-                var (sevLabel, sevRank) = severityMap.TryGetValue(type, out var v) ? v : ("Other", 6);
-                string rule = iss?["code"]?.ToString()?.Split('.')[0] ?? "";
-                string message = iss?["message"]?.ToString() ?? "";
-                string html = TrimHtml(iss?["context"]?.ToString() ?? "");
-                list.Add(new Issue(rule, message, html, sevLabel, sevRank, pageUrl));
             }
             return list;
         }

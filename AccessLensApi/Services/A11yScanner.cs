@@ -87,24 +87,22 @@ namespace AccessLensApi.Services
 
                         await semaphore.WaitAsync(cancellationToken);
 
-                        var task = ProcessPageAsync(ctx, url, depth, rootUri, queue, pagesResults, options, cancellationToken)
-                            .ContinueWith(async t =>
-                            {
-                                semaphore.Release();
+                        var task = ProcessPageWithSemaphoreAsync(ctx, url, depth, rootUri, queue, pagesResults, options, semaphore, cancellationToken);
+                        tasks.Add(task);
 
-                                if (t.IsFaulted)
-                                {
-                                    _log.LogError(t.Exception, "Failed to process page: {Url}", url);
-                                }
-                                else if (t.IsCompletedSuccessfully && options.GenerateTeaser && teaserUrl == null)
+                        // Update teaserUrl if this is the first page and we got a result
+                        if (options.GenerateTeaser && teaserUrl == null)
+                        {
+                            await task.ContinueWith(async t =>
+                            {
+                                if (t.IsCompletedSuccessfully)
                                 {
                                     var result = await t;
                                     if (result.teaserUrl != null)
                                         teaserUrl = result.teaserUrl;
                                 }
-                            }, cancellationToken);
-
-                        tasks.Add(task.Unwrap());
+                            }, TaskContinuationOptions.OnlyOnRanToCompletion);
+                        }
                     }
 
                     // Wait for some tasks to complete
@@ -139,6 +137,32 @@ namespace AccessLensApi.Services
             {
                 await ctx.CloseAsync();
                 semaphore.Dispose();
+            }
+        }
+
+        private async Task<(JsonObject? pageResult, string? teaserUrl)> ProcessPageWithSemaphoreAsync(
+            IBrowserContext ctx,
+            string url,
+            int depth,
+            Uri rootUri,
+            ConcurrentQueue<(string url, int depth)> queue,
+            ConcurrentBag<JsonObject> pagesResults,
+            ScanOptions options,
+            SemaphoreSlim semaphore,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await ProcessPageAsync(ctx, url, depth, rootUri, queue, pagesResults, options, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Failed to process page: {Url}", url);
+                return (null, null);
+            }
+            finally
+            {
+                semaphore.Release(); // Ensure semaphore is always released
             }
         }
 
