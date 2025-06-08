@@ -13,12 +13,14 @@ namespace AccessLensApi.Services
         private readonly IMemoryCache _cache;
         private readonly RateLimitingOptions _options;
         private readonly SemaphoreSlim _concurrent;
+        private readonly SemaphoreSlim _fullScanConcurrent; // Separate semaphore for full scans
 
         public RateLimiterService(IMemoryCache cache, IOptions<RateLimitingOptions> options)
         {
             _cache = cache;
             _options = options.Value;
             _concurrent = new SemaphoreSlim(_options.MaxConcurrentScans, _options.MaxConcurrentScans);
+            _fullScanConcurrent = new SemaphoreSlim(_options.MaxConcurrentFullScans, _options.MaxConcurrentFullScans);
         }
 
         public async Task<bool> TryAcquireStarterAsync(string ip, string email, bool verified)
@@ -69,6 +71,48 @@ namespace AccessLensApi.Services
         public void ReleaseStarter()
         {
             _concurrent.Release();
+        }
+
+        public async Task<bool> TryAcquireFullScanAsync(string ip, string email)
+        {
+            if (!await _fullScanConcurrent.WaitAsync(0))
+                return false;
+
+            try
+            {
+                var now = DateTime.UtcNow;
+
+                // Rate limiting for full scans (more restrictive)
+                var ipKey = $"fullscan-ip-{ip}";
+                var ipCount = _cache.Get<int>(ipKey);
+                if (ipCount >= _options.MaxFullScansPerIpPerDay)
+                    return Fail();
+                _cache.Set(ipKey, ipCount + 1, TimeSpan.FromDays(1));
+
+                var emailKey = $"fullscan-email-{email}";
+                var emailCount = _cache.Get<int>(emailKey);
+                if (emailCount >= _options.MaxFullScansPerEmailPerDay)
+                    return Fail();
+                _cache.Set(emailKey, emailCount + 1, TimeSpan.FromDays(1));
+
+                return true;
+            }
+            catch
+            {
+                _fullScanConcurrent.Release();
+                throw;
+            }
+
+            bool Fail()
+            {
+                _fullScanConcurrent.Release();
+                return false;
+            }
+        }
+
+        public void ReleaseFullScan()
+        {
+            _fullScanConcurrent.Release();
         }
     }
 }

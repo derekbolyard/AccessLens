@@ -118,7 +118,7 @@ builder.Services.AddSingleton<IStorageService, S3StorageService>();
 //#endif
 
 StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
-builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimiting"));
+builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimitingOptions"));
 builder.Services.Configure<CaptchaOptions>(configuration.GetSection("Captcha"));
 
 builder.Services.AddHttpClient();

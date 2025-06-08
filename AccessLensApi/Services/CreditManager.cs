@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
-using System.Data;
-using Dapper;
 using Microsoft.EntityFrameworkCore;
 using AccessLensApi.Data;
 using AccessLensApi.Services.Interfaces;
+using System.Data;
+using Dapper;
 
 namespace AccessLensApi.Services
 {
@@ -36,12 +36,20 @@ namespace AccessLensApi.Services
                     WHERE  Email = @Email
                         AND  CreditsLeft > 0
                     RETURNING CreditsLeft;
-
             ";
 
             var oldCredits = await _dbConnection.QuerySingleOrDefaultAsync<int?>(sql, new { Email = email });
 
             return oldCredits.HasValue;
+        }
+
+        public async Task<bool> HasPremiumAccessAsync(string email)
+        {
+            // Only active subscriptions allow full site scanning
+            // Snapshot passes are for single-page scans only
+            return await _dbContext.Subscriptions
+                .AsNoTracking()
+                .AnyAsync(s => s.Email == email && s.Active);
         }
     }
 }

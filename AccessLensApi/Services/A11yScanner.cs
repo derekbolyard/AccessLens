@@ -312,6 +312,199 @@ namespace AccessLensApi.Services
             return sitemapUrls;
         }
 
+        private async Task<(JsonObject? pageResult, string? teaserUrl)> ProcessPageAsync(
+            IBrowserContext ctx,
+            string url,
+            int depth,
+            Uri rootUri,
+            ConcurrentQueue<(string url, int depth)> queue,
+            ConcurrentBag<JsonObject> pagesResults,
+            ScanOptions options,
+            CancellationToken cancellationToken)
+        {
+            IPage? page = null;
+            try
+            {
+                page = await ctx.NewPageAsync();
+                await page.SetViewportSizeAsync(1280, 720);
+
+                // Navigate to the page
+                var response = await page.GotoAsync(url, new PageGotoOptions
+                {
+                    WaitUntil = WaitUntilState.DOMContentLoaded,
+                    Timeout = 30000
+                });
+
+                if (response?.Status >= 400)
+                {
+                    _log.LogWarning("Page returned {Status} for {Url}", response.Status, url);
+                    return (null, null);
+                }
+
+                // Inject axe-core script
+                var axeScript = await GetAxeScriptAsync(cancellationToken);
+                await page.AddScriptTagAsync(new() { Content = axeScript });
+
+                // Run axe accessibility scan
+                var axeResults = await page.EvaluateAsync<string>(@"
+            new Promise((resolve) => {
+                axe.run(document, (err, results) => {
+                    if (err) {
+                        resolve(JSON.stringify({ violations: [] }));
+                    } else {
+                        resolve(JSON.stringify(results));
+                    }
+                });
+            })
+        ");
+
+                // Convert to your desired format
+                var pageResult = ConvertToShapeA(url, axeResults);
+                pagesResults.Add(pageResult);
+
+                // ── 2️⃣  teaser on FIRST page ─────────────────────────────────
+                string? teaserUrl = null;
+                if (options.GenerateTeaser && pagesResults.Count == 1) // First page only
+                {
+                    var axeObj = (JsonObject)JsonNode.Parse(axeResults)!;
+                    var violations = axeObj["violations"]!.AsArray();
+
+                    int crit = violations.Count(v => v?["impact"]?.ToString() == "critical");
+                    int seri = violations.Count(v => v?["impact"]?.ToString() == "serious");
+                    int moderate = violations.Count(v => v?["impact"]?.ToString() == "moderate");
+                    int score = A11yScore.From(axeObj);
+
+                    /* ---- capture (crop if possible) ---- */
+                    (byte[] raw, bool zoomed) = await ScreenshotHelper.CaptureAsync(page, violations);
+
+                    /* ---- overlay bar + circles ---- */
+                    byte[] finalTeaser = TeaserOverlay.AddOverlay(raw, score, crit, seri, moderate);
+
+                    /* ---- upload & URL ---- */
+                    string key = $"teasers/{Guid.NewGuid()}.png";
+                    await _storage.UploadAsync(key, finalTeaser);
+                    teaserUrl = _storage.GetPresignedUrl(key, TimeSpan.FromDays(7));
+
+                    _log.LogInformation("Generated teaser for first page: {Url} - Score: {Score}, Critical: {Critical}, Serious: {Serious}, Moderate: {Moderate}",
+                        url, score, crit, seri, moderate);
+                }
+
+                // Discover new links if within depth limit
+                if (depth < options.MaxDepth)
+                {
+                    await DiscoverLinksFromPage(page, url, depth, rootUri, queue, options, cancellationToken);
+                }
+
+                _log.LogInformation("Scanned page: {Url} - Found {IssueCount} issues",
+                    url, pageResult["issues"]?.AsArray().Count ?? 0);
+
+                return (pageResult, teaserUrl);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Error processing page: {Url}", url);
+                return (null, null);
+            }
+            finally
+            {
+                if (page != null)
+                {
+                    await page.CloseAsync();
+                }
+            }
+        }
+
+        private async Task DiscoverLinksFromPage(
+            IPage page,
+            string currentUrl,
+            int currentDepth,
+            Uri rootUri,
+            ConcurrentQueue<(string url, int depth)> queue,
+            ScanOptions options,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Extract all links from the page
+                var links = await page.EvaluateAsync<string[]>(@"
+            Array.from(document.querySelectorAll('a[href]'))
+                .map(a => a.href)
+                .filter(href => href && !href.startsWith('mailto:') && !href.startsWith('tel:'))
+                .slice(0, arguments[0])
+        ", options.MaxLinksPerPage);
+
+                var addedCount = 0;
+                foreach (var link in links)
+                {
+                    if (addedCount >= options.MaxLinksPerPage)
+                        break;
+
+                    if (Uri.TryCreate(link, UriKind.Absolute, out var linkUri) &&
+                        linkUri.Host.Equals(rootUri.Host, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var normalizedUrl = NormalizeUrl(linkUri);
+                        queue.Enqueue((normalizedUrl, currentDepth + 1));
+                        addedCount++;
+                    }
+                }
+
+                _log.LogDebug("Discovered {Count} links from {Url}", addedCount, currentUrl);
+            }
+            catch (Exception ex)
+            {
+                _log.LogWarning(ex, "Failed to discover links from page: {Url}", currentUrl);
+            }
+        }
+
+        private static bool ShouldExcludeUrl(string url, Regex[] excludePatterns)
+        {
+            if (excludePatterns.Length == 0)
+                return false;
+
+            return excludePatterns.Any(pattern => pattern.IsMatch(url));
+        }
+
+        private static string NormalizeUrl(Uri uri)
+        {
+            // Remove fragment and common query parameters that don't change content
+            var builder = new UriBuilder(uri)
+            {
+                Fragment = string.Empty
+            };
+
+            // Optionally remove common tracking parameters
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var paramsToRemove = new[] { "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "ref" };
+
+            foreach (var param in paramsToRemove)
+            {
+                query.Remove(param);
+            }
+
+            builder.Query = query.ToString();
+            return builder.ToString();
+        }
+
+        private async Task<string> GetAxeScriptAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Try to get from CDN first
+                var response = await _httpClient.GetAsync(AxeCdn, cancellationToken);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadAsStringAsync(cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.LogWarning(ex, "Failed to load axe-core from CDN, falling back to embedded version");
+            }
+
+            // Fallback to a minimal embedded version or throw
+            throw new InvalidOperationException("Could not load axe-core script. Consider embedding axe-core as a resource.");
+        }
+
         private static bool IsValidSitemapUrl(string url, Uri rootUri)
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
