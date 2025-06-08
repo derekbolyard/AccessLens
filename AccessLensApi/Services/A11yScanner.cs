@@ -23,7 +23,7 @@ namespace AccessLensApi.Services
             _log = log;
         }
 
-        public async Task<JsonObject> ScanFivePagesAsync(string rootUrl)
+        public async Task<JsonObject> ScanFivePagesAsync(string rootUrl, CancellationToken cancellationToken = default)
         {
             var ctx = await _browser.NewContextAsync(new() { IgnoreHTTPSErrors = true });
             var queue = new Queue<string>();
@@ -35,11 +35,14 @@ namespace AccessLensApi.Services
 
             while (queue.Count > 0 && pagesArr.Count < 5)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var url = queue.Dequeue();
                 if (!visited.Add(url)) continue;
 
                 var page = await ctx.NewPageAsync();
                 await page.GotoAsync(url, new() { WaitUntil = WaitUntilState.NetworkIdle });
+
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // ── 1️⃣  run axe ───────────────────────────────────────────────
                 await page.AddScriptTagAsync(new() { Url = AxeCdn });
@@ -62,6 +65,8 @@ namespace AccessLensApi.Services
                     (byte[] raw, bool zoomed) =
                         await ScreenshotHelper.CaptureAsync(page, violations);
 
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     /* ---- overlay bar + circles ---- */
                     byte[] finalTeaser = TeaserOverlay.AddOverlay(raw, score, crit, seri, moderate);
 
@@ -69,6 +74,8 @@ namespace AccessLensApi.Services
                     string key = $"teasers/{Guid.NewGuid()}.png";
                     await _storage.UploadAsync(key, finalTeaser);
                     teaserUrl = _storage.GetPresignedUrl(key, TimeSpan.FromDays(30));
+
+                    cancellationToken.ThrowIfCancellationRequested();
 
                     _log.LogInformation("Teaser built (zoomed={Zoom}, crit={Crit}, ser={Ser})", zoomed, crit, seri);
                 }
@@ -88,6 +95,7 @@ namespace AccessLensApi.Services
                         queue.Enqueue(href);
 
                 await page.CloseAsync();
+                cancellationToken.ThrowIfCancellationRequested();
             }
 
             await ctx.CloseAsync();
