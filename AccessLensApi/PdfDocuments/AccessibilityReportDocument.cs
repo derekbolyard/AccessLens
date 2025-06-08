@@ -11,6 +11,7 @@ namespace AccessLensApi.PdfDocuments
         private readonly int RulesFailed;
         private readonly int TotalRulesTested;
         private readonly int PageCount;
+        private readonly List<string> Urls;
 
         private const string CompanyName = "Your Company Name";
         private const string CompanyWebsite = "www.yourcompany.com";
@@ -23,7 +24,8 @@ namespace AccessLensApi.PdfDocuments
             int rulesPassed,
             int rulesFailed,
             int totalRulesTested,
-            int pageCount)
+            int pageCount,
+            List<string> urls)
         {
             SiteName = siteName;
             Summary = summary;
@@ -31,6 +33,7 @@ namespace AccessLensApi.PdfDocuments
             RulesFailed = rulesFailed;
             TotalRulesTested = totalRulesTested;
             PageCount = pageCount;
+            Urls = urls;
         }
 
         public DocumentMetadata GetMetadata() => DocumentMetadata.Default;
@@ -46,6 +49,23 @@ namespace AccessLensApi.PdfDocuments
 
                     page.Header().Element(ComposeHeader);
                     page.Content().Element(ComposeCoverContent);
+                    page.Footer().Element(ComposeFooter);
+                })
+                .Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1, Unit.Centimetre);
+                    page.DefaultTextStyle(x => x.FontSize(9));
+
+                    page.Header().Element(container =>
+                    {
+                        container.PaddingBottom(10)
+                            .Text("Pages Scanned")
+                            .FontSize(14)
+                            .Bold();
+                    });
+
+                    page.Content().Element(ComposeUrlsList);
                     page.Footer().Element(ComposeFooter);
                 })
                 .Page(page =>
@@ -82,7 +102,7 @@ namespace AccessLensApi.PdfDocuments
 
 
                 col.Item()
-                   .Text("AccessGuard – Preliminary Accessibility Scan")
+                   .Text("AccessGuard â€“ Preliminary Accessibility Scan")
                    .FontSize(20)
                    .Bold()
                    .AlignCenter();
@@ -122,25 +142,36 @@ namespace AccessLensApi.PdfDocuments
 
                     stats.Item().Text(txt =>
                     {
-                        txt.Span("• Rules tested: ").SemiBold();
+                        txt.Span("â€¢ Rules tested: ").SemiBold();
                         txt.Span(TotalRulesTested.ToString());
                     });
 
                     stats.Item().Text(txt =>
                     {
-                        txt.Span("• Rules passed: ").SemiBold();
+                        txt.Span("â€¢ Rules passed: ").SemiBold();
                         txt.Span(RulesPassed.ToString());
                     });
 
                     stats.Item().Text(txt =>
                     {
-                        txt.Span("• Rules failing: ").SemiBold().FontColor(Colors.Red.Medium);
+                        txt.Span("â€¢ Rules failing: ").SemiBold().FontColor(Colors.Red.Medium);
                         txt.Span(RulesFailed.ToString()).FontColor(Colors.Red.Medium);
                     });
 
                     stats.Item().Text(txt =>
                     {
-                        txt.Span("• Severity breakdown: ").SemiBold();
+
+        void ComposeUrlsList(IContainer container)
+        {
+            container.Column(col =>
+            {
+                col.Spacing(2);
+                foreach (var url in Urls)
+                    col.Item().Text(url).FontColor(Colors.Blue.Medium).FontSize(10);
+            });
+        }
+
+                        txt.Span("â€¢ Severity breakdown: ").SemiBold();
                         txt.Span(SeverityCounts(Summary));
                     });
                 });
@@ -245,7 +276,7 @@ namespace AccessLensApi.PdfDocuments
         {
             var order = new[] { "Critical", "Serious", "Major", "Moderate", "Minor", "Info" };
             var counts = summary.GroupBy(x => x.Severity).ToDictionary(g => g.Key, g => g.Count());
-            return string.Join("  •  ", order.Where(o => counts.ContainsKey(o)).Select(o => $"{o}: {counts[o]}"));
+            return string.Join("  â€¢  ", order.Where(o => counts.ContainsKey(o)).Select(o => $"{o}: {counts[o]}"));
         }
     }
 }

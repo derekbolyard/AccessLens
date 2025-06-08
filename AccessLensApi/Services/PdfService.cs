@@ -31,11 +31,12 @@ namespace AccessLensApi.Services
             int rulesPassed = TOTAL_RULES_TESTED - uniqueFailedRules;
 
             int distinctPagesCrawled = issues.Select(i => i.Page).Distinct().Count();
+            var urls = issues.Select(i => i.Page).Distinct().OrderBy(u => u).ToList();
 
             var doc = new AccessibilityReportDocument(
                     siteName, summary, rulesPassed,
                     uniqueFailedRules, TOTAL_RULES_TESTED,
-                    distinctPagesCrawled);
+                    distinctPagesCrawled, urls);
 
             byte[] bytes = doc.GeneratePdf();
 
