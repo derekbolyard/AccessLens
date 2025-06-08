@@ -5,6 +5,6 @@ namespace AccessLensApi.Services.Interfaces
     public interface IA11yScanner
     {
         /// Runs a 5-page starter-tier crawl and returns a merged JSON report.
-        Task<JsonObject> ScanFivePagesAsync(string rootUrl);
+        Task<JsonObject> ScanFivePagesAsync(string rootUrl, CancellationToken cancellationToken = default);
     }
 }

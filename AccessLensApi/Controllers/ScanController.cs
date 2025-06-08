@@ -6,6 +6,7 @@ using System.Threading;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using Microsoft.AspNetCore.Http;
 using AccessLensApi.Data;
 using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
@@ -30,6 +31,7 @@ namespace AccessLensApi.Controllers
         private readonly IRateLimiter _rateLimiter;
         private readonly RateLimitingOptions _rateOptions;
         private readonly CaptchaOptions _captchaOptions;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public ScanController(
             ApplicationDbContext dbContext,
@@ -39,7 +41,8 @@ namespace AccessLensApi.Controllers
             ILogger<ScanController> logger,
             IRateLimiter rateLimiter,
             IOptions<RateLimitingOptions> rateOptions,
-            IOptions<CaptchaOptions> captchaOptions)
+            IOptions<CaptchaOptions> captchaOptions,
+            IHttpClientFactory httpClientFactory)
         {
             _dbContext = dbContext;
             _creditManager = creditManager;
@@ -49,6 +52,7 @@ namespace AccessLensApi.Controllers
             _rateLimiter = rateLimiter;
             _rateOptions = rateOptions.Value;
             _captchaOptions = captchaOptions.Value;
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <summary>
@@ -105,14 +109,14 @@ namespace AccessLensApi.Controllers
                 return StatusCode(429, new { error = "Rate limit exceeded" });
 
             JsonObject scanResult;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_rateOptions.MaxScanDurationSeconds));
             try
             {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_rateOptions.MaxScanDurationSeconds));
-                var task = _scanner.ScanFivePagesAsync(url);
-                var finished = await Task.WhenAny(task, Task.Delay(Timeout.Infinite, cts.Token));
-                if (finished != task)
-                    return StatusCode(500, new { error = "Scan timed out." });
-                scanResult = await task;
+                scanResult = await _scanner.ScanFivePagesAsync(url, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return StatusCode(500, new { error = "Scan timed out." });
             }
             catch (Exception ex)
             {
@@ -279,18 +283,28 @@ namespace AccessLensApi.Controllers
 
         private async Task<bool> VerifyHCaptchaAsync(string token)
         {
-            using var client = new HttpClient();
-            var values = new Dictionary<string, string>
+            try
             {
-                { "secret", _captchaOptions.hCaptchaSecret },
-                { "response", token }
-            };
-            var content = new FormUrlEncodedContent(values);
-            var resp = await client.PostAsync("https://hcaptcha.com/siteverify", content);
-            if (!resp.IsSuccessStatusCode) return false;
-            var json = await resp.Content.ReadAsStringAsync();
-            var doc = System.Text.Json.JsonDocument.Parse(json);
-            return doc.RootElement.TryGetProperty("success", out var s) && s.GetBoolean();
+                var client = _httpClientFactory.CreateClient();
+                var values = new Dictionary<string, string>
+                {
+                    { "secret", _captchaOptions.hCaptchaSecret },
+                    { "response", token }
+                };
+                using var content = new FormUrlEncodedContent(values);
+                using var resp = await client.PostAsync("https://hcaptcha.com/siteverify", content);
+                if (!resp.IsSuccessStatusCode)
+                    return false;
+
+                var json = await resp.Content.ReadAsStringAsync();
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                return doc.RootElement.TryGetProperty("success", out var s) && s.GetBoolean();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "hCaptcha verification failed");
+                return false;
+            }
         }
     }
 }
