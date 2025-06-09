@@ -5,12 +5,10 @@
 
 :root {
   @include mat.all-component-themes(accesslens.$light-theme);
-  @include accesslens.high-contrast-overrides(light);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     @include mat.all-component-themes(accesslens.$dark-theme);
-    @include accesslens.high-contrast-overrides(dark);
   }
 }
