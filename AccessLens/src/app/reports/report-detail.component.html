@@ -1,7 +1,7 @@
-<a routerLink="/reports">Back to list</a>
-<div *ngIf="report">
+<a routerLink="/reports">&larr; Back to list</a>
+<div *ngIf="report" class="report">
   <h2>{{ report.siteName }} - {{ report.scanDate }}</h2>
-  <p>Pages: {{ report.pageCount }}</p>
+  <p>Pages scanned: {{ report.pageCount }}</p>
   <p>Rules Failed: {{ report.rulesFailed }} / {{ report.totalRulesTested }}</p>
 
   <h3>Findings</h3>
