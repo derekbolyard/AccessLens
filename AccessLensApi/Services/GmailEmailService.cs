@@ -32,17 +32,21 @@ namespace AccessLensApi.Services
         {
             // “FromEmail” is the single address you send from
             _fromEmail = configuration["Gmail:FromEmail"]
-                ?? throw new ArgumentNullException("Gmail:FromEmail must be set");
+                ?? Environment.GetEnvironmentVariable("GMAIL_FROM_EMAIL")
+                ?? throw new ArgumentNullException("Gmail:FromEmail must be set via config or GMAIL_FROM_EMAIL");
 
             // Client ID/Secret from Google Cloud (OAuth)
             _clientId = configuration["Gmail:OAuthClientId"]
-                ?? throw new ArgumentNullException("Gmail:OAuthClientId must be set");
+                ?? Environment.GetEnvironmentVariable("GMAIL_OAUTH_CLIENT_ID")
+                ?? throw new ArgumentNullException("Gmail:OAuthClientId must be set via config or GMAIL_OAUTH_CLIENT_ID");
             _clientSecret = configuration["Gmail:OAuthClientSecret"]
-                ?? throw new ArgumentNullException("Gmail:OAuthClientSecret must be set");
+                ?? Environment.GetEnvironmentVariable("GMAIL_OAUTH_CLIENT_SECRET")
+                ?? throw new ArgumentNullException("Gmail:OAuthClientSecret must be set via config or GMAIL_OAUTH_CLIENT_SECRET");
 
             // A long-lived refresh token you obtained once via the OAuth consent flow
             _refreshToken = configuration["Gmail:RefreshToken"]
-                ?? throw new ArgumentNullException("Gmail:RefreshToken must be set");
+                ?? Environment.GetEnvironmentVariable("GMAIL_REFRESH_TOKEN")
+                ?? throw new ArgumentNullException("Gmail:RefreshToken must be set via config or GMAIL_REFRESH_TOKEN");
         }
 
         public async Task SendVerificationCodeAsync(string email, string code)

@@ -28,7 +28,8 @@ namespace AccessLensApi.Controllers
             ApplicationDbContext dbContext,
             ILogger<StripeWebhookController> logger)
         {
-            _webhookSecret = config["Stripe:WebhookSecret"];
+            _webhookSecret = config["Stripe:WebhookSecret"]
+                ?? Environment.GetEnvironmentVariable("STRIPE_WEBHOOK_SECRET");
             _dbContext = dbContext;
             _logger = logger;
         }

@@ -42,7 +42,9 @@ builder.Host.UseSerilog((ctx, lc) => lc
 );
 
 var configuration = builder.Configuration;
-var sqliteConnString = builder.Configuration.GetConnectionString("SqliteConnection");
+var sqliteConnString = builder.Configuration.GetConnectionString("SqliteConnection")
+                        ?? Environment.GetEnvironmentVariable("SQLITE_CONNECTION_STRING")
+                        ?? "Data Source=accesslens.db";
 
 // (2) Register a transient IDbConnection that opens a SqliteConnection
 builder.Services.AddTransient<IDbConnection>(sp =>
@@ -117,7 +119,8 @@ builder.Services.AddSingleton<IEmailService, GmailEmailService>();
 builder.Services.AddSingleton<IStorageService, S3StorageService>();
 //#endif
 
-StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"];
+StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"]
+                         ?? Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY");
 builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimitingOptions"));
 builder.Services.Configure<CaptchaOptions>(configuration.GetSection("Captcha"));
 
