@@ -160,17 +160,6 @@ namespace AccessLensApi.PdfDocuments
 
                     stats.Item().Text(txt =>
                     {
-
-        void ComposeUrlsList(IContainer container)
-        {
-            container.Column(col =>
-            {
-                col.Spacing(2);
-                foreach (var url in Urls)
-                    col.Item().Text(url).FontColor(Colors.Blue.Medium).FontSize(10);
-            });
-        }
-
                         txt.Span("• Severity breakdown: ").SemiBold();
                         txt.Span(SeverityCounts(Summary));
                     });
@@ -193,6 +182,16 @@ namespace AccessLensApi.PdfDocuments
                    .PaddingTop(20)
                    .Text($"Contact us: {ContactEmail}")
                    .FontSize(10);
+            });
+        }
+
+        void ComposeUrlsList(IContainer container)
+        {
+            container.Column(col =>
+            {
+                col.Spacing(2);
+                foreach (var url in Urls)
+                    col.Item().Text(url).FontColor(Colors.Blue.Medium).FontSize(10);
             });
         }
 
