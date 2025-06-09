@@ -21,7 +21,11 @@ namespace AccessLensApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var reports = await _db.Reports.AsNoTracking().ToListAsync();
+            var reports = await _db.Reports
+                .Include(r => r.ScannedUrls)
+                .Include(r => r.Findings)
+                .AsNoTracking()
+                .ToListAsync();
             return Ok(reports);
         }
 
@@ -34,6 +38,26 @@ namespace AccessLensApi.Controllers
                 .FirstOrDefaultAsync(r => r.ReportId == id);
             if (report == null) return NotFound();
             return Ok(report);
+        }
+
+        [HttpGet("{id}/urls")]
+        public async Task<IActionResult> GetUrls(Guid id)
+        {
+            var urls = await _db.ScannedUrls
+                .AsNoTracking()
+                .Where(u => u.ReportId == id)
+                .ToListAsync();
+            return Ok(urls);
+        }
+
+        [HttpGet("{id}/findings")]
+        public async Task<IActionResult> GetFindings(Guid id)
+        {
+            var findings = await _db.Findings
+                .AsNoTracking()
+                .Where(f => f.ReportId == id)
+                .ToListAsync();
+            return Ok(findings);
         }
     }
 }
