@@ -1,0 +1,44 @@
+[
+  {
+    "reportId": 1,
+    "siteName": "Example Coffee",
+    "scanDate": "2024-06-01",
+    "pageCount": 5,
+    "rulesPassed": 8,
+    "rulesFailed": 2,
+    "totalRulesTested": 10,
+    "status": "Completed",
+    "findings": [
+      {
+        "url": "https://example.com",
+        "issue": "Missing alt text",
+        "rule": "img-alt",
+        "severity": "High"
+      },
+      {
+        "url": "https://example.com/page1",
+        "issue": "Low contrast",
+        "rule": "color-contrast",
+        "severity": "Medium"
+      }
+    ]
+  },
+  {
+    "reportId": 2,
+    "siteName": "Sample Bakery",
+    "scanDate": "2024-06-02",
+    "pageCount": 2,
+    "rulesPassed": 15,
+    "rulesFailed": 4,
+    "totalRulesTested": 19,
+    "status": "Completed",
+    "findings": [
+      {
+        "url": "https://bakery.com",
+        "issue": "Form field label missing",
+        "rule": "form-label",
+        "severity": "High"
+      }
+    ]
+  }
+]

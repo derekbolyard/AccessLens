@@ -1,0 +1,22 @@
+<h2>Accessibility Reports</h2>
+<input type="text" placeholder="Filter by site" [(ngModel)]="filter" />
+<table>
+  <thead>
+    <tr>
+      <th>Site</th>
+      <th>Date</th>
+      <th>Pages</th>
+      <th>Failed</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let r of filteredReports">
+      <td><a [routerLink]="['/reports', r.reportId]">{{ r.siteName }}</a></td>
+      <td>{{ r.scanDate }}</td>
+      <td>{{ r.pageCount }}</td>
+      <td>{{ r.rulesFailed }}</td>
+      <td>{{ r.status }}</td>
+    </tr>
+  </tbody>
+</table>
