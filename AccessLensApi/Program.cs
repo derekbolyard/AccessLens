@@ -58,12 +58,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services
     // 1) bind options from config
     .Configure<PlaywrightOptions>(builder.Configuration.GetSection("Playwright"));
-await Task.Run(() =>
+var skipPwInstall = Environment.GetEnvironmentVariable("SKIP_PLAYWRIGHT_INSTALL");
+if (skipPwInstall != "1")
 {
-    var exitCode = Microsoft.Playwright.Program.Main(new[] { "install" });
-    if (exitCode != 0)
-        throw new Exception($"Playwright install failed (exit code {exitCode})");
-});
+    await Task.Run(() =>
+    {
+        var exitCode = Microsoft.Playwright.Program.Main(new[] { "install" });
+        if (exitCode != 0)
+            throw new Exception($"Playwright install failed (exit code {exitCode})");
+    });
+}
 
 builder.Services.AddSingleton<IPlaywright>(sp =>
 {
