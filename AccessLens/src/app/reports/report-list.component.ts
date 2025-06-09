@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatCardModule } from '@angular/material/card';
 import { ReportService } from './report.service';
 import { Report } from './report';
 
@@ -20,6 +21,7 @@ import { Report } from './report';
     MatTableModule,
     MatFormFieldModule,
     MatInputModule,
+    MatCardModule,
   ]
 })
 export class ReportListComponent implements OnInit {

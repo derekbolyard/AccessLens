@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { ReportService } from './report.service';
 import { Report } from './report';
 
@@ -12,7 +13,14 @@ import { Report } from './report';
   standalone: true,
   templateUrl: './report-detail.component.html',
   styleUrls: ['./report-detail.component.scss'],
-  imports: [CommonModule, RouterLink, MatCardModule, MatTableModule, MatButtonModule]
+  imports: [
+    CommonModule,
+    RouterLink,
+    MatCardModule,
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+  ]
 })
 export class ReportDetailComponent implements OnInit {
   report?: Report;

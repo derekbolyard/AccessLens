@@ -1,3 +1,7 @@
+:host {
+  display: block;
+}
+
 .filter {
   margin-bottom: 1rem;
   width: 300px;
@@ -5,6 +9,7 @@
 
 table {
   width: 100%;
+  margin-top: 1rem;
 }
 
 .mat-column-site a {

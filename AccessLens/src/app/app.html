@@ -1,6 +1,7 @@
 <mat-toolbar color="primary">
-  <span>AccessLens Dashboard</span>
+  <mat-icon class="logo" aria-hidden="true">insights</mat-icon>
+  <span class="app-title">{{ title }}</span>
 </mat-toolbar>
-<main>
+<div class="container">
   <router-outlet></router-outlet>
-</main>
+</div>

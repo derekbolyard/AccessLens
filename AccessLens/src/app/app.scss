@@ -1,10 +1,15 @@
-header {
-  background-color: var(--primary-color);
-  color: #fff;
-  padding: 1rem;
-  margin-bottom: 1rem;
+.app-title {
+  margin-left: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 500;
 }
 
-main {
-  padding: 0 1rem;
+.logo {
+  font-size: 1.5rem;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
 }
