@@ -1,26 +1,40 @@
-<a routerLink="/reports">&larr; Back to list</a>
-<div *ngIf="report" class="report">
-  <h2>{{ report.siteName }} - {{ report.scanDate }}</h2>
-  <p>Pages scanned: {{ report.pageCount }}</p>
-  <p>Rules Failed: {{ report.rulesFailed }} / {{ report.totalRulesTested }}</p>
+<a mat-button color="primary" routerLink="/reports">&larr; Back to list</a>
+<mat-card *ngIf="report" class="report">
+  <mat-card-title>
+    {{ report.siteName }} - {{ report.scanDate }}
+  </mat-card-title>
+  <mat-card-content>
+    <p>Pages scanned: {{ report.pageCount }}</p>
+    <p>Rules Failed: {{ report.rulesFailed }} / {{ report.totalRulesTested }}</p>
 
-  <h3>Findings</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>URL</th>
-        <th>Issue</th>
-        <th>Rule</th>
-        <th>Severity</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let f of report.findings">
-        <td>{{ f.url }}</td>
-        <td>{{ f.issue }}</td>
-        <td>{{ f.rule }}</td>
-        <td>{{ f.severity }}</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+    <h3>Findings</h3>
+    <table
+      mat-table
+      [dataSource]="report.findings"
+      class="mat-elevation-z1"
+    >
+      <ng-container matColumnDef="url">
+        <th mat-header-cell *matHeaderCellDef>URL</th>
+        <td mat-cell *matCellDef="let f">{{ f.url }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="issue">
+        <th mat-header-cell *matHeaderCellDef>Issue</th>
+        <td mat-cell *matCellDef="let f">{{ f.issue }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="rule">
+        <th mat-header-cell *matHeaderCellDef>Rule</th>
+        <td mat-cell *matCellDef="let f">{{ f.rule }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="severity">
+        <th mat-header-cell *matHeaderCellDef>Severity</th>
+        <td mat-cell *matCellDef="let f">{{ f.severity }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </mat-card-content>
+</mat-card>

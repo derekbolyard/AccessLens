@@ -22,6 +22,9 @@ Then run the development server with:
 ng serve
 ```
 
+This project uses **Angular Material** for its UI components. The theme styles
+are defined in `src/theme.scss`.
+
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
 ## Code scaffolding
