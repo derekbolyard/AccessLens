@@ -30,8 +30,7 @@
               }
             ],
             "styles": [
-              "src/styles.scss",
-              "src/theme.scss"
+              "src/styles.scss"
             ]
           },
           "configurations": {
@@ -89,8 +88,7 @@
               }
             ],
             "styles": [
-              "src/styles.scss",
-              "src/theme.scss"
+              "src/styles.scss"
             ]
           }
         }
