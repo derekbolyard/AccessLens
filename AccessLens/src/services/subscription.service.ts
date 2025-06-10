@@ -19,17 +19,6 @@ export class SubscriptionService {
       isActive: true
     },
     {
-      id: 'starter-yearly',
-      name: 'Starter',
-      stripeProductId: 'price_starter_yearly',
-      price: 290,
-      interval: 'year',
-      scanLimit: 120,
-      features: ['120 scans per year', 'Basic reporting', 'Email support'],
-      isPopular: true,
-      isActive: true
-    },
-    {
       id: 'professional-monthly',
       name: 'Professional',
       stripeProductId: 'price_pro_monthly',
@@ -37,6 +26,29 @@ export class SubscriptionService {
       interval: 'month',
       scanLimit: 50,
       features: ['50 scans per month', 'Advanced reporting', 'Priority support', 'API access'],
+      isPopular: true,
+      isActive: true
+    },
+    {
+      id: 'enterprise-monthly',
+      name: 'Enterprise',
+      stripeProductId: 'price_enterprise_monthly',
+      price: 299,
+      interval: 'month',
+      scanLimit: 200,
+      features: ['200 scans per month', 'Premium reporting', 'Phone support', 'API access', 'Custom integrations', 'SSO'],
+      isPopular: false,
+      isActive: true
+    },
+    // Yearly variants
+    {
+      id: 'starter-yearly',
+      name: 'Starter',
+      stripeProductId: 'price_starter_yearly',
+      price: 290,
+      interval: 'year',
+      scanLimit: 120,
+      features: ['120 scans per year', 'Basic reporting', 'Email support'],
       isPopular: false,
       isActive: true
     },
@@ -50,6 +62,17 @@ export class SubscriptionService {
       features: ['600 scans per year', 'Advanced reporting', 'Priority support', 'API access'],
       isPopular: false,
       isActive: true
+    },
+    {
+      id: 'enterprise-yearly',
+      name: 'Enterprise',
+      stripeProductId: 'price_enterprise_yearly',
+      price: 2990,
+      interval: 'year',
+      scanLimit: 2400,
+      features: ['2400 scans per year', 'Premium reporting', 'Phone support', 'API access', 'Custom integrations', 'SSO'],
+      isPopular: false,
+      isActive: true
     }
   ];
 
@@ -57,11 +80,13 @@ export class SubscriptionService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
 
   constructor() {
+    const starterPlan = this.plans[0];
+    
     // Mock current subscription
     this.currentSubscriptionSubject.next({
       id: 'sub_123',
       planId: 'starter-monthly',
-      plan: this.plans[0],
+      plan: starterPlan,
       status: 'active',
       startDate: new Date(),
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -69,7 +94,7 @@ export class SubscriptionService {
       active: true
     });
 
-    // Mock current user
+    // Mock current user with scan limit from plan
     this.currentUserSubject.next({
       userId: 'user_123',
       email: 'user@example.com',
@@ -77,8 +102,8 @@ export class SubscriptionService {
       firstScan: false,
       createdAt: new Date(),
       scansUsed: 3,
-      scanLimit: 10,
-      scansRemaining: 7
+      scanLimit: starterPlan.scanLimit,
+      scansRemaining: starterPlan.scanLimit - 3
     });
   }
 

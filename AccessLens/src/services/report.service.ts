@@ -147,6 +147,11 @@ export class ReportService {
   }
 
   private loadMockData(): void {
+    // Assign mock reports to the site
+    this.mockSites[0].reports = this.mockReports;
+    this.mockSites[0].totalReports = this.mockReports.length;
+    this.mockSites[0].lastScanDate = this.mockReports[0].createdDate;
+    
     this.sitesSubject.next(this.mockSites);
     this.cacheService.set('sites', this.mockSites, 10 * 60 * 1000); // Cache for 10 minutes
   }
