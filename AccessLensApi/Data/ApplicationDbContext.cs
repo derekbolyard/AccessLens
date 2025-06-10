@@ -21,6 +21,10 @@ namespace AccessLensApi.Data
         public DbSet<Report> Reports { get; set; }
         public DbSet<ScannedUrl> ScannedUrls { get; set; }
         public DbSet<Finding> Findings { get; set; }
+        
+        // New DbSets
+        public DbSet<Site> Sites { get; set; }
+        public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -132,6 +136,44 @@ namespace AccessLensApi.Data
                 .WithMany(u => u.Findings)
                 .HasForeignKey(f => f.UrlId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // New entity configurations
+            modelBuilder.Entity<Site>()
+                .HasKey(s => s.Id);
+            modelBuilder.Entity<Site>()
+                .HasOne(s => s.User)
+                .WithMany(u => u.Sites)
+                .HasForeignKey(s => s.Email)  // Use Email instead of UserId
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SubscriptionPlan>()
+                .HasKey(sp => sp.Id);
+            
+            // Configure SubscriptionPlan Features as TEXT for SQLite
+            modelBuilder.Entity<SubscriptionPlan>()
+                .Property(sp => sp.Features)
+                .HasColumnType("TEXT");
+
+            // Site relationship with User using Email (not UserId)
+            modelBuilder.Entity<Site>()
+                .HasOne(s => s.User)
+                .WithMany(u => u.Sites)
+                .HasForeignKey(s => s.Email)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Update Report to include Site relationship
+            modelBuilder.Entity<Report>()
+                .HasOne(r => r.Site)
+                .WithMany(s => s.Reports)
+                .HasForeignKey(r => r.SiteId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Update Subscription to include Plan relationship
+            modelBuilder.Entity<Subscription>()
+                .HasOne(s => s.Plan)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(s => s.PlanId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

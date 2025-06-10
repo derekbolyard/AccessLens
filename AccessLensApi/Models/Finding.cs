@@ -4,6 +4,21 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AccessLensApi.Models
 {
+    public static class FindingCategories
+    {
+        public const string Images = "Images";
+        public const string Forms = "Forms";
+        public const string Navigation = "Navigation";
+        public const string Content = "Content";
+        public const string Multimedia = "Multimedia";
+        public const string Structure = "Structure";
+        public const string Color = "Color";
+        public const string Keyboard = "Keyboard";
+        public const string Focus = "Focus";
+        public const string Timing = "Timing";
+        public const string Other = "Other";
+    }
+
     public class Finding
     {
         [Key]
@@ -27,9 +42,16 @@ namespace AccessLensApi.Models
         [Required]
         public string Rule { get; set; }
 
-        public string Severity { get; set; }
+        public string Severity { get; set; } = "Medium"; // "Low", "Medium", "High", "Critical"
 
-        public string Status { get; set; } = "Open"; // Open, Fixed, Ignored
+        public string Status { get; set; } = "Open"; // "Open", "Fixed", "Ignored"
+
+        public string Category { get; set; } = FindingCategories.Other;
+
+        public string? UserNotes { get; set; }
+        public DateTime? StatusUpdatedAt { get; set; }
+        public string? StatusUpdatedBy { get; set; }
+        
         public DateTime FirstDetected { get; set; } = DateTime.UtcNow;
         public DateTime LastSeen { get; set; } = DateTime.UtcNow;
     }

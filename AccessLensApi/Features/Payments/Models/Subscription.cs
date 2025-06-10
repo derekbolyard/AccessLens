@@ -22,5 +22,22 @@ namespace AccessLensApi.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+        // New plan relationship
+        public Guid? PlanId { get; set; }
+        [ForeignKey("PlanId")]
+        public virtual SubscriptionPlan? Plan { get; set; }
+
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+
+        // Computed property for human-readable status
+        [NotMapped]
+        public string ReadableStatus => Active switch
+        {
+            true when NextBillingUtc > DateTime.UtcNow => "Active",
+            true => "Past Due", 
+            false => "Canceled"
+        };
     }
 }

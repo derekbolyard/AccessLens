@@ -11,7 +11,7 @@ export interface Site {
 export interface Report {
   id: string;
   siteId: string;
-  name: string;
+  name: string; // Calculated by backend
   createdDate: Date;
   status: 'completed' | 'in-progress' | 'failed';
   totalPages: number;

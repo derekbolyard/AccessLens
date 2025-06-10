@@ -23,7 +23,7 @@ export class UpgradePageComponent implements OnInit {
   billingInterval: 'month' | 'year' = 'month';
 
   constructor(
-    private subscriptionService: SubscriptionService,
+    public subscriptionService: SubscriptionService,
     private router: Router
   ) {}
 
