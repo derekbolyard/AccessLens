@@ -1,9 +1,10 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Site } from '../../types/report.interface';
 import { ReportService } from '../../services/report.service';
 import { CardComponent } from '../common/card/card.component';
 import { ButtonComponent } from '../common/button/button.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-sites-list',
@@ -13,11 +14,12 @@ import { ButtonComponent } from '../common/button/button.component';
   styleUrls: ['./sites-list.component.scss']
 })
 export class SitesListComponent implements OnInit {
-  @Output() siteSelected = new EventEmitter<string>();
-  
   sites: Site[] = [];
 
-  constructor(private reportService: ReportService) {}
+  constructor(
+    private reportService: ReportService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.reportService.getSites().subscribe(sites => {
@@ -62,13 +64,13 @@ export class SitesListComponent implements OnInit {
   }
 
   onSiteClick(site: Site): void {
-    this.siteSelected.emit(site.id);
+    this.router.navigate(['/sites', site.id, 'reports']);
   }
 
   onViewSite(site: Site, event?: Event): void {
     if (event) {
       event.stopPropagation();
     }
-    this.siteSelected.emit(site.id);
+    this.router.navigate(['/sites', site.id, 'reports']);
   }
 }

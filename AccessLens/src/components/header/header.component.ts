@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonComponent } from '../common/button/button.component';
 import { ModalComponent } from '../common/modal/modal.component';
@@ -12,6 +12,7 @@ import { AuthService, User } from '../../services/auth.service';
 import { SupportService } from '../../services/support.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { UserSubscription, SubscriptionPlan } from '../../types/subscription.interface';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
@@ -30,10 +31,6 @@ import { UserSubscription, SubscriptionPlan } from '../../types/subscription.int
   styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent {
-  @Output() dashboardClick = new EventEmitter<void>();
-  @Output() sitesClick = new EventEmitter<void>();
-  @Output() upgradeClick = new EventEmitter<void>();
-
   showScanModal = false;
   showAuthModal = false;
   showFeedbackModal = false;
@@ -51,7 +48,8 @@ export class HeaderComponent {
     private reportService: ReportService,
     private authService: AuthService,
     private supportService: SupportService,
-    public subscriptionService: SubscriptionService
+    public subscriptionService: SubscriptionService,
+    private router: Router
   ) {
     this.authService.user$.subscribe(user => {
       this.currentUser = user;
@@ -67,19 +65,19 @@ export class HeaderComponent {
   }
 
   onLogoClick(): void {
-    this.dashboardClick.emit();
+    this.router.navigate(['/dashboard']);
   }
 
   onDashboardClick(): void {
-    this.dashboardClick.emit();
+    this.router.navigate(['/dashboard']);
   }
 
   onSitesClick(): void {
-    this.sitesClick.emit();
+    this.router.navigate(['/sites']);
   }
 
   onUpgradeClick(): void {
-    this.upgradeClick.emit();
+    this.router.navigate(['/upgrade']);
     this.showUserMenu = false;
   }
 

@@ -1,9 +1,10 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Site, Report } from '../../types/report.interface';
 import { ReportService } from '../../services/report.service';
 import { CardComponent } from '../common/card/card.component';
 import { BadgeComponent, BadgeVariant } from '../common/badge/badge.component';
+import { Router } from '@angular/router';
 
 interface ChartDataPoint {
   label: string;
@@ -19,12 +20,12 @@ interface ChartDataPoint {
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
-  @Output() siteSelected = new EventEmitter<string>();
-  @Output() reportSelected = new EventEmitter<string>();
-  
   sites: Site[] = [];
 
-  constructor(private reportService: ReportService) {}
+  constructor(
+    private reportService: ReportService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.reportService.getSites().subscribe(sites => {
@@ -179,11 +180,10 @@ export class DashboardComponent implements OnInit {
   }
 
   onSiteClick(site: Site): void {
-    this.siteSelected.emit(site.id);
+    this.router.navigate(['/sites', site.id, 'reports']);
   }
 
   onReportClick(report: Report): void {
-    // Navigate to the site's reports page instead of directly to the report
-    this.siteSelected.emit(report.siteId);
+    this.router.navigate(['/sites', report.siteId, 'reports']);
   }
 }

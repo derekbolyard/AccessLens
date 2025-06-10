@@ -1,10 +1,11 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Site, Report } from '../../types/report.interface';
 import { ReportService } from '../../services/report.service';
 import { CardComponent } from '../common/card/card.component';
 import { ButtonComponent } from '../common/button/button.component';
 import { BadgeComponent, BadgeVariant } from '../common/badge/badge.component';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-reports-list',
@@ -14,15 +15,18 @@ import { BadgeComponent, BadgeVariant } from '../common/badge/badge.component';
   styleUrls: ['./reports-list.component.scss']
 })
 export class ReportsListComponent implements OnInit {
-  @Input() siteId: string = '';
-  @Output() backToSites = new EventEmitter<void>();
-  @Output() reportSelected = new EventEmitter<string>();
+  siteId: string = '';
   
   site: Site | null = null;
 
-  constructor(private reportService: ReportService) {}
+  constructor(
+    private reportService: ReportService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
+    this.siteId = this.route.snapshot.paramMap.get('siteId') || '';
     if (this.siteId) {
       this.reportService.getSiteById(this.siteId).subscribe(site => {
         this.site = site || null;
@@ -98,12 +102,16 @@ export class ReportsListComponent implements OnInit {
   }
 
   onBackToSites(): void {
-    this.backToSites.emit();
+    this.router.navigate(['/sites']);
+  }
+
+  onReportSelected(reportId: string): void {
+    this.router.navigate(['/sites', this.siteId, 'reports', reportId, 'pages']);
   }
 
   onReportClick(report: Report): void {
     if (report.status === 'completed') {
-      this.reportSelected.emit(report.id);
+      this.router.navigate(['/sites', this.siteId, 'reports', report.id, 'pages']);
     }
   }
 
@@ -112,7 +120,7 @@ export class ReportsListComponent implements OnInit {
       event.stopPropagation();
     }
     if (report.status === 'completed') {
-      this.reportSelected.emit(report.id);
+      this.router.navigate(['/sites', this.siteId, 'reports', report.id, 'pages']);
     }
   }
 }

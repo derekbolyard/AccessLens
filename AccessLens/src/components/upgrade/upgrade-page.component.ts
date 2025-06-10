@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardComponent } from '../common/card/card.component';
 import { ButtonComponent } from '../common/button/button.component';
@@ -6,6 +6,7 @@ import { BadgeComponent } from '../common/badge/badge.component';
 import { UpgradeModalComponent } from './upgrade-modal.component';
 import { SubscriptionService } from '../../services/subscription.service';
 import { SubscriptionPlan, UserSubscription } from '../../types/subscription.interface';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-upgrade-page',
@@ -15,15 +16,16 @@ import { SubscriptionPlan, UserSubscription } from '../../types/subscription.int
   styleUrls: ['./upgrade-page.component.scss']
 })
 export class UpgradePageComponent implements OnInit {
-  @Output() backToDashboard = new EventEmitter<void>();
-
   plans: SubscriptionPlan[] = [];
   currentSubscription: UserSubscription | null = null;
   showUpgradeModal = false;
   selectedPlan: SubscriptionPlan | null = null;
   billingInterval: 'month' | 'year' = 'month';
 
-  constructor(public subscriptionService: SubscriptionService) {}
+  constructor(
+    private subscriptionService: SubscriptionService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.plans = this.subscriptionService.getPlans();
@@ -85,7 +87,7 @@ export class UpgradePageComponent implements OnInit {
   }
 
   onBackToDashboard(): void {
-    this.backToDashboard.emit();
+    this.router.navigate(['/dashboard']);
   }
 
   formatPrice(price: number, interval: string): string {

@@ -1,8 +1,9 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Page, AccessibilityIssue, IssueStatus, IssueType } from '../../types/report.interface';
 import { ReportService } from '../../services/report.service';
 import { AlertComponent } from '../common/alert/alert.component';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-page-detail',
@@ -12,10 +13,10 @@ import { AlertComponent } from '../common/alert/alert.component';
   styleUrls: ['./page-detail.component.scss']
 })
 export class PageDetailComponent implements OnInit {
-  @Input() pageId: string = '';
-  @Input() siteName: string = '';
-  @Output() backToSites = new EventEmitter<void>();
-  @Output() backToPages = new EventEmitter<void>();
+  pageId: string = '';
+  siteId: string = '';
+  reportId: string = '';
+  siteName: string = '';
   
   page: Page | null = null;
   activeFilter: 'all' | 'pending' | 'fixed' | 'ignored' = 'all';
@@ -23,12 +24,26 @@ export class PageDetailComponent implements OnInit {
   updateSuccess: string = '';
   updateError: string = '';
 
-  constructor(private reportService: ReportService) {}
+  constructor(
+    private reportService: ReportService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
+    this.pageId = this.route.snapshot.paramMap.get('pageId') || '';
+    this.siteId = this.route.snapshot.paramMap.get('siteId') || '';
+    this.reportId = this.route.snapshot.paramMap.get('reportId') || '';
+    
     if (this.pageId) {
       this.reportService.getPageById(this.pageId).subscribe(page => {
         this.page = page || null;
+      });
+    }
+    
+    if (this.siteId) {
+      this.reportService.getSiteById(this.siteId).subscribe(site => {
+        this.siteName = site?.name || '';
       });
     }
   }
@@ -138,10 +153,14 @@ export class PageDetailComponent implements OnInit {
   }
 
   onBackToSites(): void {
-    this.backToSites.emit();
+    this.router.navigate(['/sites']);
+  }
+
+  onBackToReports(): void {
+    this.router.navigate(['/sites', this.siteId, 'reports']);
   }
 
   onBackToPages(): void {
-    this.backToPages.emit();
+    this.router.navigate(['/sites', this.siteId, 'reports', this.reportId, 'pages']);
   }
 }
