@@ -152,6 +152,8 @@ namespace AccessLensApi.Controllers
 
                 var teaserUrl = ExtractTeaser(scanResult);
 
+                await SaveReportAsync(scanResult, email, url, pdfUrl);
+
                 return Ok(new { score, pdfUrl, teaserUrl });
             }
             catch (Exception ex)
@@ -255,6 +257,8 @@ namespace AccessLensApi.Controllers
 
             var teaserUrl = ExtractTeaser(scanResult);
             var totalPages = scanResult["totalPages"]?.GetValue<int>() ?? 0;
+
+            await SaveReportAsync(scanResult, email, url, pdfUrl);
 
             return Ok(new
             {
@@ -415,6 +419,65 @@ namespace AccessLensApi.Controllers
             }
 
             return "";
+        }
+
+        private async Task SaveReportAsync(JsonObject result, string email, string siteName, string pdfUrl)
+        {
+            const int TOTAL_RULES = 68;
+            var pages = result["pages"] as JsonArray;
+            if (pages == null)
+                return;
+
+            var rules = new HashSet<string>();
+            var report = new Report
+            {
+                Email = email,
+                SiteName = siteName,
+                ScanDate = DateTime.UtcNow,
+                PageCount = pages.Count,
+                TotalRulesTested = TOTAL_RULES,
+                Status = "Completed",
+                RulesPassed = 0,
+                RulesFailed = 0
+            };
+
+            _dbContext.Reports.Add(report);
+
+            foreach (JsonObject page in pages.Cast<JsonObject>())
+            {
+                var urlStr = page["pageUrl"]?.ToString() ?? "";
+                var scanned = new ScannedUrl
+                {
+                    ReportId = report.ReportId,
+                    Url = urlStr,
+                    ScanTimestamp = DateTime.UtcNow
+                };
+                _dbContext.ScannedUrls.Add(scanned);
+
+                if (page["issues"] is JsonArray issues)
+                {
+                    foreach (JsonObject iss in issues.Cast<JsonObject>())
+                    {
+                        var rule = iss["code"]?.ToString()?.Split('.')[0] ?? "";
+                        rules.Add(rule);
+                        var finding = new Finding
+                        {
+                            ReportId = report.ReportId,
+                            UrlId = scanned.UrlId,
+                            Issue = iss["message"]?.ToString() ?? "",
+                            Rule = rule,
+                            Severity = iss["type"]?.ToString() ?? "",
+                            Status = "Open"
+                        };
+                        _dbContext.Findings.Add(finding);
+                    }
+                }
+            }
+
+            report.RulesFailed = rules.Count;
+            report.RulesPassed = TOTAL_RULES - report.RulesFailed;
+
+            await _dbContext.SaveChangesAsync();
         }
 
         private bool IsUrlAllowed(Uri uri)

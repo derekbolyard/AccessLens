@@ -1,0 +1,61 @@
+# AccessLens API
+
+This directory contains the ASP.NET Core backend that powers the AccessLens service.
+
+## Required environment variables
+
+Configuration settings are read from environment variables using the `Section__Key` notation. The API requires the following secrets to be supplied:
+
+- `AWS__Region` – AWS region used when uploading files.
+- `AWS__S3Bucket` – S3 bucket name for PDF and image uploads.
+- `Stripe__SecretKey` – your Stripe secret API key.
+- `Stripe__WebhookSecret` – signing secret for webhook verification.
+- `Gmail__FromEmail` – address the service sends email from.
+- `Gmail__OAuthClientId` – Gmail OAuth client ID.
+- `Gmail__OAuthClientSecret` – Gmail OAuth client secret.
+- `Gmail__RefreshToken` – long‑lived refresh token for Gmail API access.
+- `Captcha__hCaptchaSecret` – secret key for hCaptcha verification.
+- `Gcs__BucketName` – (if using Google Cloud Storage) bucket name.
+- `Gcs__ServiceAccountJson` or `GCS_SERVICE_ACCOUNT_JSON` – JSON for the service account used when storing files in GCS.
+- `ConnectionStrings__SqliteConnection` – connection string for the SQLite database.
+- `Playwright__BrowsersPath` – optional custom path for Playwright browsers.
+
+## Database migrations
+
+Entity Framework Core migrations are included in the `Migrations` folder. To apply them locally run:
+
+```bash
+dotnet ef database update
+```
+
+This creates or updates the `accesslens.db` SQLite database.
+
+## Running the API locally
+
+From this directory run:
+
+```bash
+dotnet run
+```
+
+The server listens on the URLs configured in `launchSettings.json` (by default `https://localhost:7088`).
+
+## Available API endpoints
+
+The main endpoints exposed by the API are listed below.
+
+### Authentication
+
+- `POST /api/auth/send-code` – send a verification code to a user’s email.
+- `POST /api/auth/verify` – verify the code and mark the email as confirmed.
+
+### Scanning
+
+- `POST /api/scan/starter` – perform a five‑page accessibility snapshot.
+- `POST /api/scan/full` – crawl and scan an entire site (requires premium access).
+
+### Stripe webhooks
+
+- `POST /stripe/webhook` – handle Stripe billing events.
+
+Additional utility endpoints exist for storage testing and the example weather forecast controller used by the ASP.NET template.
