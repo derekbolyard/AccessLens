@@ -1,20 +1,36 @@
 export interface SubscriptionPlan {
   id: string;
   name: string;
+  stripeProductId: string;
   price: number;
   interval: 'month' | 'year';
-  features: string[];
   scanLimit: number;
-  popular?: boolean;
+  features: string[];
+  isPopular: boolean;
+  isActive: boolean;
+  description?: string;
 }
 
 export interface UserSubscription {
-  planId: string;
-  status: 'active' | 'canceled' | 'past_due' | 'trialing';
-  currentPeriodStart: Date;
-  currentPeriodEnd: Date;
+  id: string;
+  planId?: string;
+  plan?: SubscriptionPlan;
+  status: string;
+  startDate?: Date;
+  endDate?: Date;
+  email: string;
+  active: boolean;
+}
+
+export interface User {
+  userId: string;
+  email: string;
+  emailVerified: boolean;
+  firstScan: boolean;
+  createdAt: Date;
   scansUsed: number;
   scanLimit: number;
+  scansRemaining: number; // calculated property
 }
 
 export interface UpgradeRequest {

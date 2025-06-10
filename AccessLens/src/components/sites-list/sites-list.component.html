@@ -86,7 +86,7 @@
 
           <div slot="footer" class="site-footer-content">
             <span class="last-scan text-muted">
-              Last scan {{ formatDate(site.lastScanDate) }}
+              Last scan {{ site.lastScanDate ? formatDate(site.lastScanDate) : 'Never' }}
             </span>
             <app-button 
               variant="secondary" 

@@ -145,13 +145,13 @@
                (click)="onReportClick(report)">
             <div class="report-info">
               <div class="report-header">
-                <h4>{{ getReportDisplayName(report) }}</h4>
+                <h4>{{ report.name }}</h4>
                 <app-badge [variant]="getStatusVariant(report.status)">
                   {{ getStatusLabel(report.status) }}
                 </app-badge>
               </div>
               <div class="report-meta">
-                <span class="site-name">{{ getSiteName(report.siteId) }}</span>
+                <span class="site-name">{{ getSiteName(report.siteId!) }}</span>
                 <span class="report-date">{{ formatDate(report.createdDate) }}</span>
               </div>
             </div>

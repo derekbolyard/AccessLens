@@ -5,7 +5,7 @@ import { ButtonComponent } from '../common/button/button.component';
 import { BadgeComponent } from '../common/badge/badge.component';
 import { UpgradeModalComponent } from './upgrade-modal.component';
 import { SubscriptionService } from '../../services/subscription.service';
-import { SubscriptionPlan, UserSubscription } from '../../types/subscription.interface';
+import { SubscriptionPlan, UserSubscription, User } from '../../types/subscription.interface';
 import { Router } from '@angular/router';
 
 @Component({
@@ -18,6 +18,7 @@ import { Router } from '@angular/router';
 export class UpgradePageComponent implements OnInit {
   plans: SubscriptionPlan[] = [];
   currentSubscription: UserSubscription | null = null;
+  currentUser: User | null = null;
   showUpgradeModal = false;
   selectedPlan: SubscriptionPlan | null = null;
   billingInterval: 'month' | 'year' = 'month';
@@ -31,6 +32,9 @@ export class UpgradePageComponent implements OnInit {
     this.plans = this.subscriptionService.getPlans();
     this.subscriptionService.getCurrentSubscription().subscribe(subscription => {
       this.currentSubscription = subscription;
+    });
+    this.subscriptionService.getCurrentUser().subscribe(user => {
+      this.currentUser = user;
     });
   }
 

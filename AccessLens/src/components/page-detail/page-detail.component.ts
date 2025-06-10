@@ -61,7 +61,7 @@ export class PageDetailComponent implements OnInit {
 
     switch (this.activeFilter) {
       case 'pending':
-        return this.page.issues.filter(issue => issue.status === 'not-fixed');
+        return this.page.issues.filter(issue => issue.status === 'open');
       case 'fixed':
         return this.page.issues.filter(issue => issue.status === 'fixed');
       case 'ignored':
@@ -72,7 +72,15 @@ export class PageDetailComponent implements OnInit {
   }
 
   getPendingIssues(): AccessibilityIssue[] {
-    return this.page?.issues.filter(issue => issue.status === 'not-fixed') || [];
+    return this.page?.issues.filter(issue => issue.status === 'open') || [];
+  }
+
+  private getOpenIssues(): AccessibilityIssue[] {
+    return this.page?.issues.filter(issue => issue.status === 'open') || [];
+  }
+
+  get openIssues(): AccessibilityIssue[] {
+    return this.page?.issues.filter(issue => issue.status === 'open') || [];
   }
 
   getScoreClass(score: number): string {
@@ -88,7 +96,7 @@ export class PageDetailComponent implements OnInit {
 
   getStatusLabel(status: IssueStatus): string {
     switch (status) {
-      case 'not-fixed': return 'Not Fixed';
+      case 'open': return 'Open';
       case 'fixed': return 'Fixed';
       case 'ignored': return 'Ignored';
       default: return status;

@@ -2,16 +2,19 @@ export interface Site {
   id: string;
   name: string;
   url: string;
-  createdDate: Date;
-  lastScanDate: Date;
-  totalReports: number;
+  description?: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  totalReports?: number; // calculated
+  lastScanDate?: Date; // calculated
   reports: Report[];
 }
 
 export interface Report {
   id: string;
-  siteId: string;
-  name: string; // Calculated by backend
+  siteId?: string;
+  name: string; // calculated by backend
   createdDate: Date;
   status: 'completed' | 'in-progress' | 'failed';
   totalPages: number;
@@ -25,14 +28,14 @@ export interface Report {
 export interface Page {
   id: string;
   reportId: string;
-  title: string;
+  title?: string;
   url: string;
   scanDate: Date;
   status: 'completed' | 'in-progress' | 'failed';
   totalIssues: number;
   fixedIssues: number;
   ignoredIssues: number;
-  score: number;
+  score?: number; // calculated
   issues: AccessibilityIssue[];
 }
 
@@ -43,13 +46,20 @@ export interface AccessibilityIssue {
   description: string;
   element: string;
   xpath: string;
-  status: 'not-fixed' | 'fixed' | 'ignored';
+  status: 'open' | 'fixed' | 'ignored';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  category: string;
   impact: 'critical' | 'serious' | 'moderate' | 'minor';
   help: string;
   helpUrl: string;
+  userNotes?: string;
+  statusUpdatedAt?: Date;
+  statusUpdatedBy?: string;
+  firstDetected: Date;
+  lastSeen: Date;
 }
 
-export type IssueStatus = 'not-fixed' | 'fixed' | 'ignored';
+export type IssueStatus = 'open' | 'fixed' | 'ignored';
 export type IssueType = 'error' | 'warning' | 'notice';
 export type IssueImpact = 'critical' | 'serious' | 'moderate' | 'minor';
 export type PageStatus = 'completed' | 'in-progress' | 'failed';

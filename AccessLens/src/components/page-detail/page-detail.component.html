@@ -46,7 +46,7 @@
           </div>
         </div>
         <div class="page-score">
-          <div class="score-circle" [class]="getScoreClass(page.score)">
+          <div class="score-circle" [class]="getScoreClass(page.score || 0)">
             <span class="score-value">{{ page.score }}</span>
             <span class="score-label">Score</span>
           </div>
@@ -200,9 +200,9 @@
             </button>
             <button 
               class="btn btn-error btn-sm"
-              [class.active]="issue.status === 'not-fixed'"
+              [class.active]="issue.status === 'open'"
               [disabled]="isUpdating(issue.id)"
-              (click)="updateIssueStatus(issue.id, 'not-fixed')"
+              (click)="updateIssueStatus(issue.id, 'open')"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -210,6 +210,17 @@
                 <line x1="9" y1="9" x2="15" y2="15"/>
               </svg>
               {{ isUpdating(issue.id) ? 'Updating...' : 'Not Fixed' }}
+            </button>
+            <button 
+              class="btn btn-info btn-sm"
+              [class.active]="issue.status === 'open'"
+              [disabled]="isUpdating(issue.id)"
+              (click)="updateIssueStatus(issue.id, 'open')"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20m10-10H2"/>
+              </svg>
+              {{ isUpdating(issue.id) ? 'Updating...' : 'Reopen' }}
             </button>
           </div>
 

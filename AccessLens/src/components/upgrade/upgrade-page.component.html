@@ -25,12 +25,12 @@
             <h3>Current Plan: {{ subscriptionService.getCurrentPlan()?.name || 'Free' }}</h3>
             <div class="usage-stats">
               <div class="usage-stat">
-                <span class="usage-number">{{ currentSubscription.scansUsed }}</span>
+                <span class="usage-number">{{ currentUser?.scansUsed }}</span>
                 <span class="usage-label">Scans Used</span>
               </div>
               <div class="usage-divider">/</div>
               <div class="usage-stat">
-                <span class="usage-number">{{ currentSubscription.scanLimit }}</span>
+                <span class="usage-number">{{ currentUser?.scanLimit }}</span>
                 <span class="usage-label">Scan Limit</span>
               </div>
             </div>
@@ -39,11 +39,11 @@
             <div class="progress-bar">
               <div 
                 class="progress-fill" 
-                [style.width.%]="(currentSubscription.scansUsed / currentSubscription.scanLimit) * 100"
+                [style.width.%]="(currentUser?.scansUsed || 0) / (currentUser?.scanLimit || 1) * 100"
               ></div>
             </div>
             <span class="progress-text">
-              {{ subscriptionService.getScansRemaining() }} scans remaining this month
+              {{ currentUser?.scansRemaining || 0 }} scans remaining this month
             </span>
           </div>
         </div>
@@ -75,14 +75,14 @@
     <div class="pricing-grid">
       <app-card 
         *ngFor="let plan of displayedPlans" 
-        [class.popular]="plan.popular"
+        [class.popular]="plan.isPopular"
         [class.current]="isCurrentPlan(plan)"
         [elevated]="true"
         class="pricing-card"
       >
         <div class="plan-header">
           <app-badge 
-            *ngIf="plan.popular" 
+            *ngIf="plan.isPopular" 
             variant="primary"
             class="popular-badge"
           >
@@ -119,7 +119,7 @@
         <div class="plan-action">
           <app-button 
             *ngIf="!isCurrentPlan(plan)"
-            [variant]="plan.popular ? 'primary' : 'secondary'"
+            [variant]="plan.isPopular ? 'primary' : 'secondary'"
             [fullWidth]="true"
             [disabled]="!canUpgrade(plan)"
             (click)="onSelectPlan(plan)"

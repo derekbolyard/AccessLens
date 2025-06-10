@@ -16,7 +16,7 @@
         <h2>{{ site.name }}</h2>
         <div class="site-meta">
           <span class="site-url">{{ site.url }}</span>
-          <span class="last-scan">Last scan {{ formatDate(site.lastScanDate) }}</span>
+          <span class="last-scan">Last scan {{ site.lastScanDate ? formatDate(site.lastScanDate) : 'Never' }}</span>
         </div>
       </div>
     </div>

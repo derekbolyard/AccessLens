@@ -1,112 +1,85 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { delay, map } from 'rxjs/operators';
-import { SubscriptionPlan, UserSubscription, UpgradeRequest } from '../types/subscription.interface';
+import { Observable, of, BehaviorSubject } from 'rxjs';
+import { SubscriptionPlan, UserSubscription, UpgradeRequest, User } from '../types/subscription.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SubscriptionService {
-  private subscriptionSubject = new BehaviorSubject<UserSubscription | null>(null);
-  public subscription$ = this.subscriptionSubject.asObservable();
-
   private plans: SubscriptionPlan[] = [
     {
-      id: 'free',
-      name: 'Free',
-      price: 0,
-      interval: 'month',
-      scanLimit: 3,
-      features: [
-        '3 scans per month',
-        'Basic accessibility reports',
-        'Issue tracking',
-        'Email support'
-      ]
-    },
-    {
-      id: 'pro',
-      name: 'Professional',
+      id: 'starter-monthly',
+      name: 'Starter',
+      stripeProductId: 'price_starter_monthly',
       price: 29,
       interval: 'month',
-      scanLimit: 50,
-      popular: true,
-      features: [
-        '50 scans per month',
-        'Advanced accessibility reports',
-        'Priority issue tracking',
-        'Custom reporting',
-        'API access',
-        'Priority support'
-      ]
+      scanLimit: 10,
+      features: ['10 scans per month', 'Basic reporting', 'Email support'],
+      isPopular: false,
+      isActive: true
     },
     {
-      id: 'pro-yearly',
-      name: 'Professional',
+      id: 'starter-yearly',
+      name: 'Starter',
+      stripeProductId: 'price_starter_yearly',
       price: 290,
       interval: 'year',
-      scanLimit: 50,
-      features: [
-        '50 scans per month',
-        'Advanced accessibility reports',
-        'Priority issue tracking',
-        'Custom reporting',
-        'API access',
-        'Priority support',
-        '2 months free'
-      ]
+      scanLimit: 120,
+      features: ['120 scans per year', 'Basic reporting', 'Email support'],
+      isPopular: true,
+      isActive: true
     },
     {
-      id: 'enterprise',
-      name: 'Enterprise',
+      id: 'professional-monthly',
+      name: 'Professional',
+      stripeProductId: 'price_pro_monthly',
       price: 99,
       interval: 'month',
-      scanLimit: 200,
-      features: [
-        '200 scans per month',
-        'Enterprise accessibility reports',
-        'Advanced analytics',
-        'White-label reports',
-        'SSO integration',
-        'Dedicated support',
-        'Custom integrations'
-      ]
+      scanLimit: 50,
+      features: ['50 scans per month', 'Advanced reporting', 'Priority support', 'API access'],
+      isPopular: false,
+      isActive: true
     },
     {
-      id: 'enterprise-yearly',
-      name: 'Enterprise',
+      id: 'professional-yearly',
+      name: 'Professional',
+      stripeProductId: 'price_pro_yearly',
       price: 990,
       interval: 'year',
-      scanLimit: 200,
-      features: [
-        '200 scans per month',
-        'Enterprise accessibility reports',
-        'Advanced analytics',
-        'White-label reports',
-        'SSO integration',
-        'Dedicated support',
-        'Custom integrations',
-        '2 months free'
-      ]
+      scanLimit: 600,
+      features: ['600 scans per year', 'Advanced reporting', 'Priority support', 'API access'],
+      isPopular: false,
+      isActive: true
     }
   ];
 
+  private currentSubscriptionSubject = new BehaviorSubject<UserSubscription | null>(null);
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+
   constructor() {
-    this.loadMockSubscription();
-  }
-
-  private loadMockSubscription(): void {
-    // Mock free tier subscription
-    const mockSubscription: UserSubscription = {
-      planId: 'free',
+    // Mock current subscription
+    this.currentSubscriptionSubject.next({
+      id: 'sub_123',
+      planId: 'starter-monthly',
+      plan: this.plans[0],
       status: 'active',
-      currentPeriodStart: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      scansUsed: 2, // User has used 2 out of 3 free scans
-      scanLimit: 3
-    };
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      email: 'user@example.com',
+      active: true
+    });
 
-    this.subscriptionSubject.next(mockSubscription);
+    // Mock current user
+    this.currentUserSubject.next({
+      userId: 'user_123',
+      email: 'user@example.com',
+      emailVerified: true,
+      firstScan: false,
+      createdAt: new Date(),
+      scansUsed: 3,
+      scanLimit: 10,
+      scansRemaining: 7
+    });
   }
 
   getPlans(): SubscriptionPlan[] {
@@ -114,67 +87,67 @@ export class SubscriptionService {
   }
 
   getCurrentSubscription(): Observable<UserSubscription | null> {
-    return this.subscription$;
+    return this.currentSubscriptionSubject.asObservable();
   }
 
   canRequestScan(): boolean {
-    const subscription = this.subscriptionSubject.value;
-    if (!subscription) return false;
-    return subscription.scansUsed < subscription.scanLimit;
+    const user = this.currentUserSubject.value;
+    return user ? user.scansUsed < user.scanLimit : false;
   }
 
   getScansRemaining(): number {
-    const subscription = this.subscriptionSubject.value;
-    if (!subscription) return 0;
-    return Math.max(0, subscription.scanLimit - subscription.scansUsed);
+    const user = this.currentUserSubject.value;
+    return user ? Math.max(0, user.scanLimit - user.scansUsed) : 0;
   }
 
-  incrementScanUsage(): void {
-    const subscription = this.subscriptionSubject.value;
-    if (subscription && subscription.scansUsed < subscription.scanLimit) {
-      const updatedSubscription = {
-        ...subscription,
-        scansUsed: subscription.scansUsed + 1
+  incrementScanUsage(): Observable<User | null> {
+    const user = this.currentUserSubject.value;
+    if (user && user.scansUsed < user.scanLimit) {
+      const updatedUser = {
+        ...user,
+        scansUsed: user.scansUsed + 1,
+        scansRemaining: user.scanLimit - (user.scansUsed + 1)
       };
-      this.subscriptionSubject.next(updatedSubscription);
+      this.currentUserSubject.next(updatedUser);
+      return of(updatedUser);
     }
+    return of(user);
   }
 
-  upgradePlan(request: UpgradeRequest): Observable<boolean> {
-    // Simulate upgrade process
-    return of(true).pipe(
-      delay(2000),
-      map(success => {
-        if (Math.random() > 0.9) { // 10% failure rate for demo
-          throw new Error('Payment processing failed');
-        }
-
-        // Update subscription
-        const plan = this.plans.find(p => p.id === request.planId);
-        if (plan) {
-          const updatedSubscription: UserSubscription = {
-            planId: plan.id,
-            status: 'active',
-            currentPeriodStart: new Date(),
-            currentPeriodEnd: new Date(Date.now() + (plan.interval === 'year' ? 365 : 30) * 24 * 60 * 60 * 1000),
-            scansUsed: 0,
-            scanLimit: plan.scanLimit
-          };
-          this.subscriptionSubject.next(updatedSubscription);
-        }
-
-        return success;
-      })
-    );
+  upgradePlan(request: UpgradeRequest): Observable<UserSubscription> {
+    return this.upgrade(request);
   }
 
-  getPlanById(planId: string): SubscriptionPlan | undefined {
-    return this.plans.find(plan => plan.id === planId);
+  getCurrentUser(): Observable<User | null> {
+    return this.currentUserSubject.asObservable();
   }
 
-  getCurrentPlan(): SubscriptionPlan | undefined {
-    const subscription = this.subscriptionSubject.value;
-    if (!subscription) return undefined;
-    return this.getPlanById(subscription.planId);
+  getCurrentPlan(): SubscriptionPlan | null {
+    const subscription = this.currentSubscriptionSubject.value;
+    const plan = subscription?.planId ? this.getPlanById(subscription.planId) : undefined;
+    return plan || null;
+  }
+
+  private getPlanById(id: string): SubscriptionPlan | undefined {
+    return this.plans.find(plan => plan.id === id);
+  }
+
+  private upgrade(request: UpgradeRequest): Observable<UserSubscription> {
+    const newPlan = this.getPlanById(request.planId);
+    if (newPlan) {
+      const newSubscription: UserSubscription = {
+        id: 'sub_' + Math.random().toString(36).substr(2, 9),
+        planId: newPlan.id,
+        plan: newPlan,
+        status: 'active',
+        startDate: new Date(),
+        endDate: new Date(Date.now() + (newPlan.interval === 'year' ? 365 : 30) * 24 * 60 * 60 * 1000),
+        email: 'user@example.com',
+        active: true
+      };
+      this.currentSubscriptionSubject.next(newSubscription);
+      return of(newSubscription);
+    }
+    throw new Error('Plan not found');
   }
 }

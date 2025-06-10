@@ -91,7 +91,7 @@ export class PagesListComponent implements OnInit {
     const completedPages = pages.filter(page => page.status === 'completed');
     if (completedPages.length === 0) return 0;
     
-    const totalScore = completedPages.reduce((sum, page) => sum + page.score, 0);
+    const totalScore = completedPages.reduce((sum, page) => sum + (page.score || 0), 0);
     return Math.round(totalScore / completedPages.length);
   }
 
