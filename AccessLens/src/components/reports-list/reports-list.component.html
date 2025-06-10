@@ -1,0 +1,151 @@
+<div class="reports-list" *ngIf="site">
+  <div class="container">
+    <div class="reports-header">
+      <div class="breadcrumb">
+        <app-button 
+          variant="ghost" 
+          size="sm" 
+          icon="arrow-left" 
+          (click)="onBackToSites()"
+        >
+          All Sites
+        </app-button>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">{{ site.name }}</span>
+      </div>
+      
+      <div class="site-overview">
+        <h2>{{ site.name }}</h2>
+        <div class="site-meta">
+          <span class="site-url">{{ site.url }}</span>
+          <span class="last-scan">Last scan {{ formatDate(site.lastScanDate) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-stats-grid">
+      <app-card variant="default" [elevated]="true">
+        <div class="stat-content">
+          <div class="stat-icon info">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ site.totalReports }}</div>
+            <div class="stat-label">Total Reports</div>
+          </div>
+        </div>
+      </app-card>
+
+      <app-card variant="default" [elevated]="true">
+        <div class="stat-content">
+          <div class="stat-icon error">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ getTotalPending() }}</div>
+            <div class="stat-label">Pending Issues</div>
+          </div>
+        </div>
+      </app-card>
+
+      <app-card variant="default" [elevated]="true">
+        <div class="stat-content">
+          <div class="stat-icon success">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20,6 9,17 4,12"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ getTotalFixed() }}</div>
+            <div class="stat-label">Fixed Issues</div>
+          </div>
+        </div>
+      </app-card>
+
+      <app-card variant="default" [elevated]="true">
+        <div class="stat-content">
+          <div class="stat-icon">
+            <div class="score-circle" [class]="getAverageScoreClass()">
+              <span class="score-value">{{ getAverageScore() }}%</span>
+            </div>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ getAverageScore() }}%</div>
+            <div class="stat-label">Average Score</div>
+          </div>
+        </div>
+      </app-card>
+    </div>
+
+    <div class="reports-section">
+      <h3>Reports</h3>
+      <div class="reports-grid">
+        <app-card 
+          *ngFor="let report of site.reports; trackBy: trackByReportId" 
+          [title]="report.name"
+          [subtitle]="'Created ' + formatDate(report.createdDate)"
+          [hover]="true"
+          [clickable]="report.status === 'completed'"
+          [showFooter]="true"
+          (cardClick)="onReportClick(report)"
+          class="fade-in"
+          [class.loading]="report.status === 'in-progress'"
+        >
+          <div class="report-header-extra">
+            <app-badge 
+              [variant]="getStatusVariant(report.status)"
+              [icon]="getStatusIcon(report.status)"
+            >
+              {{ getStatusLabel(report.status) }}
+            </app-badge>
+          </div>
+
+          <div class="report-metrics" *ngIf="report.status === 'completed'">
+            <div class="score-section">
+              <div class="score-bar">
+                <div class="score-fill" [style.width.%]="report.averageScore"></div>
+              </div>
+              <span class="score-text">{{ report.averageScore }}% Score</span>
+            </div>
+
+            <div class="issues-summary">
+              <div class="issue-stat">
+                <span class="issue-count error">{{ report.totalIssues - report.fixedIssues - report.ignoredIssues }}</span>
+                <span class="issue-label">Pending</span>
+              </div>
+              <div class="issue-stat">
+                <span class="issue-count success">{{ report.fixedIssues }}</span>
+                <span class="issue-label">Fixed</span>
+              </div>
+              <div class="issue-stat">
+                <span class="issue-count muted">{{ report.ignoredIssues }}</span>
+                <span class="issue-label">Ignored</span>
+              </div>
+            </div>
+          </div>
+
+          <div slot="footer" class="report-footer-content">
+            <span class="pages-count text-muted">
+              {{ report.totalPages }} pages scanned
+            </span>
+            <app-button 
+              variant="secondary" 
+              size="sm" 
+              [disabled]="report.status !== 'completed'"
+              (click)="onViewReport(report, $event)"
+            >
+              View Pages
+            </app-button>
+          </div>
+        </app-card>
+      </div>
+    </div>
+  </div>
+</div>

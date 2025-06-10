@@ -1,0 +1,176 @@
+<div class="upgrade-page">
+  <div class="container">
+    <!-- Header -->
+    <div class="upgrade-header">
+      <button class="back-button" (click)="onBackToDashboard()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15,18 9,12 15,6"/>
+        </svg>
+        Back to Dashboard
+      </button>
+      
+      <div class="header-content">
+        <h1>Choose Your Plan</h1>
+        <p class="header-subtitle">
+          Upgrade your accessibility monitoring with advanced features and higher scan limits
+        </p>
+      </div>
+    </div>
+
+    <!-- Current Usage -->
+    <div class="current-usage" *ngIf="currentSubscription">
+      <app-card variant="primary" [elevated]="true">
+        <div class="usage-content">
+          <div class="usage-info">
+            <h3>Current Plan: {{ subscriptionService.getCurrentPlan()?.name || 'Free' }}</h3>
+            <div class="usage-stats">
+              <div class="usage-stat">
+                <span class="usage-number">{{ currentSubscription.scansUsed }}</span>
+                <span class="usage-label">Scans Used</span>
+              </div>
+              <div class="usage-divider">/</div>
+              <div class="usage-stat">
+                <span class="usage-number">{{ currentSubscription.scanLimit }}</span>
+                <span class="usage-label">Scan Limit</span>
+              </div>
+            </div>
+          </div>
+          <div class="usage-progress">
+            <div class="progress-bar">
+              <div 
+                class="progress-fill" 
+                [style.width.%]="(currentSubscription.scansUsed / currentSubscription.scanLimit) * 100"
+              ></div>
+            </div>
+            <span class="progress-text">
+              {{ subscriptionService.getScansRemaining() }} scans remaining this month
+            </span>
+          </div>
+        </div>
+      </app-card>
+    </div>
+
+    <!-- Billing Toggle -->
+    <div class="billing-toggle">
+      <div class="toggle-container">
+        <button 
+          class="toggle-option"
+          [class.active]="billingInterval === 'month'"
+          (click)="setBillingInterval('month')"
+        >
+          Monthly
+        </button>
+        <button 
+          class="toggle-option"
+          [class.active]="billingInterval === 'year'"
+          (click)="setBillingInterval('year')"
+        >
+          Yearly
+          <span class="savings-badge">Save 17%</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Pricing Plans -->
+    <div class="pricing-grid">
+      <app-card 
+        *ngFor="let plan of displayedPlans" 
+        [class.popular]="plan.popular"
+        [class.current]="isCurrentPlan(plan)"
+        [elevated]="true"
+        class="pricing-card"
+      >
+        <div class="plan-header">
+          <app-badge 
+            *ngIf="plan.popular" 
+            variant="primary"
+            class="popular-badge"
+          >
+            Most Popular
+          </app-badge>
+          <app-badge 
+            *ngIf="isCurrentPlan(plan)" 
+            variant="success"
+            class="current-badge"
+          >
+            Current Plan
+          </app-badge>
+          
+          <h3 class="plan-name">{{ plan.name }}</h3>
+          <div class="plan-price">
+            <span class="price-amount">{{ formatPrice(plan.price, plan.interval) }}</span>
+            <span *ngIf="plan.price > 0 && plan.interval === 'year'" class="price-note">
+              Save ${{ getYearlySavings(plan.price / 10) }} per year
+            </span>
+          </div>
+        </div>
+
+        <div class="plan-features">
+          <ul class="features-list">
+            <li *ngFor="let feature of plan.features" class="feature-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20,6 9,17 4,12"/>
+              </svg>
+              {{ feature }}
+            </li>
+          </ul>
+        </div>
+
+        <div class="plan-action">
+          <app-button 
+            *ngIf="!isCurrentPlan(plan)"
+            [variant]="plan.popular ? 'primary' : 'secondary'"
+            [fullWidth]="true"
+            [disabled]="!canUpgrade(plan)"
+            (click)="onSelectPlan(plan)"
+          >
+            {{ plan.price === 0 ? 'Downgrade to Free' : 'Upgrade to ' + plan.name }}
+          </app-button>
+          
+          <app-button 
+            *ngIf="isCurrentPlan(plan)"
+            variant="secondary"
+            [fullWidth]="true"
+            [disabled]="true"
+          >
+            Current Plan
+          </app-button>
+        </div>
+      </app-card>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="faq-section">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <h4>What happens if I exceed my scan limit?</h4>
+          <p>You'll be prompted to upgrade your plan. Your existing reports remain accessible, but new scans will be blocked until you upgrade or your limit resets next month.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h4>Can I change plans anytime?</h4>
+          <p>Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any billing differences.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h4>What's included in the accessibility reports?</h4>
+          <p>All plans include comprehensive WCAG 2.1 compliance reports with detailed issue descriptions, remediation guidance, and progress tracking.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h4>Do you offer refunds?</h4>
+          <p>We offer a 30-day money-back guarantee for all paid plans. Contact support if you're not satisfied with your subscription.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upgrade Modal -->
+  <app-upgrade-modal
+    [isOpen]="showUpgradeModal"
+    [plan]="selectedPlan"
+    (close)="onCloseUpgradeModal()"
+    (upgradeSuccess)="onUpgradeSuccess()"
+  ></app-upgrade-modal>
+</div>

@@ -1,0 +1,11 @@
+<button 
+  [class]="getButtonClasses()"
+  [disabled]="disabled"
+  [type]="type"
+  (click)="onClick($event)"
+>
+  <svg *ngIf="icon && iconPosition === 'left'" [innerHTML]="getIconSvg()"></svg>
+  <span *ngIf="loading" class="loading-spinner"></span>
+  <ng-content></ng-content>
+  <svg *ngIf="icon && iconPosition === 'right'" [innerHTML]="getIconSvg()"></svg>
+</button>

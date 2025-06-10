@@ -1,0 +1,215 @@
+<header class="header">
+  <div class="container">
+    <div class="header-content">
+      <div class="logo" (click)="onLogoClick()">
+        <h1>AccessibilityReports</h1>
+        <span class="tagline">Professional Accessibility Auditing</span>
+      </div>
+      
+      <nav class="nav">
+        <button class="nav-link" (click)="onDashboardClick()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          Dashboard
+        </button>
+        
+        <button class="nav-link" (click)="onSitesClick()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+          Sites
+        </button>
+        
+        <app-button 
+          variant="primary" 
+          [loading]="isScanning"
+          (click)="onRequestScan()"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14"/>
+            <path d="M5 12h14"/>
+          </svg>
+          Request New Scan
+        </app-button>
+
+        <!-- User Authentication -->
+        <div class="auth-section">
+          <div *ngIf="!currentUser" class="auth-buttons">
+            <app-button 
+              variant="secondary" 
+              size="sm"
+              (click)="onSignIn()"
+            >
+              Sign In
+            </app-button>
+          </div>
+
+          <div *ngIf="currentUser" class="user-menu-container">
+            <button class="user-menu-trigger" (click)="toggleUserMenu()">
+              <img [src]="currentUser.avatar" [alt]="currentUser.name" class="user-avatar">
+              <span class="user-name">{{ currentUser.name }}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6,9 12,15 18,9"/>
+              </svg>
+            </button>
+
+            <div *ngIf="showUserMenu" class="user-menu">
+              <div class="user-menu-header">
+                <img [src]="currentUser.avatar" [alt]="currentUser.name" class="user-avatar-large">
+                <div class="user-info">
+                  <div class="user-name-large">{{ currentUser.name }}</div>
+                  <div class="user-email">{{ currentUser.email }}</div>
+                </div>
+              </div>
+
+              <!-- Subscription Info -->
+              <div class="subscription-info" *ngIf="currentSubscription">
+                <div class="subscription-plan">
+                  <span class="plan-name">{{ subscriptionService.getCurrentPlan()?.name || 'Free' }} Plan</span>
+                  <span class="scans-remaining">{{ getScansRemaining() }} scans left</span>
+                </div>
+                <button class="upgrade-button" (click)="onUpgradeClick()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5"/>
+                  </svg>
+                  Upgrade Plan
+                </button>
+              </div>
+              
+              <div class="user-menu-divider"></div>
+              
+              <button class="user-menu-item" (click)="onFeedback()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Send Feedback
+              </button>
+              
+              <button class="user-menu-item" (click)="onContactSupport()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                Contact Support
+              </button>
+              
+              <div class="user-menu-divider"></div>
+              
+              <button 
+                class="user-menu-item sign-out" 
+                [disabled]="isSigningOut"
+                (click)="onSignOut()"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16,17 21,12 16,7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                {{ isSigningOut ? 'Signing out...' : 'Sign Out' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Scan Request Modal -->
+  <app-modal 
+    [isOpen]="showScanModal"
+    title="Request New Accessibility Scan"
+    size="md"
+    [showFooter]="true"
+    (close)="onCloseScanModal()"
+  >
+    <div class="scan-form">
+      <app-alert 
+        *ngIf="scanSuccess" 
+        variant="success" 
+        title="Scan Requested Successfully!"
+        [dismissible]="false"
+      >
+        Your accessibility scan has been queued and will begin shortly. You'll be notified when it's complete.
+      </app-alert>
+
+      <app-alert 
+        *ngIf="scanError" 
+        variant="error" 
+        title="Error"
+        [dismissible]="true"
+        (dismiss)="scanError = ''"
+      >
+        {{ scanError }}
+      </app-alert>
+
+      <div *ngIf="!scanSuccess">
+        <div class="scan-limit-info" *ngIf="currentSubscription">
+          <div class="limit-display">
+            <span class="scans-remaining">{{ getScansRemaining() }} scans remaining</span>
+            <span class="plan-name">{{ subscriptionService.getCurrentPlan()?.name || 'Free' }} Plan</span>
+          </div>
+          <button class="upgrade-link" (click)="onUpgradeClick(); onCloseScanModal()">
+            Upgrade for more scans
+          </button>
+        </div>
+
+        <app-input
+          label="Website URL"
+          type="url"
+          placeholder="https://example.com"
+          prefixIcon="globe"
+          [value]="scanUrl"
+          [disabled]="isScanning"
+          helpText="Enter the full URL of the website you want to scan for accessibility issues"
+          (inputChange)="scanUrl = $event"
+        ></app-input>
+      </div>
+    </div>
+
+    <div slot="footer" *ngIf="!scanSuccess">
+      <app-button 
+        variant="secondary" 
+        [disabled]="isScanning"
+        (click)="onCloseScanModal()"
+      >
+        Cancel
+      </app-button>
+      <app-button 
+        variant="primary" 
+        [loading]="isScanning"
+        [disabled]="!scanUrl.trim() || isScanning || !subscriptionService.canRequestScan()"
+        (click)="onSubmitScan()"
+      >
+        {{ isScanning ? 'Starting Scan...' : 'Start Scan' }}
+      </app-button>
+    </div>
+  </app-modal>
+
+  <!-- Authentication Modal -->
+  <app-auth-modal
+    [isOpen]="showAuthModal"
+    (close)="onCloseAuthModal()"
+    (authSuccess)="onAuthSuccess($event)"
+  ></app-auth-modal>
+
+  <!-- Feedback Modal -->
+  <app-feedback-modal
+    [isOpen]="showFeedbackModal"
+    (close)="onCloseFeedbackModal()"
+  ></app-feedback-modal>
+
+  <!-- Upgrade Modal -->
+  <app-upgrade-modal
+    [isOpen]="showUpgradeModal"
+    [plan]="proPlan"
+    (close)="onCloseUpgradeModal()"
+    (upgradeSuccess)="onUpgradeSuccess()"
+  ></app-upgrade-modal>
+
+  <!-- Overlay for user menu -->
+  <div *ngIf="showUserMenu" class="user-menu-overlay" (click)="showUserMenu = false"></div>
+</header>

@@ -1,0 +1,26 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onOverlayClick($event)">
+  <div class="modal-container" [class]="getModalClasses()">
+    <div class="modal-header" *ngIf="title || showCloseButton">
+      <h3 class="modal-title" *ngIf="title">{{ title }}</h3>
+      <button 
+        *ngIf="showCloseButton"
+        class="modal-close"
+        (click)="close.emit()"
+        aria-label="Close modal"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <ng-content></ng-content>
+    </div>
+    
+    <div class="modal-footer" *ngIf="showFooter">
+      <ng-content select="[slot=footer]"></ng-content>
+    </div>
+  </div>
+</div>

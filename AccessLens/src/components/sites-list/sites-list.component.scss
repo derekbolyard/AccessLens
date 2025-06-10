@@ -1,0 +1,142 @@
+.sites-list {
+  padding: var(--space-8) 0;
+}
+
+.sites-header {
+  margin-bottom: var(--space-8);
+  text-align: center;
+}
+
+.sites-header h2 {
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-10);
+}
+
+.stat-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon.success {
+  background-color: var(--success-100);
+  color: var(--success-600);
+}
+
+.stat-icon.warning {
+  background-color: var(--warning-100);
+  color: var(--warning-600);
+}
+
+.stat-icon.info {
+  background-color: var(--primary-100);
+  color: var(--primary-600);
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: var(--text-sm);
+  color: var(--gray-600);
+  margin-top: var(--space-1);
+}
+
+.sites-section {
+  margin-top: var(--space-8);
+}
+
+.sites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-6);
+}
+
+.site-metrics {
+  margin-bottom: var(--space-4);
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.metric-value {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1;
+}
+
+.metric-value.success { 
+  color: var(--success-600); 
+}
+
+.metric-label {
+  font-size: var(--text-xs);
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: var(--space-1);
+}
+
+.site-footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.last-scan {
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 768px) {
+  .sites-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .metric-row {
+    justify-content: space-around;
+  }
+
+  .site-footer-content {
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,149 @@
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  position: relative;
+}
+
+.alert-success {
+  background-color: var(--success-50);
+  border-color: var(--success-200);
+  color: var(--success-800);
+}
+
+.alert-warning {
+  background-color: var(--warning-50);
+  border-color: var(--warning-200);
+  color: var(--warning-800);
+}
+
+.alert-error {
+  background-color: var(--error-50);
+  border-color: var(--error-200);
+  color: var(--error-800);
+}
+
+.alert-info {
+  background-color: var(--primary-50);
+  border-color: var(--primary-200);
+  color: var(--primary-800);
+}
+
+.alert-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert-success .alert-icon {
+  color: var(--success-600);
+}
+
+.alert-warning .alert-icon {
+  color: var(--warning-600);
+}
+
+.alert-error .alert-icon {
+  color: var(--error-600);
+}
+
+.alert-info .alert-icon {
+  color: var(--primary-600);
+}
+
+.alert-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-title {
+  margin: 0 0 var(--space-1) 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.alert-message {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.alert-message p {
+  margin: 0;
+}
+
+.alert-message p + p {
+  margin-top: var(--space-2);
+}
+
+.alert-dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.alert-dismiss:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+// Sizes
+.alert-sm {
+  padding: var(--space-3);
+  gap: var(--space-2);
+}
+
+.alert-sm .alert-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.alert-sm .alert-title {
+  font-size: var(--text-xs);
+}
+
+.alert-sm .alert-message {
+  font-size: var(--text-xs);
+}
+
+.alert-lg {
+  padding: var(--space-6);
+  gap: var(--space-4);
+}
+
+.alert-lg .alert-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.alert-lg .alert-title {
+  font-size: var(--text-base);
+}
+
+.alert-lg .alert-message {
+  font-size: var(--text-base);
+}
+
+// Bordered variant
+.alert-bordered {
+  border-width: 2px;
+}
+
+@media (max-width: 768px) {
+  .alert {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+}

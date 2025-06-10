@@ -1,0 +1,107 @@
+<app-modal 
+  [isOpen]="isOpen"
+  title="Send Feedback"
+  size="md"
+  [showFooter]="true"
+  (close)="close.emit()"
+>
+  <div class="feedback-content">
+    <app-alert 
+      *ngIf="submitSuccess" 
+      variant="success" 
+      title="Feedback Submitted!"
+      [dismissible]="false"
+    >
+      Thank you for your feedback! We'll review it and get back to you if needed.
+    </app-alert>
+
+    <app-alert 
+      *ngIf="submitError" 
+      variant="error" 
+      [dismissible]="true"
+      (dismiss)="submitError = ''"
+    >
+      {{ submitError }}
+    </app-alert>
+
+    <div *ngIf="!submitSuccess" class="feedback-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Feedback Type</label>
+          <select 
+            class="form-select" 
+            [(ngModel)]="feedback.type"
+            [disabled]="isSubmitting"
+          >
+            <option value="bug">Bug Report</option>
+            <option value="feature">Feature Request</option>
+            <option value="improvement">Improvement Suggestion</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select 
+            class="form-select" 
+            [(ngModel)]="feedback.priority"
+            [disabled]="isSubmitting"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+
+      <app-input
+        label="Subject"
+        placeholder="Brief description of your feedback"
+        [value]="feedback.subject"
+        [disabled]="isSubmitting"
+        [required]="true"
+        (inputChange)="feedback.subject = $event"
+      ></app-input>
+
+      <div class="form-group">
+        <label class="form-label">Message *</label>
+        <textarea 
+          class="form-textarea"
+          placeholder="Please provide detailed information about your feedback..."
+          [(ngModel)]="feedback.message"
+          [disabled]="isSubmitting"
+          rows="5"
+        ></textarea>
+      </div>
+
+      <app-input
+        label="Email (optional)"
+        type="email"
+        placeholder="your.email@example.com"
+        prefixIcon="email"
+        [value]="feedback.email || ''"
+        [disabled]="isSubmitting"
+        helpText="We'll only use this to follow up on your feedback if needed"
+        (inputChange)="feedback.email = $event"
+      ></app-input>
+    </div>
+  </div>
+
+  <div slot="footer" *ngIf="!submitSuccess">
+    <app-button 
+      variant="secondary" 
+      [disabled]="isSubmitting"
+      (click)="close.emit()"
+    >
+      Cancel
+    </app-button>
+    <app-button 
+      variant="primary" 
+      [loading]="isSubmitting"
+      [disabled]="!isFormValid() || isSubmitting"
+      (click)="submitFeedback()"
+    >
+      {{ isSubmitting ? 'Submitting...' : 'Submit Feedback' }}
+    </app-button>
+  </div>
+</app-modal>

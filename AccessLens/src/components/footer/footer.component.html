@@ -1,0 +1,79 @@
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>AccessibilityReports</h3>
+        <p>Professional accessibility auditing to help you build inclusive web experiences.</p>
+      </div>
+
+      <div class="footer-section">
+        <h4>Support</h4>
+        <div class="footer-links">
+          <button class="footer-link" (click)="onContactSupport()">
+            Contact Support
+          </button>
+          <button class="footer-link" (click)="onSendFeedback()">
+            Send Feedback
+          </button>
+          <a href="mailto:{{ supportEmail }}" class="footer-link">
+            {{ supportEmail }}
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-section">
+        <h4>Resources</h4>
+        <div class="footer-links">
+          <a href="https://www.w3.org/WAI/WCAG21/quickref/" target="_blank" rel="noopener noreferrer" class="footer-link">
+            WCAG Guidelines
+          </a>
+          <a href="https://webaim.org/" target="_blank" rel="noopener noreferrer" class="footer-link">
+            WebAIM Resources
+          </a>
+          <a href="https://www.a11yproject.com/" target="_blank" rel="noopener noreferrer" class="footer-link">
+            A11Y Project
+          </a>
+        </div>
+      </div>
+
+      <div class="footer-section">
+        <h4>Get in Touch</h4>
+        <p class="contact-info">
+          Have questions or need help? We're here to support you in making the web more accessible.
+        </p>
+        <div class="contact-actions">
+          <app-button 
+            variant="primary" 
+            size="sm"
+            (click)="onContactSupport()"
+          >
+            Contact Us
+          </app-button>
+          <app-button 
+            variant="secondary" 
+            size="sm"
+            (click)="onSendFeedback()"
+          >
+            Send Feedback
+          </app-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-bottom-content">
+        <p>&copy; 2024 AccessibilityReports. All rights reserved.</p>
+        <div class="footer-bottom-links">
+          <a href="#" class="footer-bottom-link">Privacy Policy</a>
+          <a href="#" class="footer-bottom-link">Terms of Service</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Feedback Modal -->
+<app-feedback-modal
+  [isOpen]="showFeedbackModal"
+  (close)="showFeedbackModal = false"
+></app-feedback-modal>

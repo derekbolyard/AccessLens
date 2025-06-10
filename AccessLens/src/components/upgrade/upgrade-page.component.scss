@@ -1,0 +1,301 @@
+.upgrade-page {
+  padding: var(--space-8) 0;
+  min-height: 100vh;
+}
+
+.upgrade-header {
+  margin-bottom: var(--space-8);
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  color: var(--primary-600);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  margin-bottom: var(--space-6);
+}
+
+.back-button:hover {
+  background-color: var(--primary-50);
+  color: var(--primary-700);
+}
+
+.header-content {
+  text-align: center;
+}
+
+.header-content h1 {
+  color: var(--gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.header-subtitle {
+  color: var(--gray-600);
+  font-size: var(--text-lg);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.current-usage {
+  margin-bottom: var(--space-8);
+}
+
+.usage-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.usage-info h3 {
+  margin: 0 0 var(--space-3) 0;
+  color: var(--primary-700);
+}
+
+.usage-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.usage-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.usage-number {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--primary-700);
+  line-height: 1;
+}
+
+.usage-label {
+  font-size: var(--text-sm);
+  color: var(--primary-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.usage-divider {
+  font-size: var(--text-xl);
+  color: var(--primary-400);
+  font-weight: 300;
+}
+
+.usage-progress {
+  flex: 1;
+  max-width: 300px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--primary-100);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-2);
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--primary-500);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: var(--text-sm);
+  color: var(--primary-600);
+}
+
+.billing-toggle {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-8);
+}
+
+.toggle-container {
+  display: flex;
+  background-color: var(--gray-100);
+  border-radius: var(--radius-lg);
+  padding: var(--space-1);
+}
+
+.toggle-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--gray-600);
+}
+
+.toggle-option.active {
+  background-color: white;
+  color: var(--gray-900);
+  box-shadow: var(--shadow-sm);
+}
+
+.savings-badge {
+  background-color: var(--success-100);
+  color: var(--success-700);
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-12);
+}
+
+.pricing-card {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.pricing-card.popular {
+  border: 2px solid var(--primary-500);
+  transform: scale(1.02);
+}
+
+.pricing-card.current {
+  border: 2px solid var(--success-500);
+}
+
+.plan-header {
+  text-align: center;
+  margin-bottom: var(--space-6);
+  position: relative;
+  padding-top: var(--space-6); /* Add padding to make room for badges */
+}
+
+.popular-badge,
+.current-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.plan-name {
+  margin: var(--space-2) 0 var(--space-2) 0; /* Reduced top margin */
+  color: var(--gray-900);
+  font-size: var(--text-xl);
+}
+
+.plan-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.price-amount {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.price-note {
+  font-size: var(--text-sm);
+  color: var(--success-600);
+  font-weight: 500;
+}
+
+.plan-features {
+  margin-bottom: var(--space-6);
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+  color: var(--gray-700);
+}
+
+.feature-item svg {
+  color: var(--success-500);
+  flex-shrink: 0;
+}
+
+.faq-section {
+  margin-top: var(--space-16);
+}
+
+.faq-section h2 {
+  text-align: center;
+  color: var(--gray-900);
+  margin-bottom: var(--space-8);
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-6);
+}
+
+.faq-item {
+  padding: var(--space-6);
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+}
+
+.faq-item h4 {
+  margin: 0 0 var(--space-3) 0;
+  color: var(--gray-900);
+  font-size: var(--text-lg);
+}
+
+.faq-item p {
+  margin: 0;
+  color: var(--gray-600);
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .usage-content {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pricing-card.popular {
+    transform: none;
+  }
+
+  .faq-grid {
+    grid-template-columns: 1fr;
+  }
+}

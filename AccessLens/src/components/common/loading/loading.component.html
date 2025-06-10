@@ -1,0 +1,14 @@
+<div [class]="getLoadingClasses()">
+  <div *ngIf="type === 'spinner'" class="loading-spinner"></div>
+  <div *ngIf="type === 'dots'" class="loading-dots">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+  <div *ngIf="type === 'pulse'" class="loading-pulse"></div>
+  <div *ngIf="type === 'skeleton'" class="loading-skeleton">
+    <div class="skeleton-line" *ngFor="let line of skeletonLinesArray"></div>
+  </div>
+  
+  <p *ngIf="text" class="loading-text">{{ text }}</p>
+</div>

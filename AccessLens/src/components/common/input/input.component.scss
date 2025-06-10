@@ -1,0 +1,118 @@
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.input-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.required-indicator {
+  color: var(--error-500);
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input:disabled {
+  background-color: var(--gray-100);
+  color: var(--gray-500);
+  cursor: not-allowed;
+}
+
+.input:readonly {
+  background-color: var(--gray-50);
+}
+
+.input-sm {
+  padding: var(--space-2);
+  font-size: var(--text-xs);
+}
+
+.input-lg {
+  padding: var(--space-4);
+  font-size: var(--text-base);
+}
+
+.input-with-prefix {
+  padding-left: var(--space-10);
+}
+
+.input-with-suffix {
+  padding-right: var(--space-10);
+}
+
+.input-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+  pointer-events: none;
+}
+
+.input-prefix {
+  left: var(--space-3);
+}
+
+.input-suffix {
+  right: var(--space-3);
+}
+
+.input-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.input-help {
+  font-size: var(--text-xs);
+  color: var(--gray-600);
+}
+
+.input-error {
+  font-size: var(--text-xs);
+  color: var(--error-600);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.has-error .input {
+  border-color: var(--error-500);
+}
+
+.has-error .input:focus {
+  border-color: var(--error-500);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+@media (max-width: 768px) {
+  .input {
+    font-size: var(--text-base);
+  }
+}

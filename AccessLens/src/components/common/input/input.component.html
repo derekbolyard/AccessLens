@@ -1,0 +1,38 @@
+<div class="input-group" [class.has-error]="hasError">
+  <label *ngIf="label" [for]="inputId" class="input-label">
+    {{ label }}
+    <span *ngIf="required" class="required-indicator">*</span>
+  </label>
+  
+  <div class="input-wrapper" [class]="getWrapperClasses()">
+    <div *ngIf="prefixIcon" class="input-icon input-prefix">
+      <svg [innerHTML]="getIconSvg(prefixIcon)"></svg>
+    </div>
+    
+    <input
+      [id]="inputId"
+      [type]="type"
+      [placeholder]="placeholder"
+      [value]="value"
+      [disabled]="disabled"
+      [readonly]="readonly"
+      [required]="required"
+      [class]="getInputClasses()"
+      (input)="onInput($event)"
+      (blur)="onBlur($event)"
+      (focus)="onFocus($event)"
+    />
+    
+    <div *ngIf="suffixIcon" class="input-icon input-suffix">
+      <svg [innerHTML]="getIconSvg(suffixIcon)"></svg>
+    </div>
+  </div>
+  
+  <div *ngIf="helpText && !hasError" class="input-help">
+    {{ helpText }}
+  </div>
+  
+  <div *ngIf="hasError && errorMessage" class="input-error">
+    {{ errorMessage }}
+  </div>
+</div>

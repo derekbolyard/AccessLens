@@ -1,0 +1,103 @@
+<div class="sites-list">
+  <div class="container">
+    <div class="sites-header">
+      <h2>Your Sites</h2>
+      <p class="text-muted">Monitor and manage accessibility compliance across all your websites</p>
+    </div>
+
+    <div class="stats-grid">
+      <app-card variant="default" [elevated]="true">
+        <div class="stat-content">
+          <div class="stat-icon success">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20,6 9,17 4,12"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ getTotalFixed() }}</div>
+            <div class="stat-label">Issues Fixed</div>
+          </div>
+        </div>
+      </app-card>
+
+      <app-card variant="default" [elevated]="true">
+        <div class="stat-content">
+          <div class="stat-icon warning">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ getTotalPending() }}</div>
+            <div class="stat-label">Pending Issues</div>
+          </div>
+        </div>
+      </app-card>
+
+      <app-card variant="default" [elevated]="true">
+        <div class="stat-content">
+          <div class="stat-icon info">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">{{ sites.length }}</div>
+            <div class="stat-label">Total Sites</div>
+          </div>
+        </div>
+      </app-card>
+    </div>
+
+    <div class="sites-section">
+      <div class="sites-grid">
+        <app-card 
+          *ngFor="let site of sites; trackBy: trackBySiteId" 
+          [title]="site.name"
+          [subtitle]="site.url"
+          [hover]="true"
+          [clickable]="true"
+          [showFooter]="true"
+          (cardClick)="onSiteClick(site)"
+          class="fade-in"
+        >
+          <div class="site-metrics">
+            <div class="metric-row">
+              <div class="metric">
+                <span class="metric-value">{{ site.totalReports }}</span>
+                <span class="metric-label">Reports</span>
+              </div>
+              <div class="metric">
+                <span class="metric-value">{{ getTotalPagesForSite(site) }}</span>
+                <span class="metric-label">Pages</span>
+              </div>
+              <div class="metric">
+                <span class="metric-value">{{ getTotalPendingForSite(site) }}</span>
+                <span class="metric-label">Pending</span>
+              </div>
+              <div class="metric">
+                <span class="metric-value success">{{ getTotalFixedForSite(site) }}</span>
+                <span class="metric-label">Fixed</span>
+              </div>
+            </div>
+          </div>
+
+          <div slot="footer" class="site-footer-content">
+            <span class="last-scan text-muted">
+              Last scan {{ formatDate(site.lastScanDate) }}
+            </span>
+            <app-button 
+              variant="secondary" 
+              size="sm" 
+              (click)="onViewSite(site, $event)"
+            >
+              View Reports
+            </app-button>
+          </div>
+        </app-card>
+      </div>
+    </div>
+  </div>
+</div>

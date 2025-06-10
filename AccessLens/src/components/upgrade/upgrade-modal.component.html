@@ -1,0 +1,106 @@
+<app-modal 
+  [isOpen]="isOpen"
+  [title]="getModalTitle()"
+  size="md"
+  [showFooter]="true"
+  (close)="close.emit()"
+>
+  <div class="upgrade-content" *ngIf="plan">
+    <app-alert 
+      *ngIf="isUpgradeComplete" 
+      variant="success" 
+      title="Upgrade Successful!"
+      [dismissible]="false"
+    >
+      Welcome to {{ plan.name }}! Your new plan is now active and you can start using your increased scan limit immediately.
+    </app-alert>
+
+    <app-alert 
+      *ngIf="upgradeError" 
+      variant="error" 
+      [dismissible]="true"
+      (dismiss)="upgradeError = ''"
+    >
+      {{ upgradeError }}
+    </app-alert>
+
+    <div *ngIf="!isUpgradeComplete" class="plan-summary">
+      <div class="plan-details">
+        <h3>{{ plan.name }} Plan</h3>
+        <div class="plan-price">
+          <span class="price-amount">$ {{ plan.price }}</span>
+          <span class="price-interval">/ {{ plan.interval }}</span>
+        </div>
+        
+        <div class="plan-highlights">
+          <div class="highlight-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20,6 9,17 4,12"/>
+            </svg>
+            {{ plan.scanLimit }} scans per month
+          </div>
+          <div class="highlight-item" *ngFor="let feature of getKeyFeatures()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20,6 9,17 4,12"/>
+            </svg>
+            {{ feature }}
+          </div>
+        </div>
+      </div>
+
+      <div class="billing-info">
+        <div class="billing-item">
+          <span class="billing-label">Plan:</span>
+          <span class="billing-value">{{ plan.name }}</span>
+        </div>
+        <div class="billing-item">
+          <span class="billing-label">Billing:</span>
+          <span class="billing-value">{{ plan.interval === 'year' ? 'Yearly' : 'Monthly' }}</span>
+        </div>
+        <div class="billing-item total">
+          <span class="billing-label">Total:</span>
+          <span class="billing-value">$ {{ plan.price }} / {{ plan.interval }}</span>
+        </div>
+      </div>
+
+      <div class="payment-note">
+        <p>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          This is a demo. No actual payment will be processed.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div slot="footer" *ngIf="!isUpgradeComplete">
+    <app-button 
+      variant="secondary" 
+      [disabled]="isUpgrading"
+      (click)="close.emit()"
+    >
+      Cancel
+    </app-button>
+    <app-button 
+      variant="primary" 
+      [loading]="isUpgrading"
+      [disabled]="isUpgrading"
+      (click)="confirmUpgrade()"
+    >
+      {{ isUpgrading ? 'Processing...' : 'Confirm Upgrade' }}
+    </app-button>
+  </div>
+
+  <div slot="footer" *ngIf="isUpgradeComplete">
+    <app-button 
+      variant="primary" 
+      [fullWidth]="true"
+      (click)="onUpgradeComplete()"
+    >
+      Continue
+    </app-button>
+  </div>
+</app-modal>
