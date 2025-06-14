@@ -29,7 +29,9 @@
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.6" />
     <PackageReference Include="Stripe.net" Version="48.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-    
   </ItemGroup>
-
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\axe-core-4.9.0.min.js"
+                      LogicalName="AccessLensApi.Assets.axe-core-4.9.0.min.js" />
+  </ItemGroup>
 </Project>

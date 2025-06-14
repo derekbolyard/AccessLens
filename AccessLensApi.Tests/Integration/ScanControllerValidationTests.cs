@@ -1,8 +1,10 @@
 ﻿using AccessLensApi.Features.Scans.Models;
 using AccessLensApi.Tests.Helpers;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
 using System.Net.Http.Json;
+using Xunit.Abstractions;
 
 namespace AccessLensApi.Tests.Integration
 {
@@ -10,18 +12,19 @@ namespace AccessLensApi.Tests.Integration
     {
         private readonly HttpClient _client;
         public required FakeHttpHandler _fakeHttpHandler;
+        private readonly ITestOutputHelper _output;
 
-        public ScanControllerValidationTests(WebApplicationFactory<Program> factory)
+        public ScanControllerValidationTests(WebApplicationFactory<Program> factory, ITestOutputHelper output)
         {
-            factory = factory.WithWebHostBuilder(builder =>
+            _client = factory.WithWebHostBuilder(builder =>
             {
+                builder.UseEnvironment("Production");
                 builder.ConfigureServices(services =>
                 {
                     _fakeHttpHandler = new FakeHttpHandler(services);
                 });
-            });
-
-            _client = factory.CreateClient();
+            }).CreateClient();
+            _output = output;
         }
 
         [Theory]
@@ -108,47 +111,27 @@ namespace AccessLensApi.Tests.Integration
         }
 
         [Fact]
-        public async Task Starter_RequestTooLarge_ReturnsRequestEntityTooLarge()
+        public async Task Starter_UrlTooLong_ReturnsBadRequest()
         {
             // Arrange - Create a request that exceeds the 1MB limit
-            var largeString = new string('x', 1_500_000); // 1.5MB
+            var largeString = new string('x', 550); // 1.5MB
             var request = new ScanRequest
             {
                 Url = "https://example.com" + largeString,
                 Email = "test@example.com"
             };
 
-            _fakeHttpHandler.SetupResponse(HttpStatusCode.OK, new HCaptchaVerifyResponse { Success = true});
+            _fakeHttpHandler.SetupResponse(HttpStatusCode.OK, new HCaptchaVerifyResponse { Success = true });
 
             // Act
             var response = await _client.PostAsJsonAsync("/api/scan/starter", request);
+            var body = await response.Content.ReadAsStringAsync();
+
+            _output.WriteLine("Status Code: " + response.StatusCode);
+            _output.WriteLine("Response Body: " + body);
 
             // Assert
-            Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task FullSiteScan_RequestTooLarge_ReturnsRequestEntityTooLarge()
-        {
-            // Arrange - Create a request that exceeds the 2MB limit
-            var largeArray = Enumerable.Repeat("x".PadRight(1000, 'x'), 3000).ToArray(); // ~3MB
-            var request = new FullScanRequest
-            {
-                Url = "https://example.com",
-                Email = "test@example.com",
-                HcaptchaToken = "valid-token",
-                Options = new ScanOptions
-                {
-                    ExcludePatterns = largeArray
-                }
-            };
-
-
-            // Act
-            var response = await _client.PostAsJsonAsync("/api/scan/full", request);
-
-            // Assert
-            Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]

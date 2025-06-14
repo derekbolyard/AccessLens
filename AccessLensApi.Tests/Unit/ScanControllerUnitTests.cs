@@ -4,9 +4,11 @@ using AccessLensApi.Features.Scans.Models;
 using AccessLensApi.Middleware;
 using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -55,6 +57,9 @@ namespace AccessLensApi.Tests.Unit
             {
                 hCaptchaSecret = "test-secret"
             });
+            var envMock = new Mock<IWebHostEnvironment>();
+            envMock.Setup(e => e.EnvironmentName).Returns(Environments.Development);
+
 
             _controller = new ScanController(
                 _dbContext,
@@ -65,7 +70,8 @@ namespace AccessLensApi.Tests.Unit
                 _mockRateLimiter.Object,
                 rateOptions,
                 captchaOptions,
-                _mockHttpClientFactory.Object);
+                _mockHttpClientFactory.Object,
+                envMock.Object);
 
             // Setup HttpContext for IP address
             _controller.ControllerContext = new ControllerContext

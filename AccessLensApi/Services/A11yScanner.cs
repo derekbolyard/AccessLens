@@ -16,18 +16,21 @@ namespace AccessLensApi.Services
         private readonly IStorageService _storage;
         private readonly ILogger<A11yScanner> _log;
         private readonly HttpClient _httpClient;
-        private const string AxeCdn = "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.9.0/axe.min.js";
+
+        private readonly IAxeScriptProvider _axe;
 
         public A11yScanner(
             IBrowser browser,
             IStorageService storage,
             ILogger<A11yScanner> log,
-            HttpClient httpClient)
+            HttpClient httpClient,
+            IAxeScriptProvider axe)
         {
             _browser = browser;
             _storage = storage;
             _log = log;
             _httpClient = httpClient;
+            _axe = axe;
         }
 
         public async Task<JsonObject> ScanFivePagesAsync(string rootUrl, CancellationToken cancellationToken = default)
@@ -366,7 +369,7 @@ namespace AccessLensApi.Services
                 }
 
                 // Inject axe-core script
-                var axeScript = await GetAxeScriptAsync(cancellationToken);
+                var axeScript = await _axe.GetAsync(cancellationToken);
                 await page.AddScriptTagAsync(new() { Content = axeScript });
 
                 // Run axe accessibility scan
@@ -517,26 +520,6 @@ namespace AccessLensApi.Services
 
             builder.Query = query.ToString();
             return builder.ToString();
-        }
-
-        private async Task<string> GetAxeScriptAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                // Try to get from CDN first
-                var response = await _httpClient.GetAsync(AxeCdn, cancellationToken);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadAsStringAsync(cancellationToken);
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.LogWarning(ex, "Failed to load axe-core from CDN, falling back to embedded version");
-            }
-
-            // Fallback to a minimal embedded version or throw
-            throw new InvalidOperationException("Could not load axe-core script. Consider embedding axe-core as a resource.");
         }
 
         private static bool IsValidSitemapUrl(string url, Uri rootUri)

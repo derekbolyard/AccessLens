@@ -101,6 +101,7 @@ builder.Services.AddSingleton<IBrowser>(sp =>
                              .GetAwaiter().GetResult();
 });
 
+builder.Services.AddSingleton<IAxeScriptProvider, AxeScriptProvider>();
 builder.Services.AddSingleton<IA11yScanner, A11yScanner>();
 builder.Services.AddSingleton<IPdfService, PdfService>();
 

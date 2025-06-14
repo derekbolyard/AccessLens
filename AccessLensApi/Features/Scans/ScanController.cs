@@ -26,6 +26,7 @@ namespace AccessLensApi.Features.Scans
         private readonly RateLimitingOptions _rateOptions;
         private readonly CaptchaOptions _captchaOptions;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IWebHostEnvironment _env;
 
         public ScanController(
             ApplicationDbContext dbContext,
@@ -36,7 +37,8 @@ namespace AccessLensApi.Features.Scans
             IRateLimiter rateLimiter,
             IOptions<RateLimitingOptions> rateOptions,
             IOptions<CaptchaOptions> captchaOptions,
-            IHttpClientFactory httpClientFactory)
+            IHttpClientFactory httpClientFactory,
+            IWebHostEnvironment env)
         {
             _dbContext = dbContext;
             _creditManager = creditManager;
@@ -47,6 +49,7 @@ namespace AccessLensApi.Features.Scans
             _rateOptions = rateOptions.Value;
             _captchaOptions = captchaOptions.Value;
             _httpClientFactory = httpClientFactory;
+            _env = env;
         }
 
         /// <summary>
@@ -494,6 +497,12 @@ namespace AccessLensApi.Features.Scans
 
         private bool IsUrlAllowed(Uri uri)
         {
+            if (!_env.IsDevelopment())
+            {
+                if (string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+            
             if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
                 return false;
 
@@ -507,7 +516,8 @@ namespace AccessLensApi.Features.Scans
                 {
                     if (bytes[0] == 10 ||
                         bytes[0] == 192 && bytes[1] == 168 ||
-                        bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+                        bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31 ||
+                        bytes[0] == 169 && bytes[1] == 254)
                         return false;
                 }
                 if (ip.IsIPv6LinkLocal) return false;

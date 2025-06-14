@@ -2,20 +2,17 @@
 using AccessLensApi.Features.Scans.Models;
 using AccessLensApi.Middleware;
 using AccessLensApi.Services.Interfaces;
+using AccessLensApi.Tests.Helpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
-using Moq;
-using Moq.Protected;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace AccessLensApi.Tests.Integration
@@ -29,7 +26,7 @@ namespace AccessLensApi.Tests.Integration
         private readonly WebApplicationFactory<Program> _factory;
         private readonly HttpClient _client;
         private readonly ITestOutputHelper _output;
-        private Mock<IHttpClientFactory> _mockHttpClientFactory;
+        private FakeHttpHandler _fakeHttpHandler;
 
         public ScanControllerIntegrationTests(WebApplicationFactory<Program> factory, ITestOutputHelper output)
         {
@@ -59,9 +56,7 @@ namespace AccessLensApi.Tests.Integration
 
                     services.RemoveAll<IPdfService>();
                     services.AddSingleton<IPdfService, TestPdfService>();
-                    _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-                    services.RemoveAll<IHttpClientFactory>();
-                    services.AddSingleton(_mockHttpClientFactory.Object);
+                    _fakeHttpHandler = new FakeHttpHandler(services);
 
                     // Keep real implementations of internal services
                     // - CreditManager: Tests real business logic
@@ -150,7 +145,7 @@ namespace AccessLensApi.Tests.Integration
         public async Task FullSiteScan_RealCreditManager_ChecksPremiumAccess()
         {
             // Arrange
-            this.SetupMockHttp(captchaSuccess: true); // Simulate successful captcha validation
+            this._fakeHttpHandler.SetupResponse(HttpStatusCode.OK, new HCaptchaVerifyResponse { Success = true }); // Simulate successful captcha validation
             var request = new FullScanRequest
             {
                 Url = "https://example.com",
@@ -170,28 +165,6 @@ namespace AccessLensApi.Tests.Integration
         public void Dispose()
         {
             _client?.Dispose();
-        }
-
-        private void SetupMockHttp(bool captchaSuccess)
-        {
-            var handler = new Mock<HttpMessageHandler>();
-            handler.Protected()
-                   .Setup<Task<HttpResponseMessage>>(
-                       "SendAsync",
-                       ItExpr.IsAny<HttpRequestMessage>(),
-                       ItExpr.IsAny<CancellationToken>())
-                   .ReturnsAsync(new HttpResponseMessage
-                   {
-                       StatusCode = HttpStatusCode.OK,
-                       Content = new StringContent(
-                           $"{{\"success\":{captchaSuccess.ToString().ToLowerInvariant()}}}")
-                   });
-
-            var httpClient = new HttpClient(handler.Object);
-            
-            _mockHttpClientFactory
-                .Setup(x => x.CreateClient(It.IsAny<string>()))
-                .Returns(httpClient);
         }
     }
 

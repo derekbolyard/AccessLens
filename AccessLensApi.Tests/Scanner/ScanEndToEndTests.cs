@@ -63,6 +63,7 @@ namespace AccessLensApi.Tests.Scanner
             var scanner = ScannerFactory.BuildScanner(
                               _browser,
                               new HttpClient(),
+                              new AxeScriptProvider(new HttpClient(), new NullLogger<AxeScriptProvider>()),
                               new InMemoryStorage());
 
             // ----- Act ------------------------------------------------------
@@ -118,7 +119,9 @@ namespace AccessLensApi.Tests.Scanner
             var scanner = ScannerFactory.BuildScanner(
                               _browser,
                               new HttpClient(),
-                              new InMemoryStorage());
+                              new AxeScriptProvider(new HttpClient(), new NullLogger<AxeScriptProvider>()),
+                              new InMemoryStorage()
+                              );
 
             var scanOpts = new ScanOptions
             {
