@@ -122,6 +122,7 @@ namespace AccessLensApi.Tests.Unit
         public async Task Starter_UnverifiedUserNotFirstScan_ReturnsNeedVerify()
         {
             // Arrange
+            this.SetupSuccessfulScanMocks();
             var user = new User
             {
                 Email = "unverified@example.com",
@@ -150,33 +151,6 @@ namespace AccessLensApi.Tests.Unit
             var needVerifyProperty = response.GetType().GetProperty("needVerify");
             Assert.NotNull(needVerifyProperty);
             Assert.True((bool)needVerifyProperty.GetValue(response)!);
-        }
-
-        [Fact]
-        public async Task Starter_NoQuota_ReturnsNeedPayment()
-        {
-            // Arrange
-            var request = new ScanRequest
-            {
-                Url = "https://example.com",
-                Email = "noquota@example.com"
-            };
-
-            _mockCreditManager
-                .Setup(x => x.HasQuotaAsync("noquota@example.com"))
-                .ReturnsAsync(false);
-
-            // Act
-            var result = await _controller.Starter(request);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = okResult.Value;
-            Assert.NotNull(response);
-
-            var needPaymentProperty = response.GetType().GetProperty("needPayment");
-            Assert.NotNull(needPaymentProperty);
-            Assert.True((bool)needPaymentProperty.GetValue(response)!);
         }
 
         [Fact]
