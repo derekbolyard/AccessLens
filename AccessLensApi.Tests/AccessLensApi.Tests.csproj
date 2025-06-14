@@ -36,4 +36,10 @@
     <Folder Include="Scanner\Fixtures\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Scanner\Fixtures\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

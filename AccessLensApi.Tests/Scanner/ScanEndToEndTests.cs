@@ -48,21 +48,21 @@ namespace AccessLensApi.Tests.Scanner
                 app.MapGet("/robots.txt", ctx =>
                     ctx.Response.WriteAsync($"Sitemap: http://localhost:{port}/sitemap.xml"));
 
-                app.MapGet("/sitemap.xml", () => Results.Text($$"""
-            <?xml version="1.0" encoding="utf-8"?>
-            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-              <url><loc>http://localhost:{{port}}/index.html</loc></url>
-              <url><loc>http://localhost:{{port}}/pricing.html</loc></url>
-            </urlset>
-""", "application/xml"));
+                app.MapGet("/sitemap.xml", (HttpContext ctx) =>
+                {
+                    var port = ctx.Request.Host.Port ?? 80;
+                    var xml = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+                        <urlset xmlns=""http://www.sitemaps.org/schemas/sitemap/0.9"">
+                          <url><loc>http://localhost:{port}/index.html</loc></url>
+                          <url><loc>http://localhost:{port}/pricing.html</loc></url>
+                        </urlset>";
+                    return Results.Text(xml, "application/xml");
+                });
             });
 
-            var mockClient = new MockHttpMessageHandler();
-            mockClient.When("https://cdnjs.cloudflare.com/*")
-             .Respond("application/javascript", AxeShim.Javascript);
             var scanner = ScannerFactory.BuildScanner(
                               _browser,
-                              mockClient.ToHttpClient(),
+                              new HttpClient(),
                               new InMemoryStorage());
 
             // ----- Act ------------------------------------------------------
@@ -106,21 +106,18 @@ namespace AccessLensApi.Tests.Scanner
             using var host = await TestSiteBuilder.RunAsync(port, app =>
             {
                 app.MapGet("/root.html", () => Results.Text(
-    @$"<a href=""/about.html"">About</a>
-  <a href=""https://evil.com/"">Hacker</a>", "text/html"));
+                    @$"<a href=""/about.html"">About</a>
+                  <a href=""https://evil.com/"">Hacker</a>", "text/html"));
 
                 app.MapGet("/about.html", () => Results.Text(
-      @"<a href=""/contact.html"">Contact</a>", "text/html"));
+                    @"<a href=""/contact.html"">Contact</a>", "text/html"));
 
                 app.MapGet("/contact.html", () => Results.Text("<h1>Contact</h1>", "text/html"));
             });
 
-            var mockClient = new MockHttpMessageHandler();
-            mockClient.When("https://cdnjs.cloudflare.com/*")
-                .Respond("application/javascript", AxeShim.Javascript);
             var scanner = ScannerFactory.BuildScanner(
                               _browser,
-                              mockClient.ToHttpClient(),
+                              new HttpClient(),
                               new InMemoryStorage());
 
             var scanOpts = new ScanOptions

@@ -450,12 +450,12 @@ namespace AccessLensApi.Services
             try
             {
                 // Extract all links from the page
-                var links = await page.EvaluateAsync<string[]>(@"
-            Array.from(document.querySelectorAll('a[href]'))
-                .map(a => a.href)
-                .filter(href => href && !href.startsWith('mailto:') && !href.startsWith('tel:'))
-                .slice(0, arguments[0])
-        ", options.MaxLinksPerPage);
+                var links = await page.EvaluateAsync<string[]>(
+                    "(maxLinks) => Array.from(document.querySelectorAll('a[href]'))" +
+                    ".map(a => a.href)" +
+                    ".filter(href => href && !href.startsWith('mailto:') && !href.startsWith('tel:'))" +
+                    ".slice(0, maxLinks)",
+                    options.MaxLinksPerPage);
 
                 var addedCount = 0;
                 foreach (var link in links)
