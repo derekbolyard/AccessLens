@@ -194,10 +194,10 @@ namespace AccessLensApi.Services
             var urls = new List<string>();
             var sitemapUrls = new[]
             {
-                $"{rootUri.Scheme}://{rootUri.Host}/sitemap.xml",
-                $"{rootUri.Scheme}://{rootUri.Host}/sitemap_index.xml",
-                $"{rootUri.Scheme}://{rootUri.Host}/sitemaps.xml",
-                $"{rootUri.Scheme}://{rootUri.Host}/robots.txt" // Check robots.txt for sitemap references
+                 $"{rootUri.Scheme}://{rootUri.Authority}/sitemap.xml",
+                 $"{rootUri.Scheme}://{rootUri.Authority}/sitemap_index.xml",
+                 $"{rootUri.Scheme}://{rootUri.Authority}/sitemaps.xml",
+                 $"{rootUri.Scheme}://{rootUri.Authority}/robots.txt"
             };
 
             foreach (var sitemapUrl in sitemapUrls)
@@ -296,7 +296,7 @@ namespace AccessLensApi.Services
                     .FirstOrDefault(e => e.Name.LocalName.Equals(elementName, StringComparison.OrdinalIgnoreCase));
             }
 
-            return element?.Value;
+            return element?.Value.Trim();
         }
 
         private async Task<List<string>> ParseRobotsTxtForSitemapsAsync(string robotsUrl, Uri rootUri, CancellationToken cancellationToken)
@@ -371,16 +371,16 @@ namespace AccessLensApi.Services
 
                 // Run axe accessibility scan
                 var axeResults = await page.EvaluateAsync<string>(@"
-            new Promise((resolve) => {
-                axe.run(document, (err, results) => {
-                    if (err) {
-                        resolve(JSON.stringify({ violations: [] }));
-                    } else {
-                        resolve(JSON.stringify(results));
-                    }
-                });
-            })
-        ");
+                    new Promise((resolve) => {
+                        axe.run(document, (err, results) => {
+                            if (err) {
+                                resolve(JSON.stringify({ violations: [] }));
+                            } else {
+                                resolve(JSON.stringify(results));
+                            }
+                        });
+                    })
+                ");
 
                 // Convert to your desired format
                 var pageResult = ConvertToShapeA(url, axeResults);
@@ -502,7 +502,8 @@ namespace AccessLensApi.Services
             // Remove fragment and common query parameters that don't change content
             var builder = new UriBuilder(uri)
             {
-                Fragment = string.Empty
+                Fragment = string.Empty,
+                Port = uri.IsDefaultPort ? -1 : uri.Port
             };
 
             // Optionally remove common tracking parameters

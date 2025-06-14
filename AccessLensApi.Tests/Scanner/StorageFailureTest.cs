@@ -15,6 +15,8 @@ namespace AccessLensApi.Tests.Scanner
         {
             _mockStorageService = new Mock<IStorageService>();
             _mockHttpMessageHandler = new MockHttpMessageHandler();
+            _mockHttpMessageHandler.When("https://cdnjs.cloudflare.com/*")
+                .Respond("application/javascript", AxeShim.Javascript);
             _target = ScannerFactory.CreateScanner(_mockHttpMessageHandler.ToHttpClient(), _mockStorageService.Object);
         }
 

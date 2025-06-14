@@ -33,6 +33,8 @@ namespace AccessLensApi.Tests.Scanner
         {
             /* robots.txt advertises sitemap; sitemap lists 2 pages */
             var mock = new MockHttpMessageHandler();
+            mock.When("https://cdnjs.cloudflare.com/*")
+                .Respond("application/javascript", AxeShim.Javascript);
 
             mock.When("https://example.com/robots.txt")
                 .Respond("text/plain", "Sitemap: https://example.com/sitemap.xml");
@@ -44,14 +46,14 @@ namespace AccessLensApi.Tests.Scanner
                      <url><loc>https://example.com/pricing.html</loc></url>
                   </urlset>");
 
+            mock.When("https://example.com")
+           .Respond("text/html", "<h1>Root</h1>");
+
             mock.When("https://example.com/index.html")
                 .Respond("text/html", "<h1>Home</h1>");
 
             mock.When("https://example.com/pricing.html")
                 .Respond("text/html", "<h1>Pricing</h1>");
-
-            mock.When("*cdnjs.cloudflare.com*")
-                .Respond("application/javascript", "/* axe-core */");
 
             var opts = new ScanOptions
             {
@@ -69,8 +71,9 @@ namespace AccessLensApi.Tests.Scanner
 
             Assert.Equal(new[]
             {
-            "https://example.com/index.html",
-            "https://example.com/pricing.html"
+                "https://example.com/",
+                "https://example.com/index.html",
+                "https://example.com/pricing.html"
             }, pages);
             Assert.Equal("sitemap+crawling", json["discoveryMethod"]!.GetValue<string>());
         }

@@ -25,7 +25,7 @@ namespace AccessLensApi.Tests.Scanner
             if (httpClient is null)
             {
                 var mock = new MockHttpMessageHandler();
-                mock.When("*cdnjs*").Respond("application/javascript", "/* axe */");
+                mock.When("*cdnjs*").Respond("application/javascript", AxeShim.Javascript);
                 mock.When("*").Respond("text/html", "<html></html>");
                 httpClient = mock.ToHttpClient();
             }
@@ -45,6 +45,19 @@ namespace AccessLensApi.Tests.Scanner
             logger ??= Mock.Of<ILogger<A11yScanner>>();
 
             return new A11yScanner(browser, storage, logger, httpClient);
+        }
+
+        internal static A11yScanner BuildScanner(
+            IBrowser browser,
+            HttpClient http,
+            IStorageService? storage = null,
+            ILogger<A11yScanner>? log = null)
+        {
+            return new A11yScanner(
+                browser,
+                storage ?? new InMemoryStorage(),
+                log ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<A11yScanner>.Instance,
+                http);
         }
     }
 }
