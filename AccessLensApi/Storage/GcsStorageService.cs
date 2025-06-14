@@ -1,9 +1,8 @@
-﻿using AccessLensApi.Storage;
-using Google.Apis.Auth.OAuth2;
+﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Storage.v1;                   // for StorageService.Scope.DevstorageFullControl
 using Google.Cloud.Storage.V1;
 
-namespace AccessLensApi.Services.Storage
+namespace AccessLensApi.Storage
 {
     public class GcsStorageService : IStorageService
     {

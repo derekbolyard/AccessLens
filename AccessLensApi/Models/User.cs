@@ -1,4 +1,6 @@
-﻿using System;
+﻿using AccessLensApi.Features.Payments.Models;
+using AccessLensApi.Features.Scans.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

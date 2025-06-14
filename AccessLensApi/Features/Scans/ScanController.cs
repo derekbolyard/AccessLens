@@ -1,14 +1,17 @@
 ﻿using AccessLensApi.Data;
+using AccessLensApi.Features.Scans.Models;
 using AccessLensApi.Middleware;
 using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Utilities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace AccessLensApi.Controllers
+namespace AccessLensApi.Features.Scans
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -70,15 +73,17 @@ namespace AccessLensApi.Controllers
                 if (validationError != null)
                     return validationError;
 
-
-
                 var email = req.Email.Trim().ToLowerInvariant();
                 var url = req.Url.Trim();
+                var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
                 if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || !IsUrlAllowed(uri))
                     return BadRequest(new { error = "URL not allowed." });
 
                 var user = await GetOrCreateUserAsync(email);
+
+                if (!await _rateLimiter.TryAcquireStarterAsync(ip, email, user.EmailVerified))
+                    return StatusCode(429, new { error = "Rate limit exceeded" });
 
                 // 3) If not verified & not firstScan: return needVerify
                 var verifyError = CheckVerification(user);
@@ -92,19 +97,15 @@ namespace AccessLensApi.Controllers
 
                     if (!await VerifyHCaptchaAsync(req.HcaptchaToken))
                         return BadRequest(new { error = "hCaptcha failed." });
-                }
 
-                // 4) If no quota: return needPayment
-                var paymentError = await CheckQuotaAsync(email);
-                if (paymentError != null)
-                    return paymentError;
+                    var paymentError = await CheckQuotaAsync(email);
+                    if (paymentError != null)
+                        return paymentError;
+                }
 
                 // 5) Flip firstScan if needed
                 await UpdateFirstScanAsync(user);
 
-                var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                if (!await _rateLimiter.TryAcquireStarterAsync(ip, email, user.EmailVerified))
-                    return StatusCode(429, new { error = "Rate limit exceeded" });
 
                 JsonObject scanResult;
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_rateOptions.MaxScanDurationSeconds));
@@ -208,7 +209,7 @@ namespace AccessLensApi.Controllers
                 return StatusCode(429, new { error = "Rate limit exceeded for full scans" });
 
             JsonObject scanResult;
-            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(req.Options?.TimeoutMinutes ?? 30));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(req.Options?.PageTimeoutSeconds ?? 1800));
 
             try
             {
@@ -353,8 +354,19 @@ namespace AccessLensApi.Controllers
                 CreatedAt = DateTime.UtcNow
             };
             _dbContext.Users.Add(user);
-            await _dbContext.SaveChangesAsync();
-            return user;
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+                return user;
+            }
+            catch (DbUpdateException) // duplicate key, someone just inserted it
+            {
+                var existing = await _dbContext.Users.FindAsync(email);
+                if (existing is null)
+                    throw;
+
+                return existing;
+            }
         }
 
         private IActionResult? CheckVerification(User user)
@@ -494,8 +506,8 @@ namespace AccessLensApi.Controllers
                 if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                 {
                     if (bytes[0] == 10 ||
-                        (bytes[0] == 192 && bytes[1] == 168) ||
-                        (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31))
+                        bytes[0] == 192 && bytes[1] == 168 ||
+                        bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
                         return false;
                 }
                 if (ip.IsIPv6LinkLocal) return false;
@@ -510,18 +522,18 @@ namespace AccessLensApi.Controllers
             {
                 var client = _httpClientFactory.CreateClient();
                 var values = new Dictionary<string, string>
-        {
-            { "secret", _captchaOptions.hCaptchaSecret },
-            { "response", token }
-        };
+                    {
+                        { "secret", _captchaOptions.hCaptchaSecret },
+                        { "response", token }
+                    };
                 using var content = new FormUrlEncodedContent(values);
                 using var resp = await client.PostAsync("https://hcaptcha.com/siteverify", content);
                 if (!resp.IsSuccessStatusCode)
                     return false;
 
-                var json = await resp.Content.ReadAsStringAsync();
-                using var doc = System.Text.Json.JsonDocument.Parse(json);
-                return doc.RootElement.TryGetProperty("success", out var s) && s.GetBoolean();
+                await using var stream = await resp.Content.ReadAsStreamAsync();
+                var verify = await JsonSerializer.DeserializeAsync<HCaptchaVerifyResponse>(stream) ?? new HCaptchaVerifyResponse();
+                return verify.Success;
             }
             catch (Exception ex)
             {

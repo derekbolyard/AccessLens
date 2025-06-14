@@ -1,0 +1,280 @@
+﻿using AccessLensApi.Data;
+using AccessLensApi.Features.Scans;
+using AccessLensApi.Features.Scans.Models;
+using AccessLensApi.Middleware;
+using AccessLensApi.Models;
+using AccessLensApi.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Moq;
+using Moq.Protected;
+using System.Net;
+using System.Text.Json.Nodes;
+using Xunit;
+
+namespace AccessLensApi.Tests.Unit
+{
+    /// <summary>
+    /// Unit tests for ScanController focusing on business logic
+    /// with all dependencies mocked for isolation
+    /// </summary>
+    public class ScanControllerUnitTests : IDisposable
+    {
+        private readonly ApplicationDbContext _dbContext;
+        private readonly Mock<ICreditManager> _mockCreditManager;
+        private readonly Mock<IA11yScanner> _mockScanner;
+        private readonly Mock<IPdfService> _mockPdfService;
+        private readonly Mock<ILogger<ScanController>> _mockLogger;
+        private readonly Mock<IRateLimiter> _mockRateLimiter;
+        private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
+        private readonly ScanController _controller;
+
+        public ScanControllerUnitTests()
+        {
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseInMemoryDatabase($"UnitTestDb_{Guid.NewGuid()}")
+                .Options;
+            _dbContext = new ApplicationDbContext(options);
+
+            _mockCreditManager = new Mock<ICreditManager>();
+            _mockScanner = new Mock<IA11yScanner>();
+            _mockPdfService = new Mock<IPdfService>();
+            _mockLogger = new Mock<ILogger<ScanController>>();
+            _mockRateLimiter = new Mock<IRateLimiter>();
+            _mockHttpClientFactory = new Mock<IHttpClientFactory>();
+
+            var rateOptions = Options.Create(new RateLimitingOptions
+            {
+                MaxScanDurationSeconds = 300
+            });
+
+            var captchaOptions = Options.Create(new CaptchaOptions
+            {
+                hCaptchaSecret = "test-secret"
+            });
+
+            _controller = new ScanController(
+                _dbContext,
+                _mockCreditManager.Object,
+                _mockScanner.Object,
+                _mockPdfService.Object,
+                _mockLogger.Object,
+                _mockRateLimiter.Object,
+                rateOptions,
+                captchaOptions,
+                _mockHttpClientFactory.Object);
+
+            // Setup HttpContext for IP address
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(null)]
+        [InlineData("   ")]
+        [InlineData("not-a-url")]
+        public async Task Starter_InvalidUrl_ReturnsBadRequest(string invalidUrl)
+        {
+            // Arrange
+            var request = new ScanRequest { Url = invalidUrl, Email = "test@example.com" };
+
+            // Act
+            var result = await _controller.Starter(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var errorResponse = badRequestResult.Value;
+            Assert.NotNull(errorResponse);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(null)]
+        [InlineData("   ")]
+        [InlineData("not-an-email")]
+        public async Task Starter_InvalidEmail_ReturnsBadRequest(string invalidEmail)
+        {
+            // Arrange
+            var request = new ScanRequest { Url = "https://example.com", Email = invalidEmail };
+
+            // Act
+            var result = await _controller.Starter(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var errorResponse = badRequestResult.Value;
+            Assert.NotNull(errorResponse);
+        }
+
+        [Fact]
+        public async Task Starter_UnverifiedUserNotFirstScan_ReturnsNeedVerify()
+        {
+            // Arrange
+            var user = new User
+            {
+                Email = "unverified@example.com",
+                EmailVerified = false,
+                FirstScan = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.Users.Add(user);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new ScanRequest
+            {
+                Url = "https://example.com",
+                Email = "unverified@example.com"
+            };
+
+            // Act
+            var result = await _controller.Starter(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = okResult.Value;
+            Assert.NotNull(response);
+
+            // Use reflection or dynamic to check the anonymous object
+            var needVerifyProperty = response.GetType().GetProperty("needVerify");
+            Assert.NotNull(needVerifyProperty);
+            Assert.True((bool)needVerifyProperty.GetValue(response)!);
+        }
+
+        [Fact]
+        public async Task Starter_NoQuota_ReturnsNeedPayment()
+        {
+            // Arrange
+            var request = new ScanRequest
+            {
+                Url = "https://example.com",
+                Email = "noquota@example.com"
+            };
+
+            _mockCreditManager
+                .Setup(x => x.HasQuotaAsync("noquota@example.com"))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.Starter(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = okResult.Value;
+            Assert.NotNull(response);
+
+            var needPaymentProperty = response.GetType().GetProperty("needPayment");
+            Assert.NotNull(needPaymentProperty);
+            Assert.True((bool)needPaymentProperty.GetValue(response)!);
+        }
+
+        [Fact]
+        public async Task Starter_AdminUser_SkipsQuotaCheck()
+        {
+            // Arrange
+            var request = new ScanRequest
+            {
+                Url = "https://example.com",
+                Email = "derekbolyard@gmail.com"
+            };
+
+            SetupSuccessfulScanMocks();
+
+            // Act
+            var result = await _controller.Starter(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+
+            // Verify quota check was never called
+            _mockCreditManager.Verify(x => x.HasQuotaAsync("derekbolyard@gmail.com"), Times.Never);
+        }
+
+        [Fact]
+        public async Task FullSiteScan_NonPremiumUser_ReturnsBadRequest()
+        {
+            // Arrange
+            var request = new FullScanRequest
+            {
+                Url = "https://example.com",
+                Email = "basic@example.com",
+                HcaptchaToken = "valid-token"
+            };
+
+            SetupMockHttp(true); // Valid captcha
+            _mockCreditManager
+                .Setup(x => x.HasPremiumAccessAsync("basic@example.com"))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.FullSiteScan(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var errorResponse = badRequestResult.Value;
+            Assert.NotNull(errorResponse);
+        }
+
+        private void SetupSuccessfulScanMocks()
+        {
+            _mockCreditManager
+                .Setup(x => x.HasQuotaAsync(It.IsAny<string>()))
+                .ReturnsAsync(true);
+
+            _mockRateLimiter
+                .Setup(x => x.TryAcquireStarterAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .ReturnsAsync(true);
+
+            var mockScanResult = JsonNode.Parse("""
+            {
+                "pages": [
+                    {
+                        "pageUrl": "https://example.com",
+                        "issues": []
+                    }
+                ],
+                "teaserUrl": "https://example.com/teaser.png"
+            }
+            """) as JsonObject;
+
+            _mockScanner
+                .Setup(x => x.ScanFivePagesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockScanResult!);
+
+            _mockPdfService
+                .Setup(x => x.GenerateAndUploadPdf(It.IsAny<string>(), It.IsAny<JsonObject>()))
+                .ReturnsAsync("https://example.com/report.pdf");
+        }
+
+        private void SetupMockHttp(bool captchaSuccess)
+        {
+            var handler = new Mock<HttpMessageHandler>();
+            handler.Protected()
+                   .Setup<Task<HttpResponseMessage>>(
+                       "SendAsync",
+                       ItExpr.IsAny<HttpRequestMessage>(),
+                       ItExpr.IsAny<CancellationToken>())
+                   .ReturnsAsync(new HttpResponseMessage
+                   {
+                       StatusCode = HttpStatusCode.OK,
+                       Content = new StringContent(
+                           $"{{\"success\":{captchaSuccess.ToString().ToLowerInvariant()}}}")
+                   });
+
+            var httpClient = new HttpClient(handler.Object);
+            _mockHttpClientFactory
+                .Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(httpClient);
+        }
+
+        public void Dispose()
+        {
+            _dbContext?.Dispose();
+        }
+    }
+}

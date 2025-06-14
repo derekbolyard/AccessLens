@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
-namespace AccessLensApi.Controllers
+namespace AccessLensApi.Features.Storage
 {
     [ApiController]
     [Route("api/[controller]")]

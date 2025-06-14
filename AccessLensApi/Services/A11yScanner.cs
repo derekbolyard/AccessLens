@@ -1,4 +1,4 @@
-﻿using AccessLensApi.Models;
+﻿using AccessLensApi.Features.Scans.Models;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Storage;
 using AccessLensApi.Utilities;
@@ -464,7 +464,7 @@ namespace AccessLensApi.Services
                         break;
 
                     if (Uri.TryCreate(link, UriKind.Absolute, out var linkUri) &&
-                        linkUri.Host.Equals(rootUri.Host, StringComparison.OrdinalIgnoreCase))
+                        SameRegisteredDomain(linkUri.Host, rootUri.Host))
                     {
                         var normalizedUrl = NormalizeUrl(linkUri);
                         queue.Enqueue((normalizedUrl, currentDepth + 1));
@@ -478,6 +478,15 @@ namespace AccessLensApi.Services
             {
                 _log.LogWarning(ex, "Failed to discover links from page: {Url}", currentUrl);
             }
+        }
+
+        private static bool SameRegisteredDomain(string hostA, string hostB)
+        {
+            string trim(string h) => h.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+                ? h.Substring(4)
+                : h;
+
+            return trim(hostA).Equals(trim(hostB), StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool ShouldExcludeUrl(string url, Regex[] excludePatterns)

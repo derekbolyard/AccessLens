@@ -1,4 +1,4 @@
-﻿namespace AccessLensApi.Models
+﻿namespace AccessLensApi.Features.Auth.Models
 {
     public class VerifyEmailRequest
     {

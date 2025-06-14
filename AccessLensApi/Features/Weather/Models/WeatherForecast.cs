@@ -1,4 +1,4 @@
-namespace AccessLensApi
+namespace AccessLensApi.Features.Weather.Models
 {
     public class WeatherForecast
     {

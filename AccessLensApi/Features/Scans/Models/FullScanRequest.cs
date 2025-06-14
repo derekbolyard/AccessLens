@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AccessLensApi.Models
+namespace AccessLensApi.Features.Scans.Models
 {
     public class FullScanRequest
     {
@@ -15,6 +15,6 @@ namespace AccessLensApi.Models
 
         public string? HcaptchaToken { get; set; }
 
-        public FullScanOptions? Options { get; set; }
+        public ScanOptions? Options { get; set; }
     }
 }

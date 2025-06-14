@@ -1,4 +1,5 @@
 ﻿using AccessLensApi.Data;
+using AccessLensApi.Features.Auth.Models;
 using AccessLensApi.Middleware;
 using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
@@ -6,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
-namespace AccessLensApi.Controllers
+namespace AccessLensApi.Features.Auth
 {
     [ApiController]
     [Route("api/auth")]

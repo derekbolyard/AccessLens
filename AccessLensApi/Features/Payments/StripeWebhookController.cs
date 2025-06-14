@@ -1,19 +1,12 @@
 ﻿using AccessLensApi.Data;
-using AccessLensApi.Models;
+using AccessLensApi.Features.Payments.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Stripe;
 using Stripe.Checkout;
-using Stripe.V2;
-using System;
-using System.IO;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 
-namespace AccessLensApi.Controllers
+namespace AccessLensApi.Features.Payments
 {
     [ApiController]
     [Route("stripe")]
@@ -227,7 +220,7 @@ namespace AccessLensApi.Controllers
             // Extract "current_period_end" (Unix timestamp)
             long? epochEnd = null;
             if (subElem.TryGetProperty("current_period_end", out var endProp) &&
-                (endProp.ValueKind == JsonValueKind.Number) &&
+                endProp.ValueKind == JsonValueKind.Number &&
                 endProp.TryGetInt64(out var val))
             {
                 epochEnd = val;

@@ -1,4 +1,4 @@
-﻿using AccessLensApi.Models;
+﻿using AccessLensApi.Features.Scans.Models;
 using System.Text.Json.Nodes;
 
 namespace AccessLensApi.Services.Interfaces

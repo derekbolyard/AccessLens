@@ -1,4 +1,4 @@
-﻿namespace AccessLensApi.Models
+﻿namespace AccessLensApi.Features.Scans.Models
 {
     public class ScanOptions
     {
@@ -18,7 +18,7 @@
         public bool IncludeSubdomains { get; set; } = false;
 
         /// Patterns to exclude (regex)
-        public string[] ExcludePatterns { get; set; } = Array.Empty<string>();
+        public string[] ExcludePatterns { get; set; } = [];
 
         /// Whether to generate teaser for first page
         public bool GenerateTeaser { get; set; } = true;

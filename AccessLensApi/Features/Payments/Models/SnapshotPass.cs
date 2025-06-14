@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace AccessLensApi.Models
+namespace AccessLensApi.Features.Payments.Models
 {
     public class SnapshotPass
     {

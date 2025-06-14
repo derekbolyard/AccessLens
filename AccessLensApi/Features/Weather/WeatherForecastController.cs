@@ -1,6 +1,7 @@
+using AccessLensApi.Features.Weather.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AccessLensApi.Controllers
+namespace AccessLensApi.Features.Weather
 {
     [ApiController]
     [Route("[controller]")]

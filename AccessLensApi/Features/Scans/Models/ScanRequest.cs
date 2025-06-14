@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-﻿namespace AccessLensApi.Models
+namespace AccessLensApi.Features.Scans.Models
 {
     public class ScanRequest
     {
