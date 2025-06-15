@@ -1,4 +1,5 @@
-import { Injectable, Injector } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { environment } from '../environments/environment';
@@ -11,53 +12,49 @@ export interface User {
   provider: 'google' | 'github' | 'magic-link';
 }
 
+export interface SendCodeResponse {
+  message: string;
+}
+
+export interface VerifyCodeResponse {
+  message: string;
+  requiresCaptcha?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(null);
   public user$ = this.userSubject.asObservable();
-  private magicAuthService: any = null;
+  private apiUrl = environment.apiUrl;
 
-  constructor(private injector: Injector) {
-    // Check for existing session
+  constructor(private http: HttpClient) {
     this.loadUserFromStorage();
-    
-    // Lazy load magic auth service to avoid circular dependency
-    if (environment.features.useMagicLinkAuth) {
-      this.initializeMagicAuth();
-    }
-  }
-
-  private async initializeMagicAuth(): Promise<void> {
-    try {
-      // Dynamic import to avoid circular dependency
-      const { MagicAuthService } = await import('./magic-auth.service');
-      this.magicAuthService = this.injector.get(MagicAuthService);
-      
-      // Subscribe to magic auth user changes
-      this.magicAuthService.user$.subscribe((magicUser: any) => {
-        if (magicUser) {
-          const user: User = {
-            id: magicUser.email,
-            name: magicUser.email.split('@')[0],
-            email: magicUser.email,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(magicUser.email)}&background=0078d7&color=fff`,
-            provider: 'magic-link'
-          };
-          this.userSubject.next(user);
-        } else {
-          this.userSubject.next(null);
-        }
-      });
-    } catch (error) {
-      console.error('Failed to initialize magic auth service:', error);
-    }
   }
 
   private loadUserFromStorage(): void {
-    // Only load from localStorage if not using magic link auth
-    if (!environment.features.useMagicLinkAuth) {
+    if (environment.features.useMagicLinkAuth) {
+      // Load from JWT token
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const user: User = {
+            id: payload.email,
+            name: payload.email.split('@')[0],
+            email: payload.email,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(payload.email)}&background=0078d7&color=fff`,
+            provider: 'magic-link'
+          };
+          this.userSubject.next(user);
+        } catch (error) {
+          console.error('Failed to parse auth token:', error);
+          localStorage.removeItem('auth_token');
+        }
+      }
+    } else {
+      // Load from old OAuth storage
       const userData = localStorage.getItem('user');
       if (userData) {
         try {
@@ -71,12 +68,12 @@ export class AuthService {
     }
   }
 
+  // OAuth Methods (old flow)
   signInWithGoogle(): Observable<User> {
     if (environment.features.useMagicLinkAuth) {
       throw new Error('OAuth sign-in is disabled. Please use magic link authentication.');
     }
 
-    // Simulate Google OAuth flow
     const mockUser: User = {
       id: 'google_123',
       name: 'John Doe',
@@ -93,7 +90,6 @@ export class AuthService {
       throw new Error('OAuth sign-in is disabled. Please use magic link authentication.');
     }
 
-    // Simulate GitHub OAuth flow
     const mockUser: User = {
       id: 'github_456',
       name: 'Jane Smith',
@@ -104,29 +100,52 @@ export class AuthService {
 
     return of(mockUser).pipe(delay(1500));
   }
-  signOut(): Observable<boolean> {
-    if (environment.features.useMagicLinkAuth && this.magicAuthService) {
-      return this.magicAuthService.signOut();
-    } else {
-      this.clearUser();
-      return of(true).pipe(delay(500));
+
+  // Magic Link Methods (new flow)
+  sendVerificationCode(email: string): Observable<SendCodeResponse> {
+    if (!environment.features.useMagicLinkAuth) {
+      throw new Error('Magic link authentication is disabled.');
     }
+    return this.http.post<SendCodeResponse>(`${this.apiUrl}/auth/send-code`, { email });
   }
 
-  setUser(user: User): void {
+  verifyCode(email: string, code: string, hcaptchaToken?: string): Observable<VerifyCodeResponse> {
     if (!environment.features.useMagicLinkAuth) {
-      this.userSubject.next(user);
+      throw new Error('Magic link authentication is disabled.');
+    }
+    return this.http.post<VerifyCodeResponse>(`${this.apiUrl}/auth/verify`, {
+      email,
+      code,
+      hcaptchaToken
+    });
+  }
+
+  handleAuthCallback(token: string): void {
+    if (!environment.features.useMagicLinkAuth) {
+      return;
+    }
+    localStorage.setItem('auth_token', token);
+    this.loadUserFromStorage();
+  }
+
+  // Common methods
+  setUser(user: User): void {
+    this.userSubject.next(user);
+    if (environment.features.useMagicLinkAuth) {
+      // For magic link, token is already stored
+    } else {
       localStorage.setItem('user', JSON.stringify(user));
     }
-    // For magic link auth, user is managed by MagicAuthService
   }
 
-  clearUser(): void {
-    if (!environment.features.useMagicLinkAuth) {
-      this.userSubject.next(null);
+  signOut(): Observable<boolean> {
+    this.userSubject.next(null);
+    if (environment.features.useMagicLinkAuth) {
+      localStorage.removeItem('auth_token');
+    } else {
       localStorage.removeItem('user');
     }
-    // For magic link auth, user is managed by MagicAuthService
+    return of(true).pipe(delay(500));
   }
 
   get currentUser(): User | null {

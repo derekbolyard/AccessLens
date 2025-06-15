@@ -8,7 +8,8 @@ import { AuthModalComponent } from '../auth/auth-modal.component';
 import { FeedbackModalComponent } from '../support/feedback-modal.component';
 import { UpgradeModalComponent } from '../upgrade/upgrade-modal.component';
 import { ReportService } from '../../services/report.service';
-import { AuthService, User } from '../../services/auth.service';
+import { User } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
 import { SupportService } from '../../services/support.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { UserSubscription, SubscriptionPlan } from '../../types/subscription.interface';
@@ -105,7 +106,6 @@ export class HeaderComponent {
     this.isSigningOut = true;
     this.authService.signOut().subscribe({
       next: () => {
-        this.authService.clearUser();
         this.isSigningOut = false;
         this.showUserMenu = false;
       },

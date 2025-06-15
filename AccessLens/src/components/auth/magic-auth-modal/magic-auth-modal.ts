@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { MagicAuthService } from '../../../services/magic-auth.service';
+import { AuthService } from '../../../services/auth.service';
 import { ButtonComponent } from "../../common/button/button.component";
 import { HCaptchaComponent } from "../../common/hcaptcha-component/hcaptcha-component";
 import { AlertComponent } from "../../common/alert/alert.component";
@@ -27,7 +27,7 @@ export class MagicAuthModalComponent {
   hcaptchaToken = '';
   hcaptchaSiteKey = 'your-hcaptcha-site-key'; // Replace with your actual site key
 
-  constructor(private magicAuthService: MagicAuthService) {}
+  constructor(private magicAuthService: AuthService) {}
 
   onSubmitEmail(): void {
     if (!this.email.trim() || !this.isValidEmail(this.email)) {

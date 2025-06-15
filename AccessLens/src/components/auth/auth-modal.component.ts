@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { AuthService, User } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
+import { User } from '../../services/auth.service';
 import { environment } from '../../environments/environment';
 import { ButtonComponent } from "../common/button/button.component";
 import { ModalComponent } from "../common/modal/modal.component";

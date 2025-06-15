@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MagicAuthService } from '../../../services/magic-auth.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-auth-callback',
@@ -11,7 +11,7 @@ export class AuthCallbackComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private magicAuthService: MagicAuthService
+    private magicAuthService: AuthService
   ) {}
 
   ngOnInit(): void {
