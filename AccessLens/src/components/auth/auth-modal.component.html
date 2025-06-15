@@ -63,9 +63,9 @@
 
 <div *ngIf="isMagicLinkAuthEnabled">
   <!-- New Magic Link Modal -->
-  <app-auth-modal
+  <app-magic-auth-modal
     [isOpen]="isOpen"
     (close)="close.emit()"
     (authSuccess)="onMagicAuthSuccess($event)"
-  ></app-auth-modal>
+  ></app-magic-auth-modal>
 </div>

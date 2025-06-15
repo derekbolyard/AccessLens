@@ -6,12 +6,13 @@ import { ButtonComponent } from "../common/button/button.component";
 import { ModalComponent } from "../common/modal/modal.component";
 import { AlertComponent } from "../common/alert/alert.component";
 import { CommonModule } from '@angular/common';
+import { MagicAuthModalComponent } from "./magic-auth-modal/magic-auth-modal";
 
 @Component({
   selector: 'app-auth-modal',
   templateUrl: './auth-modal.component.html',
   styleUrls: ['./auth-modal.component.scss'],
-  imports: [ButtonComponent, ModalComponent, AlertComponent, CommonModule]
+  imports: [ButtonComponent, ModalComponent, AlertComponent, CommonModule, MagicAuthModalComponent]
 })
 export class AuthModalComponent {
   @Input() isOpen = false;
