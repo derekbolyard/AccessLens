@@ -1,0 +1,114 @@
+<app-modal 
+  [isOpen]="isOpen"
+  title="Sign In to Your Account"
+  size="sm"
+  [showFooter]="false"
+  (close)="close.emit()"
+>
+  <div class="auth-content">
+    <app-alert 
+      *ngIf="authError" 
+      variant="error" 
+      [dismissible]="true"
+      (dismiss)="authError = ''"
+    >
+      {{ authError }}
+    </app-alert>
+
+    <!-- Email Step -->
+    <div *ngIf="currentStep === 'email'" class="auth-step">
+      <div class="auth-description">
+        <p>Enter your email address to receive a verification code and sign in securely.</p>
+      </div>
+
+      <form (ngSubmit)="onSubmitEmail()" class="auth-form">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email"
+            [(ngModel)]="email"
+            name="email"
+            placeholder="Enter your email address"
+            class="form-control"
+            [disabled]="isLoading"
+            required
+          >
+        </div>
+
+        <app-button 
+          type="submit"
+          variant="primary" 
+          [fullWidth]="true"
+          [loading]="isLoading"
+          [disabled]="!email.trim()"
+        >
+          {{ isLoading ? 'Sending...' : 'Send Verification Code' }}
+        </app-button>
+      </form>
+    </div>
+
+    <!-- Verification Step -->
+    <div *ngIf="currentStep === 'verification'" class="auth-step">
+      <div class="auth-description">
+        <p>We've sent a 6-digit verification code to <strong>{{ email }}</strong></p>
+        <p class="text-muted">Enter the code below to sign in.</p>
+      </div>
+
+      <form (ngSubmit)="onSubmitVerification()" class="auth-form">
+        <div class="form-group">
+          <label for="code">Verification Code</label>
+          <input 
+            type="text" 
+            id="code"
+            [(ngModel)]="verificationCode"
+            name="code"
+            placeholder="Enter 6-digit code"
+            class="form-control code-input"
+            [disabled]="isLoading"
+            maxlength="6"
+            pattern="[0-9]{6}"
+            required
+          >
+        </div>
+
+        <!-- hCaptcha container (show only when required) -->
+        <div *ngIf="requiresCaptcha" class="captcha-container">
+          <app-hcaptcha
+            [siteKey]="hcaptchaSiteKey"
+            (success)="onHCaptchaSuccess($event)"
+            (error)="onHCaptchaError()"
+            (expired)="onHCaptchaExpired()"
+          ></app-hcaptcha>
+        </div>
+
+        <div class="form-actions">
+          <app-button 
+            type="submit"
+            variant="primary" 
+            [fullWidth]="true"
+            [loading]="isLoading"
+            [disabled]="verificationCode.length !== 6 || (requiresCaptcha && !hcaptchaToken)"
+          >
+            {{ isLoading ? 'Verifying...' : 'Verify & Sign In' }}
+          </app-button>
+
+          <div class="form-links">
+            <button type="button" class="link-button" (click)="onBackToEmail()">
+              Change Email Address
+            </button>
+            <button type="button" class="link-button" (click)="onResendCode()" [disabled]="isLoading">
+              Resend Code
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="auth-footer">
+      <p class="text-muted">
+        By signing in, you agree to our Terms of Service and Privacy Policy.
+      </p>
+    </div>
+  </div>
+</app-modal>

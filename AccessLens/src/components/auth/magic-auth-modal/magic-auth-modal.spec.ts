@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MagicCallback } from './magic-callback';
+import { MagicAuthModal } from './magic-auth-modal';
 
-describe('MagicCallback', () => {
-  let component: MagicCallback;
-  let fixture: ComponentFixture<MagicCallback>;
+describe('MagicAuthModal', () => {
+  let component: MagicAuthModal;
+  let fixture: ComponentFixture<MagicAuthModal>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MagicCallback]
+      imports: [MagicAuthModal]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(MagicCallback);
+    fixture = TestBed.createComponent(MagicAuthModal);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

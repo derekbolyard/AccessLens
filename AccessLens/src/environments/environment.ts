@@ -1,12 +1,13 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://localhost:7001/api', // Updated to match API port
+  apiUrl: 'http://localhost:3000/api',
   supportEmail: 'support@accessibilityreports.com',
-  version: '1.0.0',
   features: {
     enableAnalytics: false,
     enableErrorReporting: false,
-    maxFileUploadSize: 10 * 1024 * 1024, // 10MB
-    scanTimeout: 300000, // 5 minutes
+    maxFileUploadSize: 10 * 1024 * 1024,
+    scanTimeout: 300000,
+    // New auth feature toggle
+    useMagicLinkAuth: true, // Set to true to use new magic link flow, false for old OAuth
   }
 };

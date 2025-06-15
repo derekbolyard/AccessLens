@@ -1,16 +1,16 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ModalComponent } from '../common/modal/modal.component';
-import { ButtonComponent } from '../common/button/button.component';
-import { AlertComponent } from '../common/alert/alert.component';
 import { AuthService, User } from '../../services/auth.service';
+import { environment } from '../../environments/environment';
+import { ButtonComponent } from "../common/button/button.component";
+import { ModalComponent } from "../common/modal/modal.component";
+import { AlertComponent } from "../common/alert/alert.component";
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-auth-modal',
-  standalone: true,
-  imports: [CommonModule, ModalComponent, ButtonComponent, AlertComponent],
   templateUrl: './auth-modal.component.html',
-  styleUrls: ['./auth-modal.component.scss']
+  styleUrls: ['./auth-modal.component.scss'],
+  imports: [ButtonComponent, ModalComponent, AlertComponent, CommonModule]
 })
 export class AuthModalComponent {
   @Input() isOpen = false;
@@ -22,7 +22,16 @@ export class AuthModalComponent {
 
   constructor(private authService: AuthService) {}
 
+  get isMagicLinkAuthEnabled(): boolean {
+    return environment.features.useMagicLinkAuth;
+  }
+
   signInWithGoogle(): void {
+    if (this.isMagicLinkAuthEnabled) {
+      this.authError = 'OAuth sign-in is currently disabled. Please use email verification.';
+      return;
+    }
+
     this.isSigningIn = 'google';
     this.authError = '';
 
@@ -42,6 +51,11 @@ export class AuthModalComponent {
   }
 
   signInWithGitHub(): void {
+    if (this.isMagicLinkAuthEnabled) {
+      this.authError = 'OAuth sign-in is currently disabled. Please use email verification.';
+      return;
+    }
+
     this.isSigningIn = 'github';
     this.authError = '';
 
@@ -58,5 +72,9 @@ export class AuthModalComponent {
         console.error('GitHub sign-in failed:', error);
       }
     });
+  }
+
+  onMagicAuthSuccess(user: any): void {
+    this.authSuccess.emit(user);
   }
 }

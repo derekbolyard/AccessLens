@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+/* Style the hCaptcha container */
+::ng-deep .h-captcha {
+  margin: 0 auto;
+}
+
+/* Ensure proper spacing in forms */
+:host {
+  margin: var(--space-4) 0;
+}
