@@ -17,7 +17,7 @@ namespace AccessLensApi.Data
         }
 
         public DbSet<User> Users { get; set; }
-        public DbSet<EmailVerification> EmailVerifications { get; set; }
+        public DbSet<MagicLinkUsage> MagicLinkUsages { get; set; }
         public DbSet<SnapshotPass> SnapshotPasses { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<Scan> Scans { get; set; }
@@ -42,12 +42,17 @@ namespace AccessLensApi.Data
                 .Property(u => u.Email)
                 .HasMaxLength(256);
 
-            modelBuilder.Entity<EmailVerification>()
-                .HasKey(ev => ev.Id);
 
-            modelBuilder.Entity<EmailVerification>()
-                .Property(ev => ev.Email)
+            modelBuilder.Entity<MagicLinkUsage>()
+                .HasKey(mlu => mlu.Id);
+
+            modelBuilder.Entity<MagicLinkUsage>()
+                .Property(mlu => mlu.Email)
                 .HasMaxLength(256);
+
+            modelBuilder.Entity<MagicLinkUsage>()
+                .Property(mlu => mlu.JwtId)
+                .HasMaxLength(50);
 
             modelBuilder.Entity<SnapshotPass>()
                 .HasKey(sp => sp.Id);

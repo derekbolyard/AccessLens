@@ -1,13 +1,15 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { delay, map, catchError } from 'rxjs/operators';
+import { environment } from '../environments/environment';
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  avatar: string;
-  provider: 'google' | 'github';
+  avatar?: string;
+  provider: 'magic-link' | 'google' | 'github';
 }
 
 @Injectable({
@@ -17,24 +19,29 @@ export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(null);
   public user$ = this.userSubject.asObservable();
 
-  constructor() {
-    // Check for existing session
-    this.loadUserFromStorage();
-  }
-
-  private loadUserFromStorage(): void {
-    const userData = localStorage.getItem('user');
-    if (userData) {
+  constructor(private http: HttpClient) {
+    // Check if user is stored in localStorage on service init
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
       try {
-        const user = JSON.parse(userData);
-        this.userSubject.next(user);
-      } catch (error) {
-        console.error('Failed to parse user data from storage:', error);
+        this.userSubject.next(JSON.parse(storedUser));
+      } catch {
         localStorage.removeItem('user');
       }
     }
   }
 
+  sendMagicLink(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/api/auth/send-magic-link`, { email })
+      .pipe(
+        catchError(error => {
+          console.error('Magic link request failed:', error);
+          throw error;
+        })
+      );
+  }
+
+  // Keep existing OAuth methods for future use
   signInWithGoogle(): Observable<User> {
     // Simulate Google OAuth flow
     const mockUser: User = {
@@ -46,14 +53,7 @@ export class AuthService {
     };
 
     return of(mockUser).pipe(
-      delay(1500),
-      // Simulate potential auth failure
-      // map(user => {
-      //   if (Math.random() > 0.8) {
-      //     throw new Error('Authentication failed');
-      //   }
-      //   return user;
-      // })
+      delay(1500)
     );
   }
 
@@ -83,9 +83,27 @@ export class AuthService {
     localStorage.setItem('user', JSON.stringify(user));
   }
 
+  setUserFromToken(token: string): void {
+    // Decode JWT to get user info (you might want to add jwt-decode library)
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const user: User = {
+        id: payload.jti || 'unknown',
+        name: payload.email?.split('@')[0] || 'User',
+        email: payload.email || '',
+        provider: 'magic-link'
+      };
+      this.setUser(user);
+      localStorage.setItem('access_token', token);
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+    }
+  }
+
   clearUser(): void {
     this.userSubject.next(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('access_token');
   }
 
   get currentUser(): User | null {
@@ -93,6 +111,12 @@ export class AuthService {
   }
 
   get isAuthenticated(): boolean {
-    return this.userSubject.value !== null;
+    const token = localStorage.getItem('access_token');
+    const user = this.currentUser;
+    return !!(token && user);
+  }
+
+  getAuthToken(): string | null {
+    return localStorage.getItem('access_token');
   }
 }

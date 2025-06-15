@@ -1,10 +1,7 @@
-﻿using System;
-using System.Net;
-using System.Threading.Tasks;
+﻿using AccessLensApi.Services.Interfaces;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
-using Microsoft.Extensions.Configuration;
-using AccessLensApi.Services.Interfaces;
+using System.Net;
 
 namespace AccessLensApi.Services
 {
@@ -12,22 +9,45 @@ namespace AccessLensApi.Services
     {
         private readonly IAmazonSimpleEmailService _sesClient;
         private readonly string _fromAddress;
+        private readonly IConfiguration _config;
 
         public EmailService(IAmazonSimpleEmailService sesClient, IConfiguration config)
         {
             _sesClient = sesClient;
             _fromAddress = config["AWS:SesFromEmail"];
+            _config = config;
         }
 
-        public async Task SendVerificationCodeAsync(string email, string code)
+        public async Task SendMagicLinkAsync(string email, string magicToken)
         {
-            var subject = "Your Access Lens Verification Code";
+            var baseUrl = _config["Frontend:BaseUrl"] ?? "http://localhost:4200";
+            var magicLink = $"{baseUrl.TrimEnd('/')}/api/auth/magic/{magicToken}";
+
+            var subject = "Your Access Lens Magic Link";
             var htmlBody = $@"
                 <html>
                   <body>
-                    <p>Your Access Lens 6-digit verification code is:</p>
-                    <h2>{WebUtility.HtmlEncode(code)}</h2>
-                    <p>This code expires in 15 minutes.</p>
+                    <h2>Welcome to Access Lens!</h2>
+                    <p>Click the link below to sign in to your account:</p>
+                    <p>
+                      <a href=""{WebUtility.HtmlEncode(magicLink)}"" 
+                         style=""display:inline-block;
+                                 padding:12px 24px;
+                                 background:#0078d7;
+                                 color:white;
+                                 text-decoration:none;
+                                 border-radius:6px;
+                                 font-weight:bold;"">
+                        Sign In to Access Lens
+                      </a>
+                    </p>
+                    <p>This link will expire in 15 minutes for security.</p>
+                    <p>If you didn't request this link, you can safely ignore this email.</p>
+                    <hr>
+                    <p style=""color:#666;font-size:12px;"">
+                      If the button doesn't work, copy and paste this link into your browser:<br>
+                      {WebUtility.HtmlEncode(magicLink)}
+                    </p>
                   </body>
                 </html>";
 

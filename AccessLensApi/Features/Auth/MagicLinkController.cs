@@ -1,4 +1,5 @@
 ﻿using AccessLensApi.Data;
+using AccessLensApi.Features.Auth.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -14,11 +15,13 @@ public class MagicLinkController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _cfg;
+    private readonly IMagicTokenService _magicTokenService;
 
-    public MagicLinkController(ApplicationDbContext db, IConfiguration cfg)
+    public MagicLinkController(ApplicationDbContext db, IConfiguration cfg, IMagicTokenService magicTokenService)
     {
         _db = db;
         _cfg = cfg;
+        _magicTokenService = magicTokenService;
     }
 
     [HttpGet("magic/{token}")]
@@ -55,8 +58,8 @@ public class MagicLinkController : ControllerBase
         await using var tx = await _db.Database.BeginTransactionAsync();
         try
         {
-            var existingUsage = await _db.EmailVerifications
-                .AnyAsync(ev => ev.Code == jti.ToString());
+            var existingUsage = await _db.MagicLinkUsages
+                .AnyAsync(mlu => mlu.JwtId == jti.ToString());
 
             if (existingUsage)
                 return BadRequest("Magic link already used");
@@ -66,12 +69,14 @@ public class MagicLinkController : ControllerBase
             if (user != null)
             {
                 user.EmailVerified = true;
+
                 // Record the magic link usage
-                _db.EmailVerifications.Add(new Models.EmailVerification
+                _db.MagicLinkUsages.Add(new MagicLinkUsage
                 {
                     Email = email,
-                    Code = jti.ToString(),
-                    ExpiresUtc = DateTime.UtcNow.AddMinutes(1) // Already used
+                    JwtId = jti.ToString(),
+                    UsedAt = DateTime.UtcNow,
+                    ExpiresUtc = DateTime.UtcNow.AddMinutes(1) // Mark as used
                 });
                 await _db.SaveChangesAsync();
             }
@@ -84,9 +89,10 @@ public class MagicLinkController : ControllerBase
             throw;
         }
 
-        var sessionToken = new MagicTokenService(_cfg).BuildSessionToken(email);
+        // Generate session token for API access
+        var sessionToken = _magicTokenService.BuildSessionToken(email);
 
-        // Redirect to frontend with SESSION token (not the short magic token)
+        // Redirect to frontend with SESSION token
         var frontendUrl = _cfg["Frontend:BaseUrl"] ?? "http://localhost:4200";
         return Redirect($"{frontendUrl}/auth/callback#token={sessionToken}");
     }

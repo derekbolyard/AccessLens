@@ -19,6 +19,8 @@ Configuration settings are read from environment variables using the `Section__K
 - `Gcs__ServiceAccountJson` or `GCS_SERVICE_ACCOUNT_JSON` – JSON for the service account used when storing files in GCS.
 - `ConnectionStrings__SqliteConnection` – connection string for the SQLite database.
 - `Playwright__BrowsersPath` – optional custom path for Playwright browsers.
+- `MAGIC_JWT_SECRET` – secret key for JWT magic link signing (minimum 32 characters).
+- `Frontend__BaseUrl` – base URL of the frontend application for magic link redirects.
 
 ## Database migrations
 
@@ -46,8 +48,8 @@ The main endpoints exposed by the API are listed below.
 
 ### Authentication
 
-- `POST /api/auth/send-code` – send a verification code to a user’s email.
-- `POST /api/auth/verify` – verify the code and mark the email as confirmed.
+- `POST /api/auth/send-magic-link` – send a JWT magic link to a user's email.
+- `GET /api/auth/magic/{token}` – verify the magic link JWT and redirect to frontend with session token.
 
 ### Scanning
 
@@ -59,3 +61,15 @@ The main endpoints exposed by the API are listed below.
 - `POST /stripe/webhook` – handle Stripe billing events.
 
 Additional utility endpoints exist for storage testing and the example weather forecast controller used by the ASP.NET template.
+
+## Authentication Flow
+
+AccessLens uses a secure JWT-based magic link authentication system:
+
+1. User requests a magic link via `POST /api/auth/send-magic-link`
+2. System generates a short-lived JWT (15 minutes) and emails it as a clickable link
+3. User clicks the link, which calls `GET /api/auth/magic/{token}`
+4. System validates the JWT, marks email as verified, and redirects with a session token
+5. Frontend receives the session token for API authentication
+
+This eliminates the need for passwords or manually entered codes while maintaining security.

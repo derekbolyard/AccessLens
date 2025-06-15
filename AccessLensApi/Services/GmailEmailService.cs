@@ -1,15 +1,10 @@
 ﻿using AccessLensApi.Services.Interfaces;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
-using Google.Apis.Auth.OAuth2.Responses;
 using Google.Apis.Gmail.v1;
 using Google.Apis.Gmail.v1.Data;
 using Google.Apis.Services;
-using Google.Apis.Util.Store;
 using Microsoft.Extensions.Configuration;
-using MimeKit;
-using System;
-using System.IO;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -24,13 +19,15 @@ namespace AccessLensApi.Services
         private readonly string _clientId;
         private readonly string _clientSecret;
         private readonly string _refreshToken;
+        private readonly IConfiguration _config;
 
         // Gmail API scope for sending mail
         private readonly string GmailSendScope = GmailService.Scope.GmailSend;
 
         public GmailEmailService(IConfiguration configuration)
         {
-            // “FromEmail” is the single address you send from
+            _config = configuration;
+            // "FromEmail" is the single address you send from
             _fromEmail = configuration["Gmail:FromEmail"]
                 ?? Environment.GetEnvironmentVariable("GMAIL_FROM_EMAIL")
                 ?? throw new ArgumentNullException("Gmail:FromEmail must be set via config or GMAIL_FROM_EMAIL");
@@ -49,15 +46,36 @@ namespace AccessLensApi.Services
                 ?? throw new ArgumentNullException("Gmail:RefreshToken must be set via config or GMAIL_REFRESH_TOKEN");
         }
 
-        public async Task SendVerificationCodeAsync(string email, string code)
+        public async Task SendMagicLinkAsync(string email, string magicToken)
         {
-            var subject = "Your Access Lens Verification Code";
+            var baseUrl = _config["Frontend:BaseUrl"] ?? "http://localhost:4200";
+            var magicLink = $"{baseUrl.TrimEnd('/')}/api/auth/magic/{magicToken}";
+
+            var subject = "Your Access Lens Magic Link";
             var htmlBody = $@"
                 <html>
                   <body>
-                    <p>Your Access Lens 6-digit verification code is:</p>
-                    <h2>{WebUtility.HtmlEncode(code)}</h2>
-                    <p>This code expires in 15 minutes.</p>
+                    <h2>Welcome to Access Lens!</h2>
+                    <p>Click the link below to sign in to your account:</p>
+                    <p>
+                      <a href=""{WebUtility.HtmlEncode(magicLink)}"" 
+                         style=""display:inline-block;
+                                 padding:12px 24px;
+                                 background:#0078d7;
+                                 color:white;
+                                 text-decoration:none;
+                                 border-radius:6px;
+                                 font-weight:bold;"">
+                        Sign In to Access Lens
+                      </a>
+                    </p>
+                    <p>This link will expire in 15 minutes for security.</p>
+                    <p>If you didn't request this link, you can safely ignore this email.</p>
+                    <hr>
+                    <p style=""color:#666;font-size:12px;"">
+                      If the button doesn't work, copy and paste this link into your browser:<br>
+                      {WebUtility.HtmlEncode(magicLink)}
+                    </p>
                   </body>
                 </html>";
 
@@ -103,57 +121,50 @@ namespace AccessLensApi.Services
         private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
         {
             // 1) Create a Google credential from your client ID/secret + saved refresh token
-            var tokenResponse = new TokenResponse { RefreshToken = _refreshToken };
-            var clientSecrets = new ClientSecrets
-            {
-                ClientId = _clientId,
-                ClientSecret = _clientSecret
-            };
-            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
-            {
-                ClientSecrets = clientSecrets,
-                Scopes = new[] { GmailSendScope }
-                // We don't need a data store because we already have the refresh token
-            });
+            var credential = new UserCredential(
+                new GoogleAuthorizationCodeFlow(
+                    new GoogleAuthorizationCodeFlow.Initializer
+                    {
+                        ClientSecrets = new ClientSecrets
+                        {
+                            ClientId = _clientId,
+                            ClientSecret = _clientSecret
+                        },
+                        Scopes = new[] { GmailSendScope }
+                    }),
+                "user", // arbitrary user ID
+                new Google.Apis.Auth.OAuth2.Responses.TokenResponse
+                {
+                    RefreshToken = _refreshToken
+                });
 
-            var credential = new UserCredential(flow, _fromEmail, tokenResponse);
-
-            // 2) Ensure the access token is valid (refresh if needed)
-            bool success = await credential.RefreshTokenAsync(CancellationToken.None);
-            if (!success)
-                throw new InvalidOperationException("Unable to refresh Gmail access token.");
-
-            // 3) Create the Gmail API service using the credential
-            var service = new GmailService(new BaseClientService.Initializer
+            // 2) Create Gmail service
+            var service = new GmailService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
                 ApplicationName = "AccessLens"
             });
 
-            // 4) Build the MIME message via MimeKit
-            var message = new MimeMessage();
-            message.From.Add(MailboxAddress.Parse(_fromEmail));
-            message.To.Add(MailboxAddress.Parse(toEmail));
-            message.Subject = subject;
+            // 3) Build the email message
+            var message = new Message();
 
-            var builder = new BodyBuilder { HtmlBody = htmlBody };
-            message.Body = builder.ToMessageBody();
+            var email = new StringBuilder();
+            email.AppendLine($"From: {_fromEmail}");
+            email.AppendLine($"To: {toEmail}");
+            email.AppendLine($"Subject: {subject}");
+            email.AppendLine("Content-Type: text/html; charset=utf-8");
+            email.AppendLine();
+            email.AppendLine(htmlBody);
 
-            // 5) Encode to base64url (RFC 4648 §5)
-            byte[] rawBytes;
-            using (var ms = new MemoryStream())
-            {
-                await message.WriteToAsync(ms);
-                rawBytes = ms.ToArray();
-            }
-            var base64Url = Convert.ToBase64String(rawBytes)
-                               .Replace('+', '-')
-                               .Replace('/', '_')
-                               .TrimEnd('=');
+            // 4) Encode and send
+            var encodedEmail = Convert.ToBase64String(Encoding.UTF8.GetBytes(email.ToString()))
+                .Replace('+', '-')
+                .Replace('/', '_')
+                .Replace("=", "");
 
-            // 6) Send the message via Gmail API
-            var gmailMessage = new Message { Raw = base64Url };
-            await service.Users.Messages.Send(gmailMessage, "me").ExecuteAsync();
+            message.Raw = encodedEmail;
+
+            await service.Users.Messages.Send(message, "me").ExecuteAsync();
         }
     }
 }

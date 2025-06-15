@@ -2,7 +2,7 @@
 
 namespace AccessLensApi.Features.Auth.Models
 {
-    public class EmailVerification
+    public class MagicLinkUsage
     {
         [Key]
         public int Id { get; set; }
@@ -13,8 +13,10 @@ namespace AccessLensApi.Features.Auth.Models
         public string Email { get; set; } = string.Empty;
 
         [Required]
-        [StringLength(6)]
-        public string Code { get; set; } = string.Empty;
+        [MaxLength(50)]
+        public string JwtId { get; set; } = string.Empty;
+
+        public DateTime UsedAt { get; set; }
 
         public DateTime ExpiresUtc { get; set; }
     }

@@ -5,9 +5,9 @@ namespace AccessLensApi.Services.Interfaces
     public interface IEmailService
     {
         /// <summary>
-        /// Send the 6-digit verification code to the specified email.
+        /// Send a magic link JWT token to the specified email.
         /// </summary>
-        Task SendVerificationCodeAsync(string email, string code);
+        Task SendMagicLinkAsync(string email, string magicToken);
 
         /// <summary>
         /// Send the final PDF report email (with presigned link and score/thumbnail).

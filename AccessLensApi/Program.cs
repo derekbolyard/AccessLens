@@ -147,7 +147,7 @@ builder.Services.AddSingleton<IBrowser>(sp =>
 builder.Services.AddSingleton<IAxeScriptProvider, AxeScriptProvider>();
 builder.Services.AddSingleton<IA11yScanner, A11yScanner>();
 builder.Services.AddSingleton<IPdfService, PdfService>();
-builder.Services.AddSingleton<MagicTokenService>();
+builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();
 
 var awsRegion = RegionEndpoint.GetBySystemName(configuration["AWS:Region"]);
 builder.Services.AddSingleton<IAmazonS3>(sp =>

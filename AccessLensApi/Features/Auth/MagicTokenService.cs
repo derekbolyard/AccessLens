@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace AccessLensApi.Features.Auth
 {
-    public class MagicTokenService
+    public class MagicTokenService : IMagicTokenService
     {
         private readonly string _key;
 
