@@ -1,12 +1,11 @@
 ﻿using AccessLensApi.Data;
+using AccessLensApi.Features.Auth;
 using AccessLensApi.Middleware;
 using AccessLensApi.Services;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Storage;
 using Amazon;
-using Amazon.Runtime;
 using Amazon.S3;
-using Amazon.SimpleEmail;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +32,50 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 //    )
 //    .AddEnvironmentVariables()
 //    .AddCommandLine(args);
+
+// Add JWT Authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "MultiScheme";
+})
+.AddPolicyScheme("MultiScheme", "Multiple Auth Schemes", options =>
+{
+    options.ForwardDefaultSelector = context =>
+    {
+        var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+        if (authHeader?.StartsWith("Bearer ") == true)
+        {
+            return "MagicJwt";
+        }
+        return "MagicJwt"; // Default to JWT
+    };
+})
+.AddJwtBearer("MagicJwt", options =>
+{
+    var jwtSecret = builder.Configuration["MAGIC_JWT_SECRET"] ??
+        throw new InvalidOperationException("MAGIC_JWT_SECRET is required");
+
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        ValidateLifetime = true,
+        ValidateAudience = true,
+        ValidateIssuer = true,
+        ClockSkew = TimeSpan.FromMinutes(1),
+        RequireExpirationTime = true,
+        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+            System.Text.Encoding.UTF8.GetBytes(jwtSecret)),
+        ValidIssuer = "accesslens",
+        ValidAudiences = new[] { "magic", "api" } // Accept both token types
+    };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Authenticated", policy =>
+        policy.RequireAuthenticatedUser());
+});
+
 
 QuestPDF.Settings.License = LicenseType.Community;
 builder.Host.UseSerilog((ctx, lc) => lc
@@ -104,6 +147,7 @@ builder.Services.AddSingleton<IBrowser>(sp =>
 builder.Services.AddSingleton<IAxeScriptProvider, AxeScriptProvider>();
 builder.Services.AddSingleton<IA11yScanner, A11yScanner>();
 builder.Services.AddSingleton<IPdfService, PdfService>();
+builder.Services.AddSingleton<MagicTokenService>();
 
 var awsRegion = RegionEndpoint.GetBySystemName(configuration["AWS:Region"]);
 builder.Services.AddSingleton<IAmazonS3>(sp =>

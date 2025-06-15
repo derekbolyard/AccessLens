@@ -4,6 +4,7 @@ using AccessLensApi.Middleware;
 using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -174,6 +175,7 @@ namespace AccessLensApi.Features.Scans
         /// Performs a comprehensive accessibility scan of all discoverable pages on a website.
         /// </summary>
         [HttpPost("full")]
+        [Authorize(Policy = "Authenticated")]
         [RequestSizeLimit(2_097_152)] // 2MB limit for larger responses
         public async Task<IActionResult> FullSiteScan([FromBody] FullScanRequest req)
         {
