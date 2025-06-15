@@ -106,7 +106,7 @@ export class AuthService {
     if (!environment.features.useMagicLinkAuth) {
       throw new Error('Magic link authentication is disabled.');
     }
-    return this.http.post<SendCodeResponse>(`${this.apiUrl}/auth/send-code`, { email });
+    return this.http.post<SendCodeResponse>(`${this.apiUrl}/auth/send-magic-link`, { email });
   }
 
   verifyCode(email: string, code: string, hcaptchaToken?: string): Observable<VerifyCodeResponse> {

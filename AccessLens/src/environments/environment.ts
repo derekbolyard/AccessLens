@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:7088/api',
+  apiUrl: 'https://localhost:7088/api',
   supportEmail: 'support@accessibilityreports.com',
   features: {
     enableAnalytics: false,

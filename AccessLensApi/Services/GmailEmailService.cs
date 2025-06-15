@@ -46,6 +46,11 @@ namespace AccessLensApi.Services
                 ?? throw new ArgumentNullException("Gmail:RefreshToken must be set via config or GMAIL_REFRESH_TOKEN");
         }
 
+        public Task SendAsync(string to, string subject, string body)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task SendMagicLinkAsync(string email, string magicToken)
         {
             var baseUrl = _config["Frontend:BaseUrl"] ?? "http://localhost:4200";

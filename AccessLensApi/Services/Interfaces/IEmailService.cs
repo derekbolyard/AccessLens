@@ -4,6 +4,8 @@ namespace AccessLensApi.Services.Interfaces
 {
     public interface IEmailService
     {
+        Task SendAsync(string to, string subject, string body);
+
         /// <summary>
         /// Send a magic link JWT token to the specified email.
         /// </summary>

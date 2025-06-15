@@ -15,6 +15,7 @@ using QuestPDF.Infrastructure;
 using Serilog;
 using Stripe;
 using System.Data;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -160,7 +161,7 @@ builder.Services.AddSingleton<IAmazonS3>(sp =>
 //    return new AmazonSimpleEmailServiceClient(awsCreds, awsRegion);
 //});
 
-builder.Services.AddSingleton<IEmailService, GmailEmailService>();
+builder.Services.AddSingleton<IEmailService, EmailServiceSmtp>();
 
 //#if DEBUG
 //builder.Services.AddSingleton<IStorageService, LocalStorage>();

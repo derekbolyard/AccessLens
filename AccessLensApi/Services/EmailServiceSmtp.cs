@@ -1,26 +1,35 @@
 ﻿using AccessLensApi.Services.Interfaces;
-using Amazon.SimpleEmail;
-using Amazon.SimpleEmail.Model;
 using System.Net;
+using System.Net.Mail;
 
 namespace AccessLensApi.Services
 {
-    public class EmailService : IEmailService
+    public sealed class EmailServiceSmtp : IEmailService
     {
-        private readonly IAmazonSimpleEmailService _sesClient;
-        private readonly string _fromAddress;
+        private readonly SmtpClient _client;
+        private readonly string _from;
         private readonly IConfiguration _config;
 
-        public EmailService(IAmazonSimpleEmailService sesClient, IConfiguration config)
+        public EmailServiceSmtp(IConfiguration cfg)
         {
-            _sesClient = sesClient;
-            _fromAddress = config["AWS:SesFromEmail"];
-            _config = config;
+            _from = cfg["Mail:From"] ?? "demo@cancelwidget.local";
+            _client = new SmtpClient(
+                cfg["Mail:Host"] ?? "localhost",
+                int.Parse(cfg["Mail:Port"] ?? "1025"))
+            {
+                EnableSsl = false,   // MailHog = plain
+                Credentials = CredentialCache.DefaultNetworkCredentials
+            };
+            _config = cfg ?? throw new ArgumentNullException(nameof(cfg));
         }
 
         public Task SendAsync(string to, string subject, string body)
         {
-            throw new NotImplementedException();
+            var msg = new MailMessage(_from, to, subject, body)
+            {
+                IsBodyHtml = false
+            };
+            return _client.SendMailAsync(msg);
         }
 
         public async Task SendMagicLinkAsync(string email, string magicToken)
@@ -56,18 +65,7 @@ namespace AccessLensApi.Services
                   </body>
                 </html>";
 
-            var sendRequest = new SendEmailRequest
-            {
-                Source = _fromAddress,
-                Destination = new Destination { ToAddresses = new List<string> { email } },
-                Message = new Message
-                {
-                    Subject = new Content(subject),
-                    Body = new Body { Html = new Content(htmlBody) }
-                }
-            };
-
-            await _sesClient.SendEmailAsync(sendRequest);
+            await this.SendAsync(email, subject, htmlBody);
         }
 
         public async Task SendScanResultEmailAsync(string email, string presignedPdfUrl, int score, string presignedTeaserUrl = null)
@@ -89,18 +87,7 @@ namespace AccessLensApi.Services
                   </body>
                 </html>";
 
-            var sendRequest = new SendEmailRequest
-            {
-                Source = _fromAddress,
-                Destination = new Destination { ToAddresses = new List<string> { email } },
-                Message = new Message
-                {
-                    Subject = new Content(subject),
-                    Body = new Body { Html = new Content(htmlBody) }
-                }
-            };
-
-            await _sesClient.SendEmailAsync(sendRequest);
+            await this.SendAsync(email, subject, htmlBody);
         }
     }
 }
