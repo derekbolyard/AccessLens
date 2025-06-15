@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { AuthService } from '../../../services/auth.service';
+import { AuthService } from '../../../services/auth.service'; // Change this!
 import { ButtonComponent } from "../../common/button/button.component";
 import { HCaptchaComponent } from "../../common/hcaptcha-component/hcaptcha-component";
 import { AlertComponent } from "../../common/alert/alert.component";
@@ -25,9 +25,9 @@ export class MagicAuthModalComponent {
   authError = '';
   requiresCaptcha = false;
   hcaptchaToken = '';
-  hcaptchaSiteKey = 'your-hcaptcha-site-key'; // Replace with your actual site key
+  hcaptchaSiteKey = 'your-hcaptcha-site-key';
 
-  constructor(private magicAuthService: AuthService) {}
+  constructor(private authService: AuthService) {} // Change this!
 
   onSubmitEmail(): void {
     if (!this.email.trim() || !this.isValidEmail(this.email)) {
@@ -38,11 +38,10 @@ export class MagicAuthModalComponent {
     this.isLoading = true;
     this.authError = '';
 
-    this.magicAuthService.sendVerificationCode(this.email).subscribe({
+    this.authService.sendVerificationCode(this.email).subscribe({ // Change this!
       next: (response: any) => {
         this.isLoading = false;
         this.currentStep = 'verification';
-        // Show success message or instructions
       },
       error: (error: any) => {
         this.isLoading = false;
@@ -65,10 +64,9 @@ export class MagicAuthModalComponent {
     this.isLoading = true;
     this.authError = '';
 
-    this.magicAuthService.verifyCode(this.email, this.verificationCode, this.hcaptchaToken).subscribe({
+    this.authService.verifyCode(this.email, this.verificationCode, this.hcaptchaToken).subscribe({ // Change this!
       next: (response: any) => {
         this.isLoading = false;
-        // Verification successful - user will be authenticated via the auth callback
         this.authSuccess.emit({ email: this.email, provider: 'magic-link' });
         this.close.emit();
         this.resetForm();
@@ -97,20 +95,9 @@ export class MagicAuthModalComponent {
     this.onSubmitEmail();
   }
 
-  // Fixed hCaptcha event handler
   onHCaptchaSuccess(token: string): void {
     this.hcaptchaToken = token;
-    this.authError = ''; // Clear any captcha-related errors
-  }
-
-  onHCaptchaError(): void {
-    this.hcaptchaToken = '';
-    this.authError = 'Captcha verification failed. Please try again.';
-  }
-
-  onHCaptchaExpired(): void {
-    this.hcaptchaToken = '';
-    this.authError = 'Captcha expired. Please complete it again.';
+    this.authError = '';
   }
 
   private resetForm(): void {
