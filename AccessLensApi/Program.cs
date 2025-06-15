@@ -52,8 +52,8 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer("MagicJwt", options =>
 {
-    var jwtSecret = builder.Configuration["MAGIC_JWT_SECRET"] ??
-        throw new InvalidOperationException("MAGIC_JWT_SECRET is required");
+    var jwtSecret = builder.Configuration["MagicJwt:SecretKey"] ??
+        throw new InvalidOperationException("MagicJwt SecretKey is required");
 
     options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
     {

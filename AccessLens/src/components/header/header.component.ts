@@ -51,7 +51,7 @@ export class HeaderComponent {
     public subscriptionService: SubscriptionService,
     private router: Router
   ) {
-    this.authService.user$.subscribe(user => {
+    this.authService.user$.subscribe((user: any) => {
       this.currentUser = user;
     });
 
@@ -109,7 +109,7 @@ export class HeaderComponent {
         this.isSigningOut = false;
         this.showUserMenu = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         this.isSigningOut = false;
         console.error('Sign out failed:', error);
       }

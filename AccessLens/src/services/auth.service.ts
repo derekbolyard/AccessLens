@@ -1,8 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { environment } from '../environments/environment';
-import { MagicAuthService, MagicAuthUser } from './magic-auth.service';
 
 export interface User {
   id: string;
@@ -18,18 +17,30 @@ export interface User {
 export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(null);
   public user$ = this.userSubject.asObservable();
+  private magicAuthService: any = null;
 
-  constructor(private magicAuthService: MagicAuthService) {
+  constructor(private injector: Injector) {
     // Check for existing session
     this.loadUserFromStorage();
     
-    // Subscribe to magic auth user changes if using magic link auth
+    // Lazy load magic auth service to avoid circular dependency
     if (environment.features.useMagicLinkAuth) {
-      this.magicAuthService.user$.subscribe(magicUser => {
+      this.initializeMagicAuth();
+    }
+  }
+
+  private async initializeMagicAuth(): Promise<void> {
+    try {
+      // Dynamic import to avoid circular dependency
+      const { MagicAuthService } = await import('./magic-auth.service');
+      this.magicAuthService = this.injector.get(MagicAuthService);
+      
+      // Subscribe to magic auth user changes
+      this.magicAuthService.user$.subscribe((magicUser: any) => {
         if (magicUser) {
           const user: User = {
-            id: magicUser.email, // Use email as ID for magic link users
-            name: magicUser.email.split('@')[0], // Extract name from email
+            id: magicUser.email,
+            name: magicUser.email.split('@')[0],
             email: magicUser.email,
             avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(magicUser.email)}&background=0078d7&color=fff`,
             provider: 'magic-link'
@@ -39,6 +50,8 @@ export class AuthService {
           this.userSubject.next(null);
         }
       });
+    } catch (error) {
+      console.error('Failed to initialize magic auth service:', error);
     }
   }
 
@@ -72,16 +85,7 @@ export class AuthService {
       provider: 'google'
     };
 
-    return of(mockUser).pipe(
-      delay(1500),
-      // Simulate potential auth failure
-      // map(user => {
-      //   if (Math.random() > 0.8) {
-      //     throw new Error('Authentication failed');
-      //   }
-      //   return user;
-      // })
-    );
+    return of(mockUser).pipe(delay(1500));
   }
 
   signInWithGitHub(): Observable<User> {
@@ -98,13 +102,10 @@ export class AuthService {
       provider: 'github'
     };
 
-    return of(mockUser).pipe(
-      delay(1500)
-    );
+    return of(mockUser).pipe(delay(1500));
   }
-
   signOut(): Observable<boolean> {
-    if (environment.features.useMagicLinkAuth) {
+    if (environment.features.useMagicLinkAuth && this.magicAuthService) {
       return this.magicAuthService.signOut();
     } else {
       this.clearUser();

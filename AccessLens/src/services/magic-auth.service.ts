@@ -27,14 +27,17 @@ export class MagicAuthService {
   public user$ = this.userSubject.asObservable();
 
   constructor(private http: HttpClient) {
-    this.loadUserFromToken();
+    // Only initialize if magic link auth is enabled
+    if (environment.features.useMagicLinkAuth) {
+      this.loadUserFromToken();
+    }
   }
 
   private loadUserFromToken(): void {
     const token = localStorage.getItem('auth_token');
     if (token) {
       try {
-        // Decode JWT to get user info (you might want to add proper JWT decoding)
+        // Decode JWT to get user info
         const payload = JSON.parse(atob(token.split('.')[1]));
         const user: MagicAuthUser = {
           email: payload.email,
