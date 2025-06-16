@@ -34,8 +34,8 @@ namespace AccessLensApi.Services
 
         public async Task SendMagicLinkAsync(string email, string magicToken)
         {
-            var baseUrl = _config["Frontend:BaseUrl"] ?? "http://localhost:4200";
-            var magicLink = $"{baseUrl.TrimEnd('/')}/api/auth/magic/{magicToken}";
+            var baseUrl = _config["Urls:BaseUrl"];
+            var magicLink = $"{baseUrl.TrimEnd('/')}/auth/magic/{magicToken}";
 
             var subject = "Your Access Lens Magic Link";
             var htmlBody = $@"

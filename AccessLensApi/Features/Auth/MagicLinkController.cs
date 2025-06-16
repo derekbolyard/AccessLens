@@ -1,5 +1,6 @@
 ﻿using AccessLensApi.Data;
 using AccessLensApi.Features.Auth.Models;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -16,42 +17,38 @@ public class MagicLinkController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _cfg;
     private readonly IMagicTokenService _magicTokenService;
+    private readonly IAntiforgery _antiForgery;
 
-    public MagicLinkController(ApplicationDbContext db, IConfiguration cfg, IMagicTokenService magicTokenService)
+    public MagicLinkController(ApplicationDbContext db, IConfiguration cfg, IMagicTokenService magicTokenService, IAntiforgery antiForgery)
     {
         _db = db;
         _cfg = cfg;
         _magicTokenService = magicTokenService;
+        _antiForgery = antiForgery;
     }
 
     [HttpGet("magic/{token}")]
     public async Task<ActionResult> VerifyMagicLink(string token)
     {
         var handler = new JwtSecurityTokenHandler();
-        var validationParameters = new TokenValidationParameters
+        var parms = new TokenValidationParameters
         {
             ValidIssuer = "accesslens",
             ValidAudience = "magic",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_cfg["MAGIC_JWT_SECRET"] ?? string.Empty)),
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_cfg["MagicJwt:SecretKey"]!)),
             ValidateIssuerSigningKey = true,
             ValidateLifetime = true,
-            ValidateAudience = true,
             ValidateIssuer = true,
-            ClockSkew = TimeSpan.FromMinutes(1),
-            RequireExpirationTime = true
+            ValidateAudience = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
         };
 
         ClaimsPrincipal jwt;
-        try
-        {
-            jwt = handler.ValidateToken(token, validationParameters, out _);
-        }
-        catch (SecurityTokenException)
-        {
-            return Unauthorized("Invalid or expired magic link");
-        }
+        try { jwt = handler.ValidateToken(token, parms, out _); }
+        catch (SecurityTokenException) { return Unauthorized("Invalid or expired link"); }
 
-        var jti = Guid.Parse(jwt.FindFirstValue(JwtRegisteredClaimNames.Jti)!);
+        var jti = jwt.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
         var email = jwt.FindFirstValue("email")!;
 
         // Check if token was already used
@@ -89,11 +86,32 @@ public class MagicLinkController : ControllerBase
             throw;
         }
 
-        // Generate session token for API access
-        var sessionToken = _magicTokenService.BuildSessionToken(email);
+        var sessionJwt = _magicTokenService.BuildSessionToken(email);
 
-        // Redirect to frontend with SESSION token
-        var frontendUrl = _cfg["Frontend:BaseUrl"] ?? "http://localhost:4200";
-        return Redirect($"{frontendUrl}/auth/callback#token={sessionToken}");
+        // 4️⃣  Drop it as HttpOnly cookie
+        var cookieDomain = ".accesslens.app";
+
+        Response.Cookies.Append("access_token", sessionJwt, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Domain = cookieDomain,
+            Expires = DateTimeOffset.UtcNow.AddHours(8)
+        });
+
+        // 5️⃣  Seed CSRF token (Angular will read JS-visible cookie + echo header)
+        var tokens = _antiForgery.GetAndStoreTokens(HttpContext);
+        Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!, new CookieOptions
+        {
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Domain = cookieDomain,
+            // not HttpOnly so Angular can read & send it
+        });
+
+        // 6️⃣  Redirect to clean SPA root—no token/hash fragment needed
+        var frontend = _cfg["Urls:WebAppUrl"] ?? "http://localhost:4200";
+        return Redirect($"{frontend}/");
     }
 }

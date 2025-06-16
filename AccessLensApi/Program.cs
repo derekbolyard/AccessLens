@@ -1,4 +1,6 @@
-﻿using AccessLensApi.Data;
+﻿// Program.cs – AccessLens API (JWT via HttpOnly cookie, CSRF‑ready)
+// ---------------------------------------------------------------
+using AccessLensApi.Data;
 using AccessLensApi.Features.Auth;
 using AccessLensApi.Middleware;
 using AccessLensApi.Services;
@@ -6,92 +8,88 @@ using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Storage;
 using Amazon;
 using Amazon.S3;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Playwright;
 using QuestPDF.Infrastructure;
 using Serilog;
 using Stripe;
 using System.Data;
 using System.Security.Cryptography;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
-    WebRootPath = "wwwroot"          // ← set here, not later
+    WebRootPath = "wwwroot"
 });
 
-//builder.Configuration
-//    .SetBasePath(builder.Environment.ContentRootPath)
-//    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-//    .AddJsonFile(
-//        $"appsettings.{builder.Environment.EnvironmentName}.json",
-//        optional: true,
-//        reloadOnChange: true
-//    )
-//    .AddEnvironmentVariables()
-//    .AddCommandLine(args);
+// --------------------------------------------------
+// 1️⃣  SECURITY SERVICES
+// --------------------------------------------------
+// Antiforgery for SPA (Angular will read the XSRF‑TOKEN cookie and echo header)
+builder.Services.AddAntiforgery(o =>
+{
+    o.HeaderName = "X-CSRF-TOKEN";
+    o.Cookie.Name = "XSRF-TOKEN";
+    o.Cookie.SameSite = SameSiteMode.Lax;   // works cross‑sub‑domain
+    o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 
-// Add JWT Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = "MultiScheme";
-})
-.AddPolicyScheme("MultiScheme", "Multiple Auth Schemes", options =>
-{
-    options.ForwardDefaultSelector = context =>
+// Jwt Authentication – single scheme reading from HttpOnly cookie *or* Authorization header.
+var jwtSecret = builder.Configuration["MagicJwt:SecretKey"] ??
+                throw new InvalidOperationException("MagicJwt SecretKey is required");
+var keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
+
+builder.Services.AddAuthentication("MagicJwt")
+    .AddJwtBearer("MagicJwt", opts =>
     {
-        var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
-        if (authHeader?.StartsWith("Bearer ") == true)
+        opts.TokenValidationParameters = new TokenValidationParameters
         {
-            return "MagicJwt";
-        }
-        return "MagicJwt"; // Default to JWT
-    };
-})
-.AddJwtBearer("MagicJwt", options =>
-{
-    var jwtSecret = builder.Configuration["MagicJwt:SecretKey"] ??
-        throw new InvalidOperationException("MagicJwt SecretKey is required");
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+            ValidIssuer = "accesslens",
+            ValidAudience = "session",   // long‑lived session token
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
 
-    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        ValidateLifetime = true,
-        ValidateAudience = true,
-        ValidateIssuer = true,
-        ClockSkew = TimeSpan.FromMinutes(1),
-        RequireExpirationTime = true,
-        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
-            System.Text.Encoding.UTF8.GetBytes(jwtSecret)),
-        ValidIssuer = "accesslens",
-        ValidAudiences = new[] { "magic", "api" } // Accept both token types
-    };
-});
+        // Pull token from cookie when header isn’t present
+        opts.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                ctx.Token ??= ctx.Request.Cookies["access_token"];
+                return Task.CompletedTask;
+            }
+        };
+    });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("Authenticated", policy =>
-        policy.RequireAuthenticatedUser());
-});
+builder.Services.AddAuthorization(o =>
+    o.AddPolicy("Authenticated", p => p.RequireAuthenticatedUser()));
 
-
+// --------------------------------------------------
+// 2️⃣  INFRA & LIBS (unchanged from your original)
+// --------------------------------------------------
 QuestPDF.Settings.License = LicenseType.Community;
 builder.Host.UseSerilog((ctx, lc) => lc
     .WriteTo.Console()
     .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
-    .ReadFrom.Configuration(ctx.Configuration)
-);
+    .ReadFrom.Configuration(ctx.Configuration));
 
 var configuration = builder.Configuration;
-var sqliteConnString = builder.Configuration.GetConnectionString("SqliteConnection")
+var sqliteConnString = configuration.GetConnectionString("SqliteConnection")
                         ?? Environment.GetEnvironmentVariable("SQLITE_CONNECTION_STRING")
                         ?? "Data Source=accesslens.db";
 
-// (2) Register a transient IDbConnection that opens a SqliteConnection
-builder.Services.AddTransient<IDbConnection>(sp =>
+builder.Services.AddTransient<IDbConnection>(_ =>
 {
     var conn = new SqliteConnection(sqliteConnString);
     conn.Open();
@@ -101,9 +99,7 @@ builder.Services.AddTransient<IDbConnection>(sp =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(sqliteConnString));
 
-builder.Services
-    // 1) bind options from config
-    .Configure<PlaywrightOptions>(builder.Configuration.GetSection("Playwright"));
+builder.Services.Configure<PlaywrightOptions>(configuration.GetSection("Playwright"));
 var skipPwInstall = Environment.GetEnvironmentVariable("SKIP_PLAYWRIGHT_INSTALL");
 if (skipPwInstall != "1")
 {
@@ -115,34 +111,24 @@ if (skipPwInstall != "1")
     });
 }
 
-builder.Services.AddSingleton<IPlaywright>(sp =>
+builder.Services.AddSingleton<IPlaywright>(_ =>
 {
-    // Use Task.Run to create a synchronous wrapper around the async operation
     return Task.Run(async () =>
     {
         var playwright = await Playwright.CreateAsync();
-        // Set custom browsers path if configured
         var browsersPath = configuration["Playwright:BrowsersPath"];
         if (!string.IsNullOrEmpty(browsersPath))
-        {
             Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", browsersPath);
-        }
         return playwright;
     }).GetAwaiter().GetResult();
 });
+
 builder.Services.AddSingleton<IBrowser>(sp =>
 {
     var pwOpts = sp.GetRequiredService<IOptions<PlaywrightOptions>>().Value;
     var pw = sp.GetRequiredService<IPlaywright>();
-
-    var launch = new BrowserTypeLaunchOptions
-    {
-        Headless = pwOpts.Headless,
-        Args = pwOpts.Args
-    };
-
-    return pw[pwOpts.Browser].LaunchAsync(launch)
-                             .GetAwaiter().GetResult();
+    var launch = new BrowserTypeLaunchOptions { Headless = pwOpts.Headless, Args = pwOpts.Args };
+    return pw[pwOpts.Browser].LaunchAsync(launch).GetAwaiter().GetResult();
 });
 
 builder.Services.AddSingleton<IAxeScriptProvider, AxeScriptProvider>();
@@ -151,71 +137,75 @@ builder.Services.AddSingleton<IPdfService, PdfService>();
 builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();
 
 var awsRegion = RegionEndpoint.GetBySystemName(configuration["AWS:Region"]);
-builder.Services.AddSingleton<IAmazonS3>(sp =>
-{
-    return new AmazonS3Client(awsRegion);
-});
-//builder.Services.AddSingleton<IAmazonSimpleEmailService>(sp =>
-//{
-//    var awsCreds = new EnvironmentVariablesAWSCredentials();
-//    return new AmazonSimpleEmailServiceClient(awsCreds, awsRegion);
-//});
+builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(awsRegion));
 
 builder.Services.AddSingleton<IEmailService, EmailServiceSmtp>();
-
-//#if DEBUG
-//builder.Services.AddSingleton<IStorageService, LocalStorage>();
-//#else
 builder.Services.AddSingleton<IStorageService, S3StorageService>();
-//#endif
 
-StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"]
-                         ?? Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY");
+StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"] ??
+                             Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY");
+
 builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimitingOptions"));
 builder.Services.Configure<CaptchaOptions>(configuration.GetSection("Captcha"));
 
 builder.Services.AddHttpClient();
-
 builder.Services.AddSingleton<IRateLimiter, RateLimiterService>();
-
 builder.Services.AddScoped<ICreditManager, CreditManager>();
-//builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddMemoryCache();
 
-builder.Services.AddControllers()
-    .AddJsonOptions(opts =>
-    {
-        opts.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-    });
+builder.Services.AddControllers().AddJsonOptions(o =>
+    o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(options =>
+builder.Services.AddCors(o =>
 {
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.WithOrigins("http://localhost:4200", "https://localhost:4200") // Frontend URLs
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
+    o.AddDefaultPolicy(p =>
+        p.WithOrigins("http://localhost:4200", "https://localhost:4200")
+         .AllowAnyHeader()
+         .AllowAnyMethod()
+         .AllowCredentials());
 });
 
 builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
+builder.Services.AddSession(o =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
+    o.IdleTimeout = TimeSpan.FromMinutes(30);
+    o.Cookie.HttpOnly = true;
+    o.Cookie.IsEssential = true;
 });
 
+// --------------------------------------------------
+// 3️⃣  BUILD APP / PIPELINE
+// --------------------------------------------------
 var app = builder.Build();
 
 app.UseSession();
 app.UseRouting();
-// Apply pending EF migrations at startup
+
+// Static + forwarded headers
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+app.UseStaticFiles();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseCors();
+app.UseMiddleware<RateLimitMiddleware>();
+app.UseHttpsRedirection();
+
+// 👇  Auth before anything that needs User
+app.UseAuthentication();
+app.UseAuthorization();
+
+// EF migrations at startup
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -224,29 +214,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSerilogRequestLogging();
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
-
-app.UseStaticFiles();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseCors();
-
-app.UseMiddleware<RateLimitMiddleware>();
-// If you want global CAPTCHA check, you can insert a CaptchaMiddleware too
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
+// Map controllers (your Magic‑link endpoint lives in its own controller)
 app.MapControllers();
 
 app.Run();
