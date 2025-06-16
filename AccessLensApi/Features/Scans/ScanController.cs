@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static System.Net.WebRequestMethods;
 
 namespace AccessLensApi.Features.Scans
 {
@@ -26,8 +27,9 @@ namespace AccessLensApi.Features.Scans
         private readonly IRateLimiter _rateLimiter;
         private readonly RateLimitingOptions _rateOptions;
         private readonly CaptchaOptions _captchaOptions;
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly HttpClient _httpClient;
         private readonly IWebHostEnvironment _env;
+        private readonly IConfiguration _config;
 
         public ScanController(
             ApplicationDbContext dbContext,
@@ -39,7 +41,8 @@ namespace AccessLensApi.Features.Scans
             IOptions<RateLimitingOptions> rateOptions,
             IOptions<CaptchaOptions> captchaOptions,
             IHttpClientFactory httpClientFactory,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IConfiguration config)
         {
             _dbContext = dbContext;
             _creditManager = creditManager;
@@ -49,8 +52,9 @@ namespace AccessLensApi.Features.Scans
             _rateLimiter = rateLimiter;
             _rateOptions = rateOptions.Value;
             _captchaOptions = captchaOptions.Value;
-            _httpClientFactory = httpClientFactory;
+            _httpClient = httpClientFactory.CreateClient();
             _env = env;
+            _config = config;
         }
 
         /// <summary>
@@ -69,10 +73,12 @@ namespace AccessLensApi.Features.Scans
         /// </summary>
         [HttpPost("starter")]
         [RequestSizeLimit(1_048_576)]
-        public async Task<IActionResult> Starter([FromBody] ScanRequest req)
+        public async Task<IActionResult> Starter([FromForm] ScanRequest req)
         {
             try
             {
+                if (!await VerifyTurnstileAsync(req.CaptchaToken, HttpContext.Connection.RemoteIpAddress!.ToString()))
+                    return BadRequest("captcha_failed");
                 var validationError = ValidateRequest(req);
                 if (validationError != null)
                     return validationError;
@@ -96,12 +102,6 @@ namespace AccessLensApi.Features.Scans
 
                 if (!user.FirstScan && user.Email != "derekbolyard@gmail.com")
                 {
-                    if (string.IsNullOrEmpty(req.HcaptchaToken))
-                        return BadRequest(new { error = "hCaptcha token required." });
-
-                    if (!await VerifyHCaptchaAsync(req.HcaptchaToken))
-                        return BadRequest(new { error = "hCaptcha failed." });
-
                     var paymentError = await CheckQuotaAsync(email);
                     if (paymentError != null)
                         return paymentError;
@@ -155,11 +155,11 @@ namespace AccessLensApi.Features.Scans
                     return StatusCode(500, new { error = "PDF generation failed." });
                 }
 
-                var teaserUrl = ExtractTeaser(scanResult);
+                var teaser = ExtractTeaser(scanResult);
 
                 await SaveReportAsync(scanResult, email, url, pdfUrl);
 
-                return Ok(new { score, pdfUrl, teaserUrl });
+                return Ok(new { score, pdfUrl, teaser });
             }
             catch (Exception ex)
             {
@@ -187,9 +187,6 @@ namespace AccessLensApi.Features.Scans
             {
                 if (string.IsNullOrEmpty(req.HcaptchaToken))
                     return BadRequest(new { error = "hCaptcha token required." });
-
-                if (!await VerifyHCaptchaAsync(req.HcaptchaToken))
-                    return BadRequest(new { error = "hCaptcha failed." });
             }
 
             var email = req.Email.Trim().ToLowerInvariant();
@@ -426,16 +423,15 @@ namespace AccessLensApi.Features.Scans
             return await _pdf.GenerateAndUploadPdf(url, firstPage);
         }
 
-        private string ExtractTeaser(JsonObject scanResult)
+        private Teaser? ExtractTeaser(JsonObject scanResult)
         {
-            if (scanResult.TryGetPropertyValue("teaserUrl", out var teaserNode)
-                && teaserNode is JsonValue teaserValue
-                && teaserValue.TryGetValue<string>(out var teaserStr))
+            if (scanResult.TryGetPropertyValue("teaser", out var teaserNode)
+                && teaserNode is JsonObject teaserObj)
             {
-                return teaserStr ?? "";
+                return teaserObj.Deserialize<Teaser>();
             }
 
-            return "";
+            return null;   // or throw, or return a default Teaser – your call
         }
 
         private async Task SaveReportAsync(JsonObject result, string email, string siteName, string pdfUrl)
@@ -528,30 +524,20 @@ namespace AccessLensApi.Features.Scans
             return true;
         }
 
-        private async Task<bool> VerifyHCaptchaAsync(string token)
+        private async Task<bool> VerifyTurnstileAsync(string token, string ip)
         {
-            try
-            {
-                var client = _httpClientFactory.CreateClient();
-                var values = new Dictionary<string, string>
-                    {
-                        { "secret", _captchaOptions.hCaptchaSecret },
-                        { "response", token }
-                    };
-                using var content = new FormUrlEncodedContent(values);
-                using var resp = await client.PostAsync("https://hcaptcha.com/siteverify", content);
-                if (!resp.IsSuccessStatusCode)
-                    return false;
+            var body = new FormUrlEncodedContent(
+            [
+                new KeyValuePair<string,string>("secret",   _config["Turnstile:SecretKey"]),
+                new KeyValuePair<string,string>("response", token),
+                new KeyValuePair<string,string>("remoteip", ip)
+            ]);
+            var res = await _httpClient.PostAsync(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify", body);
 
-                await using var stream = await resp.Content.ReadAsStreamAsync();
-                var verify = await JsonSerializer.DeserializeAsync<HCaptchaVerifyResponse>(stream) ?? new HCaptchaVerifyResponse();
-                return verify.Success;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "hCaptcha verification failed");
-                return false;
-            }
+            var doc = await res.Content.ReadFromJsonAsync<JsonDocument>();
+            bool ok = doc!.RootElement.GetProperty("success").GetBoolean();
+            return ok;
         }
     }
 }

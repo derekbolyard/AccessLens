@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 namespace AccessLensApi.Features.Scans.Models
 {
@@ -12,6 +13,7 @@ namespace AccessLensApi.Features.Scans.Models
         [MaxLength(256)]
         public string Email { get; set; }
 
-        public string? HcaptchaToken { get; set; }
+        [FromForm(Name = "cf-turnstile-response")]
+        public string CaptchaToken { get; set; } = string.Empty;
     }
 }

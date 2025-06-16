@@ -1,9 +1,12 @@
 ﻿using AccessLensApi.Features.Scans.Models;
+using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Storage;
 using AccessLensApi.Utilities;
+using Amazon.S3.Model.Internal.MarshallTransformations;
 using Microsoft.Playwright;
 using System.Collections.Concurrent;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -61,7 +64,7 @@ namespace AccessLensApi.Services
             var visited = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
             var pagesResults = new ConcurrentBag<JsonObject>();
             var excludePatterns = options.ExcludePatterns.Select(p => new Regex(p, RegexOptions.IgnoreCase)).ToArray();
-            string? teaserUrl = null;
+            Teaser? teaser = null;
 
             // Initialize URL discovery
             await InitializeUrlDiscovery(rootUrl, rootUri, queue, options, cancellationToken);
@@ -94,15 +97,15 @@ namespace AccessLensApi.Services
                         tasks.Add(task);
 
                         // Update teaserUrl if this is the first page and we got a result
-                        if (options.GenerateTeaser && teaserUrl == null)
+                        if (options.GenerateTeaser && string.IsNullOrEmpty(teaser?.Url))
                         {
                             await task.ContinueWith(async t =>
                             {
                                 if (t.IsCompletedSuccessfully)
                                 {
                                     var result = await t;
-                                    if (result.teaserUrl != null)
-                                        teaserUrl = result.teaserUrl;
+                                    if (result.teaser != null)
+                                        teaser = result.teaser;
                                 }
                             }, TaskContinuationOptions.OnlyOnRanToCompletion);
                         }
@@ -130,7 +133,7 @@ namespace AccessLensApi.Services
                 return new JsonObject
                 {
                     ["pages"] = new JsonArray(sortedPages.Cast<JsonNode>().ToArray()),
-                    ["teaserUrl"] = teaserUrl ?? string.Empty,
+                    ["teaser"] = JsonSerializer.SerializeToNode(teaser)!,
                     ["totalPages"] = sortedPages.Length,
                     ["scannedAt"] = DateTime.UtcNow.ToString("O"),
                     ["discoveryMethod"] = options.UseSitemap ? "sitemap+crawling" : "crawling"
@@ -143,7 +146,7 @@ namespace AccessLensApi.Services
             }
         }
 
-        private async Task<(JsonObject? pageResult, string? teaserUrl)> ProcessPageWithSemaphoreAsync(
+        private async Task<(JsonObject? pageResult, Teaser? teaser)> ProcessPageWithSemaphoreAsync(
             IBrowserContext ctx,
             string url,
             int depth,
@@ -339,7 +342,7 @@ namespace AccessLensApi.Services
             return sitemapUrls;
         }
 
-        private async Task<(JsonObject? pageResult, string? teaserUrl)> ProcessPageAsync(
+        private async Task<(JsonObject? pageResult, Teaser? teaser)> ProcessPageAsync(
             IBrowserContext ctx,
             string url,
             int depth,
@@ -390,7 +393,7 @@ namespace AccessLensApi.Services
                 pagesResults.Add(pageResult);
 
                 // ── 2️⃣  teaser on FIRST page ─────────────────────────────────
-                string? teaserUrl = null;
+                var teaser = new Teaser();
                 if (options.GenerateTeaser && pagesResults.Count == 1) // First page only
                 {
                     var axeObj = (JsonObject)JsonNode.Parse(axeResults)!;
@@ -410,7 +413,18 @@ namespace AccessLensApi.Services
                     /* ---- upload & URL ---- */
                     string key = $"teasers/{Guid.NewGuid()}.png";
                     await _storage.UploadAsync(key, finalTeaser);
-                    teaserUrl = _storage.GetPresignedUrl(key, TimeSpan.FromDays(7));
+                    teaser.Url = _storage.GetPresignedUrl(key, TimeSpan.FromDays(7));
+                    teaser.TopIssues = violations
+                        .OrderBy(v => ImpactPriority.Get(v?["impact"]?.ToString()))
+                        .ThenBy(v => v?["id"]?.ToString())
+                        .Take(5)
+                        .Select(v => { 
+                            var tf = new TopIssue();
+                            tf.Severity = v?["impact"]?.ToString()?.ToUpperInvariant() ?? "UNKNOWN";
+                            tf.Text = v?["help"]?.ToString() ?? string.Empty;
+                            return tf;
+                        })
+                        .ToList();
 
                     _log.LogInformation("Generated teaser for first page: {Url} - Score: {Score}, Critical: {Critical}, Serious: {Serious}, Moderate: {Moderate}",
                         url, score, crit, seri, moderate);
@@ -425,7 +439,7 @@ namespace AccessLensApi.Services
                 _log.LogInformation("Scanned page: {Url} - Found {IssueCount} issues",
                     url, pageResult["issues"]?.AsArray().Count ?? 0);
 
-                return (pageResult, teaserUrl);
+                return (pageResult, teaser);
             }
             catch (Exception ex)
             {

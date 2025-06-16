@@ -162,10 +162,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(o =>
 {
     o.AddDefaultPolicy(p =>
-        p.WithOrigins("http://localhost:4200", "https://localhost:4200")
-         .AllowAnyHeader()
-         .AllowAnyMethod()
-         .AllowCredentials());
+        p.WithOrigins("http://localhost:4200", "https://localhost:4200", "http://localhost:3000")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
 });
 
 builder.Services.AddDistributedMemoryCache();
@@ -216,6 +216,11 @@ app.UseSerilogRequestLogging();
 
 // Map controllers (your Magic‑link endpoint lives in its own controller)
 app.MapControllers();
+app.MapGet("/api/auth/csrf", (IAntiforgery anti, HttpContext ctx) =>
+{
+    var tokens = anti.GetAndStoreTokens(ctx);   // sets XSRF-TOKEN cookie
+    return Results.Text(tokens.RequestToken!);  // send the matching request token
+});
 
 app.Run();
 

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -32,6 +33,7 @@ namespace AccessLensApi.Tests.Unit
         private readonly Mock<ILogger<ScanController>> _mockLogger;
         private readonly Mock<IRateLimiter> _mockRateLimiter;
         private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
+        private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly ScanController _controller;
 
         public ScanControllerUnitTests()
@@ -47,6 +49,7 @@ namespace AccessLensApi.Tests.Unit
             _mockLogger = new Mock<ILogger<ScanController>>();
             _mockRateLimiter = new Mock<IRateLimiter>();
             _mockHttpClientFactory = new Mock<IHttpClientFactory>();
+            _mockConfiguration = new Mock<IConfiguration>();
 
             var rateOptions = Options.Create(new RateLimitingOptions
             {
@@ -71,7 +74,8 @@ namespace AccessLensApi.Tests.Unit
                 rateOptions,
                 captchaOptions,
                 _mockHttpClientFactory.Object,
-                envMock.Object);
+                envMock.Object,
+                _mockConfiguration.Object);
 
             // Setup HttpContext for IP address
             _controller.ControllerContext = new ControllerContext
