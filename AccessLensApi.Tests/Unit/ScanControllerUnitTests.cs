@@ -4,6 +4,7 @@ using AccessLensApi.Features.Scans.Models;
 using AccessLensApi.Middleware;
 using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
+using AccessLensApi.Tests.Helpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +27,8 @@ namespace AccessLensApi.Tests.Unit
     /// </summary>
     public class ScanControllerUnitTests : IDisposable
     {
+        private const string CaptchaToken = "XXXX.DUMMY.TOKEN.XXXX";
+
         private readonly ApplicationDbContext _dbContext;
         private readonly Mock<ICreditManager> _mockCreditManager;
         private readonly Mock<IA11yScanner> _mockScanner;
@@ -56,13 +59,9 @@ namespace AccessLensApi.Tests.Unit
                 MaxScanDurationSeconds = 300
             });
 
-            var captchaOptions = Options.Create(new CaptchaOptions
-            {
-                hCaptchaSecret = "test-secret"
-            });
             var envMock = new Mock<IWebHostEnvironment>();
             envMock.Setup(e => e.EnvironmentName).Returns(Environments.Development);
-
+            ScanHelper.SetupMockCaptcha(_mockHttpClientFactory, true);
 
             _controller = new ScanController(
                 _dbContext,
@@ -72,7 +71,6 @@ namespace AccessLensApi.Tests.Unit
                 _mockLogger.Object,
                 _mockRateLimiter.Object,
                 rateOptions,
-                captchaOptions,
                 _mockHttpClientFactory.Object,
                 envMock.Object,
                 _mockConfiguration.Object);
@@ -92,7 +90,9 @@ namespace AccessLensApi.Tests.Unit
         public async Task Starter_InvalidUrl_ReturnsBadRequest(string invalidUrl)
         {
             // Arrange
-            var request = new ScanRequest { Url = invalidUrl, Email = "test@example.com" };
+            var request = new ScanRequest { Url = invalidUrl, Email = "test@example.com",
+                CaptchaToken = CaptchaToken
+            };
 
             // Act
             var result = await _controller.Starter(request);
@@ -111,7 +111,9 @@ namespace AccessLensApi.Tests.Unit
         public async Task Starter_InvalidEmail_ReturnsBadRequest(string invalidEmail)
         {
             // Arrange
-            var request = new ScanRequest { Url = "https://example.com", Email = invalidEmail };
+            var request = new ScanRequest { Url = "https://example.com", Email = invalidEmail,
+                CaptchaToken = CaptchaToken
+            };
 
             // Act
             var result = await _controller.Starter(request);
@@ -140,7 +142,8 @@ namespace AccessLensApi.Tests.Unit
             var request = new ScanRequest
             {
                 Url = "https://example.com",
-                Email = "unverified@example.com"
+                Email = "unverified@example.com",
+                CaptchaToken = CaptchaToken
             };
 
             // Act
@@ -164,7 +167,8 @@ namespace AccessLensApi.Tests.Unit
             var request = new ScanRequest
             {
                 Url = "https://example.com",
-                Email = "derekbolyard@gmail.com"
+                Email = "derekbolyard@gmail.com",
+                CaptchaToken = CaptchaToken
             };
 
             SetupSuccessfulScanMocks();
@@ -187,10 +191,9 @@ namespace AccessLensApi.Tests.Unit
             {
                 Url = "https://example.com",
                 Email = "basic@example.com",
-                HcaptchaToken = "valid-token"
+                CaptchaToken = CaptchaToken
             };
 
-            SetupMockHttp(true); // Valid captcha
             _mockCreditManager
                 .Setup(x => x.HasPremiumAccessAsync("basic@example.com"))
                 .ReturnsAsync(false);
@@ -233,27 +236,6 @@ namespace AccessLensApi.Tests.Unit
             _mockPdfService
                 .Setup(x => x.GenerateAndUploadPdf(It.IsAny<string>(), It.IsAny<JsonObject>()))
                 .ReturnsAsync("https://example.com/report.pdf");
-        }
-
-        private void SetupMockHttp(bool captchaSuccess)
-        {
-            var handler = new Mock<HttpMessageHandler>();
-            handler.Protected()
-                   .Setup<Task<HttpResponseMessage>>(
-                       "SendAsync",
-                       ItExpr.IsAny<HttpRequestMessage>(),
-                       ItExpr.IsAny<CancellationToken>())
-                   .ReturnsAsync(new HttpResponseMessage
-                   {
-                       StatusCode = HttpStatusCode.OK,
-                       Content = new StringContent(
-                           $"{{\"success\":{captchaSuccess.ToString().ToLowerInvariant()}}}")
-                   });
-
-            var httpClient = new HttpClient(handler.Object);
-            _mockHttpClientFactory
-                .Setup(x => x.CreateClient(It.IsAny<string>()))
-                .Returns(httpClient);
         }
 
         public void Dispose()

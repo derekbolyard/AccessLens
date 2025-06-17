@@ -3,17 +3,18 @@ using AccessLensApi.Features.Scans.Models;
 using AccessLensApi.Middleware;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Tests.Helpers;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Xunit.Abstractions;
 
 namespace AccessLensApi.Tests.Integration
 {
@@ -23,15 +24,12 @@ namespace AccessLensApi.Tests.Integration
     /// </summary>
     public class ScanControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
     {
+        private const string CaptchaToken = "XXXX.DUMMY.TOKEN.XXXX";
         private readonly WebApplicationFactory<Program> _factory;
         private readonly HttpClient _client;
-        private readonly ITestOutputHelper _output;
-        private FakeHttpHandler _fakeHttpHandler;
 
-        public ScanControllerIntegrationTests(WebApplicationFactory<Program> factory, ITestOutputHelper output)
+        public ScanControllerIntegrationTests(WebApplicationFactory<Program> factory)
         {
-            _output = output;
-
             _factory = factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureServices(services =>
@@ -56,7 +54,11 @@ namespace AccessLensApi.Tests.Integration
 
                     services.RemoveAll<IPdfService>();
                     services.AddSingleton<IPdfService, TestPdfService>();
-                    _fakeHttpHandler = new FakeHttpHandler(services);
+
+                    var httpFactory = new Mock<IHttpClientFactory>();
+                    ScanHelper.SetupMockCaptcha(httpFactory, true);
+                    services.RemoveAll<IHttpClientFactory>();
+                    services.AddSingleton(httpFactory.Object);
 
                     // Keep real implementations of internal services
                     // - CreditManager: Tests real business logic
@@ -69,11 +71,9 @@ namespace AccessLensApi.Tests.Integration
                         opt.MaxScanDurationSeconds = 30; // Shorter timeouts for tests
                         opt.MaxStarterScansPerHour = 2;
                     });
-
-                    services.Configure<CaptchaOptions>(opt =>
-                    {
-                        opt.hCaptchaSecret = "test-secret-key";
-                    });
+                    services.AddAuthentication(defaultScheme: "TestScheme")
+                        .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
+                     "TestScheme", _ => { });
                 });
 
                 builder.UseEnvironment("Testing");
@@ -89,21 +89,24 @@ namespace AccessLensApi.Tests.Integration
             var request = new ScanRequest
             {
                 Url = "https://example.com",
-                Email = "realtest@example.com"
+                Email = "realtest@example.com",
+                CaptchaToken = CaptchaToken
             };
 
+            var content = ScanHelper.ScanRequestAsFormData(request);
+
             // Act
-            var response = await _client.PostAsJsonAsync("/api/scan/starter", request);
+            var response = await _client.PostAsync("/api/scan/starter", content);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-            var content = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<JsonElement>(content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
             Assert.True(result.TryGetProperty("score", out var score));
             Assert.True(result.TryGetProperty("pdfUrl", out var pdfUrl));
-            Assert.True(result.TryGetProperty("teaserUrl", out var teaserUrl));
+            Assert.True(result.TryGetProperty("teaser", out var teaser));
 
             // Verify real database interactions
             using var scope = _factory.Services.CreateScope();
@@ -122,35 +125,47 @@ namespace AccessLensApi.Tests.Integration
         [Fact]
         public async Task Starter_RealRateLimiting_EnforcesLimits()
         {
-            // Arrange
-            var request = new ScanRequest
+            // Arrange – template object is fine
+            var template = new ScanRequest
             {
                 Url = "https://example.com",
-                Email = "ratelimit@example.com"
+                Email = "ratelimit@example.com",
+                CaptchaToken = CaptchaToken
             };
 
-            // Act - Make multiple rapid requests
-            var tasks = Enumerable.Range(0, 15) // More than the limit of 10
-                .Select(_ => _client.PostAsJsonAsync("/api/scan/starter", request))
+            var i = 0;
+
+            // Act – spin up 15 separate requests, each with its own body
+            var tasks = Enumerable.Range(0, 15)
+                .Select(_ =>
+                {
+                    // new content instance each time
+                    template.Email = template.Email + i.ToString();
+                    i++;
+                    var content = ScanHelper.ScanRequestAsFormData(template);
+                    return _client.PostAsync("/api/scan/starter", content);
+                })
                 .ToArray();
 
             var responses = await Task.WhenAll(tasks);
 
-            // Assert - Some should be rate limited
+            // Assert – at least one request should have hit the rate-limit
             var rateLimitedCount = responses.Count(r => r.StatusCode == HttpStatusCode.TooManyRequests);
+            var messages = responses.Select(r => r.Content.ReadAsStringAsync());
             Assert.True(rateLimitedCount > 0, "Expected some requests to be rate limited");
+            Assert.True(responses.All(r => r.StatusCode != HttpStatusCode.BadRequest));
+            Assert.True(responses.All(r => r.StatusCode != HttpStatusCode.InternalServerError));
         }
 
         [Fact]
         public async Task FullSiteScan_RealCreditManager_ChecksPremiumAccess()
         {
             // Arrange
-            this._fakeHttpHandler.SetupResponse(HttpStatusCode.OK, new HCaptchaVerifyResponse { Success = true }); // Simulate successful captcha validation
             var request = new FullScanRequest
             {
                 Url = "https://example.com",
                 Email = "basic@example.com",
-                HcaptchaToken = "test-token" // TestHttpClientFactory will handle this
+                CaptchaToken = CaptchaToken
             };
 
             // Act

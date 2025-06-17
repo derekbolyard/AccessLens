@@ -39,7 +39,8 @@ namespace AccessLensApi.Tests.Scanner
             var json = await _target.ScanFivePagesAsync("https://site.com");
 
             Assert.Equal(1, json["totalPages"]!.GetValue<int>());
-            Assert.Equal(string.Empty, json["teaserUrl"]!.GetValue<string>());
+            Assert.Equal(string.Empty,
+                 json?["teaser"]?["url"]?.GetValue<string>() ?? string.Empty);
         }
     }
 }

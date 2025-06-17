@@ -1,0 +1,5 @@
+Add-Migration <MigrationName>
+dotnet ef migrations add <MigrationName>
+
+Update-Database
+dotnet ef database update 

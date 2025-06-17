@@ -26,7 +26,6 @@ namespace AccessLensApi.Features.Scans
         private readonly ILogger<ScanController> _logger;
         private readonly IRateLimiter _rateLimiter;
         private readonly RateLimitingOptions _rateOptions;
-        private readonly CaptchaOptions _captchaOptions;
         private readonly HttpClient _httpClient;
         private readonly IWebHostEnvironment _env;
         private readonly IConfiguration _config;
@@ -39,7 +38,6 @@ namespace AccessLensApi.Features.Scans
             ILogger<ScanController> logger,
             IRateLimiter rateLimiter,
             IOptions<RateLimitingOptions> rateOptions,
-            IOptions<CaptchaOptions> captchaOptions,
             IHttpClientFactory httpClientFactory,
             IWebHostEnvironment env,
             IConfiguration config)
@@ -51,7 +49,6 @@ namespace AccessLensApi.Features.Scans
             _logger = logger;
             _rateLimiter = rateLimiter;
             _rateOptions = rateOptions.Value;
-            _captchaOptions = captchaOptions.Value;
             _httpClient = httpClientFactory.CreateClient();
             _env = env;
             _config = config;
@@ -77,7 +74,7 @@ namespace AccessLensApi.Features.Scans
         {
             try
             {
-                if (!await VerifyTurnstileAsync(req.CaptchaToken, HttpContext.Connection.RemoteIpAddress!.ToString()))
+                if (!await VerifyTurnstileAsync(req.CaptchaToken, HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? string.Empty))
                     return BadRequest("captcha_failed");
                 var validationError = ValidateRequest(req);
                 if (validationError != null)
@@ -182,12 +179,6 @@ namespace AccessLensApi.Features.Scans
             var validationError = ValidateFullScanRequest(req);
             if (validationError != null)
                 return validationError;
-
-            if (req.Email != "derekbolyard@gmail.com")
-            {
-                if (string.IsNullOrEmpty(req.HcaptchaToken))
-                    return BadRequest(new { error = "hCaptcha token required." });
-            }
 
             var email = req.Email.Trim().ToLowerInvariant();
             var url = req.Url.Trim();
@@ -526,12 +517,18 @@ namespace AccessLensApi.Features.Scans
 
         private async Task<bool> VerifyTurnstileAsync(string token, string ip)
         {
-            var body = new FormUrlEncodedContent(
-            [
-                new KeyValuePair<string,string>("secret",   _config["Turnstile:SecretKey"]),
-                new KeyValuePair<string,string>("response", token),
-                new KeyValuePair<string,string>("remoteip", ip)
-            ]);
+            var fields = new List<KeyValuePair<string, string>>
+            {
+                new ("secret",   _config["Turnstile:SecretKey"]),
+                new ("response", token)
+            };
+
+            if (!string.IsNullOrEmpty(ip))
+            {
+                fields.Add(new("remoteip", ip));
+            }
+
+            using var body = new FormUrlEncodedContent(fields);
             var res = await _httpClient.PostAsync(
                 "https://challenges.cloudflare.com/turnstile/v0/siteverify", body);
 

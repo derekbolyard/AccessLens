@@ -13,8 +13,8 @@ namespace AccessLensApi.Features.Scans.Models
         [MaxLength(256)]
         public string Email { get; set; }
 
-        public string? HcaptchaToken { get; set; }
-
         public ScanOptions? Options { get; set; }
+
+        public string CaptchaToken { get; set; } = string.Empty;
     }
 }
