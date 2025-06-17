@@ -28,6 +28,7 @@ namespace AccessLensApi.Data
         // New DbSets
         public DbSet<Site> Sites { get; set; }
         public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+        public DbSet<BrandingInfo> BrandingInfos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -182,6 +183,15 @@ namespace AccessLensApi.Data
                 .WithMany(p => p.Subscriptions)
                 .HasForeignKey(s => s.PlanId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<BrandingInfo>()
+                .HasKey(b => b.Id);
+            modelBuilder.Entity<BrandingInfo>()
+                .HasOne(b => b.User)
+                .WithMany()
+                .HasForeignKey(b => b.UserId)
+                .HasPrincipalKey(u => u.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
