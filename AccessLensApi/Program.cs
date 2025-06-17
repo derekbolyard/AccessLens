@@ -23,11 +23,7 @@ using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-{
-    Args = args,
-    WebRootPath = "wwwroot"
-});
+var builder = WebApplication.CreateBuilder(args);
 
 // --------------------------------------------------
 // 1️⃣  SECURITY SERVICES
@@ -221,6 +217,9 @@ app.MapGet("/api/auth/csrf", (IAntiforgery anti, HttpContext ctx) =>
     var tokens = anti.GetAndStoreTokens(ctx);   // sets XSRF-TOKEN cookie
     return Results.Text(tokens.RequestToken!);  // send the matching request token
 });
+
+// Serve Angular front-end for non-API routes
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
