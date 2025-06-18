@@ -6,46 +6,32 @@ primary_region = "iad"
 
 [env]
   ASPNETCORE_URLS = "http://+:8080"
-  MINIO_ROOT_USER = "minioadmin"           # if you didn’t set via secret
-  # MINIO_ROOT_PASSWORD comes from fly secrets
 
-# ── Processes ──────────────────────────────────────────
-# Two separate commands, same VM
 [processes]
-  app   = "dotnet AccessLensApi.dll"
+  app = "dotnet AccessLensApi.dll"
   minio = "minio server /data --address :9000 --console-address :9001"
 
-# ── Services (HTTP routing) ───────────────────────────
-# 1) Public-facing API
 [[services]]
-  processes     = ["app"]
+  processes = ["app"]
   internal_port = 8080
-  protocol      = "tcp"
+  protocol = "tcp"
 
   [[services.ports]]
     handlers = ["http"]
     port = 80
+
   [[services.ports]]
     handlers = ["tls", "http"]
     port = 443
 
-# 2) Optional public MinIO S3 endpoint
 [[services]]
-  processes     = ["minio"]
+  processes = ["minio"]
   internal_port = 9000
-  protocol      = "tcp"
-  [[services.ports]]
-    port = 9000        # no handlers → raw TCP; add "tls" if you need HTTPS
+  protocol = "tcp"
 
-# 3) Optional MinIO web console
-[[services]]
-  processes     = ["minio"]
-  internal_port = 9001
-  protocol      = "tcp"
   [[services.ports]]
-    port = 9001        # remove this block if you don’t need the console
+    port = 9000
 
-# ── Persistent volume ─────────────────────────────────
 [[mounts]]
   source      = "data"
   destination = "/data"
