@@ -135,7 +135,7 @@ builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();
 var awsRegion = RegionEndpoint.GetBySystemName(configuration["AWS:Region"]);
 builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(awsRegion));
 
-builder.Services.AddSingleton<IEmailService, EmailServiceSmtp>();
+builder.Services.AddSingleton<IEmailService, LocalEmailService>();
 builder.Services.AddSingleton<IStorageService, S3StorageService>();
 
 StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"] ??

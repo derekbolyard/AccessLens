@@ -18,14 +18,14 @@
     <div class="brand-list">
       <app-card *ngFor="let b of brandings" [title]="b.logoUrl" [elevated]="true" class="brand-item">
         <div *ngIf="editingId !== b.id; else editForm">
-          <div class="colors">
-            <div class="color" [style.background]="b.primaryColor"></div>
-            <div class="color" [style.background]="b.secondaryColor"></div>
-          </div>
-          <div class="actions">
+        <div class="colors">
+          <div class="color" [style.background]="b.primaryColor"></div>
+          <div class="color" [style.background]="b.secondaryColor"></div>
+        </div>
+        <div class="actions">
             <app-button size="sm" variant="secondary" (click)="startEdit(b.id)">Edit</app-button>
-            <app-button size="sm" variant="secondary" (click)="deleteBrand(b.id)">Delete</app-button>
-          </div>
+          <app-button size="sm" variant="secondary" (click)="deleteBrand(b.id)">Delete</app-button>
+        </div>
         </div>
         <ng-template #editForm>
           <form (ngSubmit)="saveBrand(b)" class="brand-form">

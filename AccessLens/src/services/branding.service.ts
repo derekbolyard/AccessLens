@@ -30,13 +30,14 @@ export class BrandingService {
         this.loadBranding().subscribe();
       })
     );
+    this.brandingSubject.next(list);
   }
 
   deleteBranding(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       tap(() => {
-        const list = this.brandingSubject.value.filter(b => b.id !== id);
-        this.brandingSubject.next(list);
+    const list = this.brandingSubject.value.filter(b => b.id !== id);
+    this.brandingSubject.next(list);
       })
     );
   }
