@@ -62,6 +62,28 @@ namespace AccessLensApi.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Email);
+                    table.UniqueConstraint("AK_Users_UserId", x => x.UserId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BrandingInfos",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    UserId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    LogoUrl = table.Column<string>(type: "TEXT", nullable: false),
+                    PrimaryColor = table.Column<string>(type: "TEXT", nullable: false),
+                    SecondaryColor = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BrandingInfos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BrandingInfos_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -259,6 +281,11 @@ namespace AccessLensApi.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_BrandingInfos_UserId",
+                table: "BrandingInfos",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Findings_ReportId",
                 table: "Findings",
                 column: "ReportId");
@@ -312,6 +339,9 @@ namespace AccessLensApi.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "BrandingInfos");
+
             migrationBuilder.DropTable(
                 name: "Findings");
 

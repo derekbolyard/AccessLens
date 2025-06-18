@@ -1,0 +1,24 @@
+<div class="branding-page">
+  <div class="container">
+    <app-card title="Create Branding" [elevated]="true">
+      <form (ngSubmit)="createBrand()" class="brand-form">
+        <app-input label="Logo URL" [(ngModel)]="newBrand.logoUrl" name="logo"></app-input>
+        <app-input label="Primary Color" [(ngModel)]="newBrand.primaryColor" name="primary"></app-input>
+        <app-input label="Secondary Color" [(ngModel)]="newBrand.secondaryColor" name="secondary"></app-input>
+        <app-button variant="primary" type="submit">Add Brand</app-button>
+      </form>
+    </app-card>
+
+    <div class="brand-list">
+      <app-card *ngFor="let b of brandings" [title]="b.logoUrl" [elevated]="true" class="brand-item">
+        <div class="colors">
+          <div class="color" [style.background]="b.primaryColor"></div>
+          <div class="color" [style.background]="b.secondaryColor"></div>
+        </div>
+        <div class="actions">
+          <app-button size="sm" variant="secondary" (click)="deleteBrand(b.id)">Delete</app-button>
+        </div>
+      </app-card>
+    </div>
+  </div>
+</div>
