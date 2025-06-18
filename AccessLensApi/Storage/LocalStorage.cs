@@ -14,11 +14,18 @@ public sealed class LocalStorage : IStorageService
 
     public LocalStorage(IWebHostEnvironment env, IConfiguration cfg)
     {
-        // fallback when WebRootPath is null (minimal APIs)
-        var webRoot = env.WebRootPath ??
-                      Path.Combine(env.ContentRootPath, "wwwroot");
+        // Determine where files should be written. When running on Fly.io this
+        // can point at a mounted volume.
+        var root = Environment.GetEnvironmentVariable("LOCAL_STORAGE_ROOT");
+        if (string.IsNullOrEmpty(root))
+        {
+            // fallback when WebRootPath is null (minimal APIs)
+            var webRoot = env.WebRootPath ??
+                          Path.Combine(env.ContentRootPath, "wwwroot");
+            root = webRoot;
+        }
 
-        _basePath = Path.Combine(webRoot, "teasers");
+        _basePath = Path.Combine(root, "teasers");
         Directory.CreateDirectory(_basePath);
 
         _baseUrl = Environment.GetEnvironmentVariable("BASE_URL") ??

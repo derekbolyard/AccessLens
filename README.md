@@ -24,6 +24,11 @@ Set the following variables before running the service:
 - `FRONTEND_BASE_URL` – base URL of the Angular app
 - `GCS_BUCKET_NAME` – Google Cloud Storage bucket (optional)
 - `GCS_SERVICE_ACCOUNT_JSON` – service account JSON for GCS (optional)
+- `STORAGE_PROVIDER` – `s3` (default), `gcs`, or `local`
+- `LOCAL_STORAGE_ROOT` – directory for files when using local storage (optional)
+- `BASE_URL` – public URL root for local storage (optional)
+- `AWS_SERVICE_URL` – custom S3-compatible endpoint (use `http://localhost:9000` for MinIO)
+- `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` – credentials for the bundled MinIO server
 
 Set these variables before launching the API for production or development.
 
@@ -35,6 +40,8 @@ Set these variables before launching the API for production or development.
 4. Run `fly deploy` to build and deploy the container.
 
 The provided `Dockerfile` builds both the ASP.NET API and Angular front‑end and exposes the application on port `8080`.
+
+The `fly.toml` config defines a separate `minio` process that runs a MinIO server on port `9000`. Attach a Fly volume to `/data` for persistence and set `AWS_SERVICE_URL=http://localhost:9000` so the API stores files in MinIO.
 
 When deployed, the API serves the compiled Angular application from the `wwwroot` folder so the front‑end is accessible on the same domain.
 `wwwroot` is the default location for static files in ASP.NET, so no additional configuration is required.

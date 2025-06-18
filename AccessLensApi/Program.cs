@@ -137,14 +137,38 @@ var awsRegionName = Environment.GetEnvironmentVariable("AWS_REGION") ??
                    configuration["AWS:Region"] ??
                    "us-east-1";
 var awsRegion = RegionEndpoint.GetBySystemName(awsRegionName);
-builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(awsRegion));
+var serviceUrl = Environment.GetEnvironmentVariable("AWS_SERVICE_URL");
+builder.Services.AddSingleton<IAmazonS3>(_ =>
+{
+    if (!string.IsNullOrEmpty(serviceUrl))
+    {
+        var cfg = new AmazonS3Config
+        {
+            ServiceURL = serviceUrl,
+            ForcePathStyle = true,
+            AuthenticationRegion = awsRegionName
+        };
+        return new AmazonS3Client(cfg);
+    }
+    return new AmazonS3Client(awsRegion);
+});
 
 #if DEBUG
 builder.Services.AddSingleton<IEmailService, LocalEmailService>();
 #else
 builder.Services.AddSingleton<IEmailService, SendGridEmailService>();
 #endif
-builder.Services.AddSingleton<IStorageService, S3StorageService>();
+builder.Services.AddSingleton<IStorageService>(sp =>
+{
+    var provider = Environment.GetEnvironmentVariable("STORAGE_PROVIDER")?.ToLowerInvariant();
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    return provider switch
+    {
+        "local" => new LocalStorage(sp.GetRequiredService<IWebHostEnvironment>(), cfg),
+        "gcs" => new GcsStorageService(cfg),
+        _ => new S3StorageService(sp.GetRequiredService<IAmazonS3>(), cfg)
+    };
+});
 
 StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ??
                              configuration["Stripe:SecretKey"];
