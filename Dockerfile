@@ -21,16 +21,16 @@ WORKDIR /src/AccessLens
 RUN npm ci && npm run build
 RUN mkdir -p /app/publish/wwwroot && cp -r dist/access-lens/* /app/publish/wwwroot/
 
+RUN curl -sL https://dl.min.io/server/minio/release/linux-amd64/minio \
+    -o /usr/local/bin/minio && \
+    chmod +x /usr/local/bin/minio
+
 # Final runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-# Install MinIO binary
-RUN wget -q -O /usr/local/bin/minio \
-      https://dl.min.io/server/minio/release/linux-amd64/minio \
- && chmod +x /usr/local/bin/minio
 
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "AccessLensApi.dll"]
