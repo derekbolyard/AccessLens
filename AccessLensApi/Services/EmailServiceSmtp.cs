@@ -27,7 +27,7 @@ namespace AccessLensApi.Services
         {
             var msg = new MailMessage(_from, to, subject, body)
             {
-                IsBodyHtml = false
+                IsBodyHtml = true
             };
             return _client.SendMailAsync(msg);
         }
