@@ -6,6 +6,7 @@ primary_region = "iad"
 
 [env]
   ASPNETCORE_URLS = "http://+:8080"
+  MINIO_ROOT_USER = "minioadmin" 
 
 [processes]
   app = "dotnet AccessLensApi.dll"
