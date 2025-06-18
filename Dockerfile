@@ -1,4 +1,4 @@
-# Use official .NET SDK for build
+﻿# Use official .NET SDK for build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
@@ -17,6 +17,16 @@ WORKDIR /src/AccessLensApi
 RUN dotnet publish AccessLensApi.csproj -c Release -o /app/publish
 
 # Build Angular frontend and copy to wwwroot
+# ── add node + npm ──────────────────────────────
+RUN apt-get update -qq \
+ && apt-get install -y --no-install-recommends curl ca-certificates gnupg \
+ && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+ && apt-get install -y --no-install-recommends nodejs \
+ && rm -rf /var/lib/apt/lists/*
+
+# now npm is available
+RUN npm --version     # optional sanity check
+
 WORKDIR /src/AccessLens
 RUN npm ci && npm run build
 RUN mkdir -p /app/publish/wwwroot && cp -r dist/access-lens/* /app/publish/wwwroot/
