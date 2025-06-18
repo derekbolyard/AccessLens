@@ -8,7 +8,7 @@ import { UpgradePageComponent } from '../components/upgrade/upgrade-page.compone
 import { BrandingPageComponent } from '../components/branding/branding-page.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'sites', component: SitesListComponent },
   { path: 'sites/:siteId/reports', component: ReportsListComponent },
@@ -16,5 +16,5 @@ export const routes: Routes = [
   { path: 'sites/:siteId/reports/:reportId/pages/:pageId', component: PageDetailComponent },
   { path: 'upgrade', component: UpgradePageComponent },
   { path: 'branding', component: BrandingPageComponent },
-  { path: '**', redirectTo: '/dashboard' } // Fallback route
+  { path: '**', redirectTo: 'dashboard' } // Fallback route
 ];

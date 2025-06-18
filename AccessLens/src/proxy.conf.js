@@ -4,7 +4,7 @@
  */
 module.exports = {
   '/api': {
-    target: 'https://localhost:5001',   // ← your backend URL/port
+    target: 'https://localhost:7088',   // ← your backend URL/port
     secure: false,                      // ignore self-signed HTTPS cert in dev
     changeOrigin: true,                 // rewrites Host header → backend
     logLevel: 'debug',
