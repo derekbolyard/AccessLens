@@ -10,6 +10,8 @@ primary_region = "iad"
   MINIO_ROOT_USER          = "minioadmin"
   MINIO_ROOT_PASSWORD      = "<set-via-fly-secrets>"
   SQLITE_CONNECTION_STRING = "Data Source=/data/accesslens.db"
+  S3_SERVICE_URL           = "http://accesslens.internal:9000"
+  S3_REGION                = "us-east-1"
 
 [processes]
   app = "/entrypoint.sh"

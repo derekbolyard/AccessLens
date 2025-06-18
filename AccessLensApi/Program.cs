@@ -132,11 +132,11 @@ builder.Services.AddSingleton<IA11yScanner, A11yScanner>();
 builder.Services.AddSingleton<IPdfService, PdfService>();
 builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();
 
-var awsRegionName = Environment.GetEnvironmentVariable("AWS_REGION") ??
-                   configuration["AWS:Region"] ??
+var awsRegionName = Environment.GetEnvironmentVariable("S3_REGION") ??
+                   configuration["S3:Region"] ??
                    "us-east-1";
 var awsRegion = RegionEndpoint.GetBySystemName(awsRegionName);
-var serviceUrl = Environment.GetEnvironmentVariable("AWS_SERVICE_URL");
+var serviceUrl = Environment.GetEnvironmentVariable("S3_SERVICE_URL");
 builder.Services.AddSingleton<IAmazonS3>(_ =>
 {
     if (!string.IsNullOrEmpty(serviceUrl))
@@ -164,16 +164,14 @@ builder.Services.AddSingleton<IStorageService>(sp =>
     return provider switch
     {
         "local" => new LocalStorage(sp.GetRequiredService<IWebHostEnvironment>(), cfg),
-        "gcs" => new GcsStorageService(cfg),
         _ => new S3StorageService(sp.GetRequiredService<IAmazonS3>(), cfg)
     };
 });
 
-StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ??
-                             configuration["Stripe:SecretKey"];
+//StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ??
+//                             configuration["Stripe:SecretKey"];
 
-builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimitingOptions"));
-builder.Services.Configure<CaptchaOptions>(configuration.GetSection("Captcha"));
+builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimitingOptions"));;
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IRateLimiter, RateLimiterService>();
