@@ -29,6 +29,12 @@ RUN npm --version     # optional sanity check
 
 WORKDIR /src/AccessLens
 RUN npm ci && npm run build
+
+# 📌 DEBUG ─ list everything under the working dir
+RUN echo "========= LIST =========" \
+ && pwd \
+ && find . -maxdepth 3 -print
+
 RUN mkdir -p /app/publish/wwwroot && cp -r dist/AccessLens/* /app/publish/wwwroot/
 
 RUN curl -sL https://dl.min.io/server/minio/release/linux-amd64/minio \
