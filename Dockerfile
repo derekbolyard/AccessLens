@@ -29,7 +29,7 @@ RUN npm --version     # optional sanity check
 
 WORKDIR /src/AccessLens
 RUN npm ci && npm run build
-RUN mkdir -p /app/publish/wwwroot && cp -r dist/accesslens/* /app/publish/wwwroot/
+RUN mkdir -p /app/publish/wwwroot && cp -r dist/AccessLens/* /app/publish/wwwroot/
 
 RUN curl -sL https://dl.min.io/server/minio/release/linux-amd64/minio \
     -o /usr/local/bin/minio && \
