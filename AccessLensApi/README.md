@@ -20,6 +20,11 @@ Configuration settings are read from environment variables, which take precedenc
 - `Captcha__hCaptchaSecret` – secret key for hCaptcha verification.
 - `Gcs__BucketName` – (if using Google Cloud Storage) bucket name.
 - `Gcs__ServiceAccountJson` or `GCS_SERVICE_ACCOUNT_JSON` – JSON for the service account used when storing files in GCS.
+- `STORAGE_PROVIDER` – choose `s3`, `gcs`, or `local` (default `s3`).
+- `LOCAL_STORAGE_ROOT` – directory for local file uploads (when using `local`).
+- `BASE_URL` – public URL root for files when using local storage.
+- `AWS_SERVICE_URL` – S3-compatible endpoint URL (use `http://localhost:9000` for MinIO).
+- `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` – credentials for the bundled MinIO server (started as a separate process).
 - `ConnectionStrings__SqliteConnection` – connection string for the SQLite database.
 - `Playwright__BrowsersPath` – optional custom path for Playwright browsers.
 - `MAGIC_JWT_SECRET` – secret key for JWT magic link signing (minimum 32 characters).

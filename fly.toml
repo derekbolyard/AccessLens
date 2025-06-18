@@ -7,7 +7,12 @@ primary_region = "iad"
 [env]
   ASPNETCORE_URLS = "http://+:8080"
 
+[processes]
+  app = "dotnet AccessLensApi.dll"
+  minio = "minio server /data --address :9000 --console-address :9001"
+
 [[services]]
+  processes = ["app"]
   internal_port = 8080
   protocol = "tcp"
 
@@ -18,3 +23,11 @@ primary_region = "iad"
   [[services.ports]]
     handlers = ["tls", "http"]
     port = 443
+
+[[services]]
+  processes = ["minio"]
+  internal_port = 9000
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 9000
