@@ -14,6 +14,8 @@ Configuration settings are read from environment variables using the `Section__K
 - `Gmail__OAuthClientId` – Gmail OAuth client ID.
 - `Gmail__OAuthClientSecret` – Gmail OAuth client secret.
 - `Gmail__RefreshToken` – long‑lived refresh token for Gmail API access.
+- `SendGrid__ApiKey` – SendGrid API key.
+- `SendGrid__FromEmail` – address used for sending email via SendGrid.
 - `Captcha__hCaptchaSecret` – secret key for hCaptcha verification.
 - `Gcs__BucketName` – (if using Google Cloud Storage) bucket name.
 - `Gcs__ServiceAccountJson` or `GCS_SERVICE_ACCOUNT_JSON` – JSON for the service account used when storing files in GCS.

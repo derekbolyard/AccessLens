@@ -11,6 +11,8 @@ The API reads configuration values from `appsettings.json` and the following env
 - `GMAIL_OAUTH_CLIENT_ID` – Gmail OAuth client ID
 - `GMAIL_OAUTH_CLIENT_SECRET` – Gmail OAuth client secret
 - `GMAIL_REFRESH_TOKEN` – long‑lived Gmail refresh token
+- `SENDGRID_API_KEY` – SendGrid API key
+- `SENDGRID_FROM_EMAIL` – address used to send email via SendGrid
 - `STRIPE_SECRET_KEY` – Stripe secret API key
 - `STRIPE_WEBHOOK_SECRET` – Stripe webhook signing secret
 
