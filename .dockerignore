@@ -1,0 +1,15 @@
+.git
+.gitignore
+.github
+**/node_modules
+**/bin
+**/obj
+**/dist
+.vscode
+*.log
+Dockerfile*
+fly.toml
+docker-compose*.yml
+*.md
+# Optional: test projects
+AccessLensTests/

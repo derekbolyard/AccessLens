@@ -5,18 +5,15 @@ primary_region = "iad"
   dockerfile = "Dockerfile"
 
 [env]
-  ASPNETCORE_URLS          = "http://+:8080"            # redundant but explicit
-  SKIP_PLAYWRIGHT_INSTALL  = "1"                        # skip runtime download
+  ASPNETCORE_URLS          = "http://+:8080"
+  SKIP_PLAYWRIGHT_INSTALL  = "1"
   MINIO_ROOT_USER          = "minioadmin"
   MINIO_ROOT_PASSWORD      = "<set-via-fly-secrets>"
   SQLITE_CONNECTION_STRING = "Data Source=/data/accesslens.db"
 
-# ---------- Process definitions --------------------------------------------
 [processes]
-  app   = "dotnet AccessLensApi.dll"
-  minio = "/usr/local/bin/minio server /data --address :9000 --console-address :9001"
+  app = "/entrypoint.sh"
 
-# ---------- Networking ------------------------------------------------------
 [[services]]
   processes     = ["app"]
   internal_port = 8080
@@ -30,6 +27,11 @@ primary_region = "iad"
     handlers = ["tls", "http"]
     port     = 443
 
+  # Expose MinIO S3 API internally (no handlers by default)
+  [[services.ports]]
+    processes = ["app"]
+    port = 9000
+
   [[services.http_checks]]
     processes = ["app"]
     port      = 80
@@ -37,14 +39,6 @@ primary_region = "iad"
     path      = "/api/health"
     interval  = "30s"
     timeout   = "5s"
-
-[[services]]
-  processes     = ["minio"]
-  internal_port = 9000
-  protocol      = "tcp"
-
-  [[services.ports]]
-    port = 9000   # no public handlers; purely internal unless you later expose
 
 [[mounts]]
   source      = "data"
