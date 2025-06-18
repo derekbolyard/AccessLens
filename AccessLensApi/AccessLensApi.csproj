@@ -38,16 +38,4 @@
   <ItemGroup>
     <EmbeddedResource Include="Assets\axe-core-4.9.0.min.js" LogicalName="AccessLensApi.Assets.axe-core-4.9.0.min.js" />
   </ItemGroup>
-  <Target Name="BuildClient" AfterTargets="Publish">
-    <!-- install & build using your folder name -->
-    <Exec Command="npm install --prefix AccessLens" />
-    <Exec Command="npm run build --prefix AccessLens --prod" />
-
-    <!-- copy the compiled output into wwwroot -->
-    <ItemGroup>
-      <DistFiles Include="AccessLens\dist\**\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(DistFiles)"
-          DestinationFolder="$(PublishDir)wwwroot\%(RecursiveDir)" />
-  </Target>
 </Project>
