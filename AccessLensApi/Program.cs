@@ -1,5 +1,4 @@
-﻿// Program.cs – AccessLens API (JWT via HttpOnly cookie, CSRF‑ready)
-// ---------------------------------------------------------------
+﻿using AccessLensApi.Config;
 using AccessLensApi.Data;
 using AccessLensApi.Features.Auth;
 using AccessLensApi.Middleware;
@@ -17,47 +16,58 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Playwright;
-using QuestPDF.Infrastructure;
 using Serilog;
-using Stripe;
 using System.Data;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-// --------------------------------------------------
-// 1️⃣  SECURITY SERVICES
-// --------------------------------------------------
-// Antiforgery for SPA (Angular will read the XSRF‑TOKEN cookie and echo header)
+
+// ------------------------------------------------------------------
+// 1️⃣  CONFIG + LOGGING
+// ------------------------------------------------------------------
+builder.Services
+    .AddOptions<JwtOptions>().BindConfiguration(JwtOptions.Section).ValidateDataAnnotations()
+    .Services
+    .AddOptions<S3Options>().BindConfiguration(S3Options.Section).ValidateDataAnnotations()
+    .Services
+    .AddOptions<AccessLensApi.Config.PlaywrightOptions>().BindConfiguration(AccessLensApi.Config.PlaywrightOptions.Section)
+    .Services
+    .AddOptions<MinioOptions>().BindConfiguration(MinioOptions.Section);
+
+builder.Host.UseSerilog((ctx, cfg) =>
+    cfg.ReadFrom.Configuration(ctx.Configuration)
+       .WriteTo.Console());
+
+// ------------------------------------------------------------------
+// 2️⃣  SECURITY (Antiforgery + JWT)
+// ------------------------------------------------------------------
 builder.Services.AddAntiforgery(o =>
 {
     o.HeaderName = "X-CSRF-TOKEN";
     o.Cookie.Name = "XSRF-TOKEN";
-    o.Cookie.SameSite = SameSiteMode.Lax;   // works cross‑sub‑domain
+    o.Cookie.SameSite = SameSiteMode.Lax;
     o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
-// Jwt Authentication – single scheme reading from HttpOnly cookie *or* Authorization header.
-var jwtSecret = Environment.GetEnvironmentVariable("MAGIC_JWT_SECRET") ??
-                builder.Configuration["MagicJwt:SecretKey"] ??
-                throw new InvalidOperationException("MagicJwt SecretKey is required");
-var keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
+var jwt = builder.Configuration.GetSection(JwtOptions.Section).Get<JwtOptions>()
+          ?? throw new InvalidOperationException("Jwt settings missing");
 
-builder.Services.AddAuthentication("MagicJwt")
-    .AddJwtBearer("MagicJwt", opts =>
+builder.Services.AddAuthentication("JwtCookie")
+    .AddJwtBearer("JwtCookie", opts =>
     {
-        opts.TokenValidationParameters = new TokenValidationParameters
+        var keyBytes = Encoding.UTF8.GetBytes(jwt.SecretKey);
+
+        opts.TokenValidationParameters = new()
         {
-            ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-            ValidIssuer = "accesslens",
-            ValidAudience = "session",   // long‑lived session token
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = jwt.Audience,
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(1)
         };
 
-        // Pull token from cookie when header isn’t present
         opts.Events = new JwtBearerEvents
         {
             OnMessageReceived = ctx =>
@@ -71,113 +81,84 @@ builder.Services.AddAuthentication("MagicJwt")
 builder.Services.AddAuthorization(o =>
     o.AddPolicy("Authenticated", p => p.RequireAuthenticatedUser()));
 
-// --------------------------------------------------
-// 2️⃣  INFRA & LIBS (unchanged from your original)
-// --------------------------------------------------
-QuestPDF.Settings.License = LicenseType.Community;
-builder.Host.UseSerilog((ctx, lc) => lc
-    .WriteTo.Console()
-    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
-    .ReadFrom.Configuration(ctx.Configuration));
-
-var configuration = builder.Configuration;
-var sqliteConnString = Environment.GetEnvironmentVariable("SQLITE_CONNECTION_STRING")
-                        ?? configuration.GetConnectionString("SqliteConnection")
-                        ?? "Data Source=accesslens.db";
-
-builder.Services.AddTransient<IDbConnection>(_ =>
-{
-    var conn = new SqliteConnection(sqliteConnString);
-    conn.Open();
-    return conn;
-});
-
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(sqliteConnString));
-
-builder.Services.Configure<PlaywrightOptions>(configuration.GetSection("Playwright"));
-var skipPwInstall = Environment.GetEnvironmentVariable("SKIP_PLAYWRIGHT_INSTALL");
-if (skipPwInstall != "1")
-{
-    await Task.Run(() =>
+// ------------------------------------------------------------------
+// 3️⃣  DB + Dapper connection
+// ------------------------------------------------------------------
+var sqliteConn = builder.Configuration.GetConnectionString("Sqlite");
+builder.Services
+    .AddDbContext<ApplicationDbContext>(o => o.UseSqlite(sqliteConn))
+    .AddTransient<IDbConnection>(_ =>
     {
-        var exitCode = Microsoft.Playwright.Program.Main(new[] { "install" });
-        if (exitCode != 0)
-            throw new Exception($"Playwright install failed (exit code {exitCode})");
+        var c = new SqliteConnection(sqliteConn);
+        c.Open();
+        return c;
     });
-}
 
-builder.Services.AddSingleton<IPlaywright>(_ =>
+// ------------------------------------------------------------------
+// 4️⃣  S3 / MinIO client
+// ------------------------------------------------------------------
+var minio = builder.Configuration.GetSection(MinioOptions.Section).Get<MinioOptions>()
+          ?? throw new InvalidOperationException("Minio settings missing");
+builder.Services.AddSingleton<IAmazonS3>(sp =>
 {
-    return Task.Run(async () =>
+    var opts = sp.GetRequiredService<IOptions<S3Options>>().Value;
+    if (string.IsNullOrEmpty(opts.ServiceUrl))
+        return new AmazonS3Client(RegionEndpoint.GetBySystemName(opts.Region));
+
+    var cfg = new AmazonS3Config
     {
-        var playwright = await Playwright.CreateAsync();
-        var browsersPath = configuration["Playwright:BrowsersPath"];
-        if (!string.IsNullOrEmpty(browsersPath))
-            Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", browsersPath);
-        return playwright;
-    }).GetAwaiter().GetResult();
+        ServiceURL = opts.ServiceUrl,
+        ForcePathStyle = true,
+        AuthenticationRegion = opts.Region
+    };
+    return new AmazonS3Client(minio.User, minio.Password, cfg);
 });
 
-builder.Services.AddSingleton<IBrowser>(sp =>
-{
-    var pwOpts = sp.GetRequiredService<IOptions<PlaywrightOptions>>().Value;
-    var pw = sp.GetRequiredService<IPlaywright>();
-    var launch = new BrowserTypeLaunchOptions { Headless = pwOpts.Headless, Args = pwOpts.Args };
-    return pw[pwOpts.Browser].LaunchAsync(launch).GetAwaiter().GetResult();
-});
-
-builder.Services.AddSingleton<IAxeScriptProvider, AxeScriptProvider>();
-builder.Services.AddSingleton<IA11yScanner, A11yScanner>();
-builder.Services.AddSingleton<IPdfService, PdfService>();
-builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();
-
-var awsRegionName = Environment.GetEnvironmentVariable("S3_REGION") ??
-                   configuration["S3:Region"] ??
-                   "us-east-1";
-var awsRegion = RegionEndpoint.GetBySystemName(awsRegionName);
-var serviceUrl = Environment.GetEnvironmentVariable("S3_SERVICE_URL");
-builder.Services.AddSingleton<IAmazonS3>(_ =>
-{
-    if (!string.IsNullOrEmpty(serviceUrl))
-    {
-        var cfg = new AmazonS3Config
-        {
-            ServiceURL = serviceUrl,
-            ForcePathStyle = true,
-            AuthenticationRegion = awsRegionName
-        };
-        return new AmazonS3Client(cfg);
-    }
-    return new AmazonS3Client(awsRegion);
-});
-
+builder.Services.AddSingleton<IStorageService, S3StorageService>();
 #if DEBUG
 builder.Services.AddSingleton<IEmailService, LocalEmailService>();
 #else
 builder.Services.AddSingleton<IEmailService, SendGridEmailService>();
 #endif
-builder.Services.AddSingleton<IStorageService>(sp =>
+
+// ------------------------------------------------------------------
+// 5️⃣  Playwright (optional install)
+// ------------------------------------------------------------------
+builder.Services.AddSingleton<IPlaywright>(sp =>
 {
-    var provider = Environment.GetEnvironmentVariable("STORAGE_PROVIDER")?.ToLowerInvariant();
-    var cfg = sp.GetRequiredService<IConfiguration>();
-    return provider switch
-    {
-        "local" => new LocalStorage(sp.GetRequiredService<IWebHostEnvironment>(), cfg),
-        _ => new S3StorageService(sp.GetRequiredService<IAmazonS3>(), cfg)
-    };
+    var opts = sp.GetRequiredService<IOptions<AccessLensApi.Config.PlaywrightOptions>>().Value;
+    Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", opts.BrowsersPath);
+
+    // optional install step
+    if (Environment.GetEnvironmentVariable("SKIP_PLAYWRIGHT_INSTALL") != "1")
+        Microsoft.Playwright.Program.Main(new[] { "install" });
+
+    return Playwright.CreateAsync().GetAwaiter().GetResult();
 });
 
-//StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ??
-//                             configuration["Stripe:SecretKey"];
+builder.Services.AddSingleton<IBrowser>(sp =>
+{
+    var opts = sp.GetRequiredService<IOptions<AccessLensApi.Config.PlaywrightOptions>>().Value;
+    var pw = sp.GetRequiredService<IPlaywright>();
+    return pw[opts.Browser].LaunchAsync(new() { Headless = opts.Headless, Args = opts.Args })
+                            .GetAwaiter().GetResult();
+});
 
-builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimitingOptions"));;
+// ------------------------------------------------------------------
+// 6️⃣  Domain services, rate lim, etc.
+// ------------------------------------------------------------------
+builder.Services.AddSingleton<IAxeScriptProvider, AxeScriptProvider>();
+builder.Services.AddSingleton<IA11yScanner, A11yScanner>();
+builder.Services.AddSingleton<IPdfService, PdfService>();
+builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();
 
+builder.Services.Configure<RateLimitingOptions>(builder.Configuration.GetSection("RateLimiting"));
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IRateLimiter, RateLimiterService>();
 builder.Services.AddScoped<ICreditManager, CreditManager>();
 builder.Services.AddMemoryCache();
 
+// MVC, Swagger, CORS, Session
 builder.Services.AddControllers().AddJsonOptions(o =>
     o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
 
@@ -185,13 +166,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddCors(o =>
-{
-    o.AddDefaultPolicy(p =>
-        p.WithOrigins("http://localhost:4200", "https://localhost:4200", "http://localhost:3000")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials());
-});
+    o.AddDefaultPolicy(p => p
+        .WithOrigins("http://localhost:4200", "https://localhost:4200")
+        .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(o =>
@@ -201,31 +178,27 @@ builder.Services.AddSession(o =>
     o.Cookie.IsEssential = true;
 });
 
-// --------------------------------------------------
-// 3️⃣  BUILD APP / PIPELINE
-// --------------------------------------------------
+// ------------------------------------------------------------------
+// 7️⃣  PIPELINE
+// ------------------------------------------------------------------
 var app = builder.Build();
-app.UseExceptionHandler(errorApp =>
+
+app.UseExceptionHandler(a => a.Run(async ctx =>
 {
-    errorApp.Run(async context =>
-        {
-            context.Response.ContentType = "application/json";
-            var feat = context.Features.Get<IExceptionHandlerFeature>();
-            if (feat?.Error != null)
-                Log.Error(feat.Error, "Unhandled exception");
+    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    ctx.Response.ContentType = "application/json";
+    var ex = ctx.Features.Get<IExceptionHandlerFeature>()?.Error;
+    Log.Error(ex, "Unhandled exception");
+    await ctx.Response.WriteAsJsonAsync(new { error = "Internal server error" });
+}));
 
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
-        });
-});
-app.UseSession();
-app.UseRouting();
-
-// Static + forwarded headers
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+app.UseForwardedHeaders(new()
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
+
+app.UseSession();
+app.UseRouting();
 app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
@@ -237,30 +210,23 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseMiddleware<RateLimitMiddleware>();
 app.UseHttpsRedirection();
-
-// 👇  Auth before anything that needs User
 app.UseAuthentication();
 app.UseAuthorization();
 
-// EF migrations at startup
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.Migrate();
 }
 
 app.UseSerilogRequestLogging();
 
-// Map controllers (your Magic‑link endpoint lives in its own controller)
 app.MapControllers();
 app.MapGet("/api/auth/csrf", (IAntiforgery anti, HttpContext ctx) =>
 {
-    var tokens = anti.GetAndStoreTokens(ctx);   // sets XSRF-TOKEN cookie
-    return Results.Text(tokens.RequestToken!);  // send the matching request token
+    var tok = anti.GetAndStoreTokens(ctx);
+    return Results.Text(tok.RequestToken!);
 });
 app.MapGet("/api/health", () => Results.Json(new { status = "ok" }));
-
-// Serve Angular front-end for non-API routes
 app.MapFallbackToFile("index.html");
 
 app.Run();

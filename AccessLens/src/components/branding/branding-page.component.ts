@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { InputComponent } from '../common/input/input.component';
 import { ButtonComponent } from '../common/button/button.component';
 import { CardComponent } from '../common/card/card.component';
 import { BrandingService } from '../../services/branding.service';
@@ -11,7 +10,7 @@ import { AuthService } from 'src/services/auth.service';
 @Component({
   selector: 'app-branding-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputComponent, ButtonComponent, CardComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, CardComponent],
   templateUrl: './branding-page.component.html',
   styleUrls: ['./branding-page.component.scss']
 })

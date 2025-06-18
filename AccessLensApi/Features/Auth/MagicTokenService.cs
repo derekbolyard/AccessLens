@@ -1,6 +1,8 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using AccessLensApi.Config;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AccessLensApi.Features.Auth
@@ -9,13 +11,10 @@ namespace AccessLensApi.Features.Auth
     {
         private readonly string _key;
 
-        public MagicTokenService(IConfiguration cfg)
+        public MagicTokenService(IOptions<JwtOptions> cfg)
         {
-            _key = Environment.GetEnvironmentVariable("MAGIC_JWT_SECRET") ??
-                cfg["MagicJwt:SecretKey"] ??
+            _key = cfg.Value.SecretKey ??
                 throw new InvalidOperationException("MAGIC_JWT_SECRET is required");
-            if (_key.Length < 32)
-                throw new InvalidOperationException("MAGIC_JWT_SECRET must be at least 32 characters");
         }
 
         // Short-lived magic link token (15 min)

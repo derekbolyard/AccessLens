@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AccessLensApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250618001415_Initial")]
+    [Migration("20250618212918_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

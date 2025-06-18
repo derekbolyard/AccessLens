@@ -8,10 +8,9 @@ primary_region = "iad"
   ASPNETCORE_URLS          = "http://+:8080"
   SKIP_PLAYWRIGHT_INSTALL  = "1"
   MINIO_ROOT_USER          = "minioadmin"
-  MINIO_ROOT_PASSWORD      = "<set-via-fly-secrets>"
-  SQLITE_CONNECTION_STRING = "Data Source=/data/accesslens.db"
-  S3_SERVICE_URL           = "http://accesslens.internal:9000"
-  S3_REGION                = "us-east-1"
+  ConnectonStrings__Sqlite = "Data Source=/data/accesslens.db"
+  S3__SERVICE_URL           = "http://accesslens.internal:9000"
+  S3__REGION                = "us-east-1"
 
 [processes]
   app = "/entrypoint.sh"
