@@ -2,22 +2,40 @@
   <div class="container">
     <app-card title="Create Branding" [elevated]="true">
       <form (ngSubmit)="createBrand()" class="brand-form">
-        <app-input label="Logo URL" [(ngModel)]="newBrand.logoUrl" name="logo"></app-input>
-        <app-input label="Primary Color" [(ngModel)]="newBrand.primaryColor" name="primary"></app-input>
-        <app-input label="Secondary Color" [(ngModel)]="newBrand.secondaryColor" name="secondary"></app-input>
+        <input type="file" accept="image/*" (change)="logoFile = $event.target.files?.[0] || null" />
+        <label>
+          Primary Color
+          <input type="color" [(ngModel)]="newBrand.primaryColor" name="primary" />
+        </label>
+        <label>
+          Secondary Color
+          <input type="color" [(ngModel)]="newBrand.secondaryColor" name="secondary" />
+        </label>
         <app-button variant="primary" type="submit">Add Brand</app-button>
       </form>
     </app-card>
 
     <div class="brand-list">
       <app-card *ngFor="let b of brandings" [title]="b.logoUrl" [elevated]="true" class="brand-item">
-        <div class="colors">
-          <div class="color" [style.background]="b.primaryColor"></div>
-          <div class="color" [style.background]="b.secondaryColor"></div>
+        <div *ngIf="editingId !== b.id; else editForm">
+          <div class="colors">
+            <div class="color" [style.background]="b.primaryColor"></div>
+            <div class="color" [style.background]="b.secondaryColor"></div>
+          </div>
+          <div class="actions">
+            <app-button size="sm" variant="secondary" (click)="startEdit(b.id)">Edit</app-button>
+            <app-button size="sm" variant="secondary" (click)="deleteBrand(b.id)">Delete</app-button>
+          </div>
         </div>
-        <div class="actions">
-          <app-button size="sm" variant="secondary" (click)="deleteBrand(b.id)">Delete</app-button>
-        </div>
+        <ng-template #editForm>
+          <form (ngSubmit)="saveBrand(b)" class="brand-form">
+            <input type="file" accept="image/*" (change)="logoFile = $event.target.files?.[0] || null" />
+            <label>Primary <input type="color" [(ngModel)]="b.primaryColor" name="p{{b.id}}" /></label>
+            <label>Secondary <input type="color" [(ngModel)]="b.secondaryColor" name="s{{b.id}}" /></label>
+            <app-button size="sm" variant="primary" type="submit">Save</app-button>
+            <app-button size="sm" variant="secondary" (click)="editingId=null">Cancel</app-button>
+          </form>
+        </ng-template>
       </app-card>
     </div>
   </div>
