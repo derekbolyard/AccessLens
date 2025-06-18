@@ -28,21 +28,21 @@ namespace AccessLensApi.Services
         {
             _config = configuration;
             // "FromEmail" is the single address you send from
-            _fromEmail = configuration["Gmail:FromEmail"]
-                ?? Environment.GetEnvironmentVariable("GMAIL_FROM_EMAIL")
+            _fromEmail = Environment.GetEnvironmentVariable("GMAIL_FROM_EMAIL")
+                ?? configuration["Gmail:FromEmail"]
                 ?? throw new ArgumentNullException("Gmail:FromEmail must be set via config or GMAIL_FROM_EMAIL");
 
             // Client ID/Secret from Google Cloud (OAuth)
-            _clientId = configuration["Gmail:OAuthClientId"]
-                ?? Environment.GetEnvironmentVariable("GMAIL_OAUTH_CLIENT_ID")
+            _clientId = Environment.GetEnvironmentVariable("GMAIL_OAUTH_CLIENT_ID")
+                ?? configuration["Gmail:OAuthClientId"]
                 ?? throw new ArgumentNullException("Gmail:OAuthClientId must be set via config or GMAIL_OAUTH_CLIENT_ID");
-            _clientSecret = configuration["Gmail:OAuthClientSecret"]
-                ?? Environment.GetEnvironmentVariable("GMAIL_OAUTH_CLIENT_SECRET")
+            _clientSecret = Environment.GetEnvironmentVariable("GMAIL_OAUTH_CLIENT_SECRET")
+                ?? configuration["Gmail:OAuthClientSecret"]
                 ?? throw new ArgumentNullException("Gmail:OAuthClientSecret must be set via config or GMAIL_OAUTH_CLIENT_SECRET");
 
             // A long-lived refresh token you obtained once via the OAuth consent flow
-            _refreshToken = configuration["Gmail:RefreshToken"]
-                ?? Environment.GetEnvironmentVariable("GMAIL_REFRESH_TOKEN")
+            _refreshToken = Environment.GetEnvironmentVariable("GMAIL_REFRESH_TOKEN")
+                ?? configuration["Gmail:RefreshToken"]
                 ?? throw new ArgumentNullException("Gmail:RefreshToken must be set via config or GMAIL_REFRESH_TOKEN");
         }
 
@@ -53,7 +53,9 @@ namespace AccessLensApi.Services
 
         public async Task SendMagicLinkAsync(string email, string magicToken)
         {
-            var baseUrl = _config["Frontend:BaseUrl"] ?? "http://localhost:4200";
+            var baseUrl = Environment.GetEnvironmentVariable("FRONTEND_BASE_URL") ??
+                         _config["Frontend:BaseUrl"] ??
+                         "http://localhost:4200";
             var magicLink = $"{baseUrl.TrimEnd('/')}/api/auth/magic/{magicToken}";
 
             var subject = "Your Access Lens Magic Link";

@@ -13,12 +13,13 @@ namespace AccessLensApi.Storage
         public GcsStorageService(IConfiguration config)
         {
             // 1) Read the bucket name from configuration
-            _bucketName = config["Gcs:BucketName"]
+            _bucketName = Environment.GetEnvironmentVariable("GCS_BUCKET_NAME")
+                          ?? config["Gcs:BucketName"]
                           ?? throw new ArgumentNullException("Gcs:BucketName must be set");
 
             // 2) Read the entire service account JSON from config or environment
-            var saJson = config["Gcs:ServiceAccountJson"]
-                         ?? Environment.GetEnvironmentVariable("GCS_SERVICE_ACCOUNT_JSON");
+            var saJson = Environment.GetEnvironmentVariable("GCS_SERVICE_ACCOUNT_JSON")
+                         ?? config["Gcs:ServiceAccountJson"];
 
             if (string.IsNullOrEmpty(saJson))
             {

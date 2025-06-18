@@ -4,10 +4,11 @@ This directory contains the ASP.NET Core backend that powers the AccessLens serv
 
 ## Required environment variables
 
-Configuration settings are read from environment variables using the `Section__Key` notation. The API requires the following secrets to be supplied:
+Configuration settings are read from environment variables, which take precedence over `appsettings.json`. You can create a `.env` file for local development using the `Section__Key` notation. Define the following variables:
 
-- `AWS__Region` – AWS region used when uploading files.
-- `AWS__S3Bucket` – S3 bucket name for PDF and image uploads.
+- `AWS__Region` – AWS region used when uploading files (or `AWS_REGION`).
+- `AWS__S3Bucket` – S3 bucket name for PDF and image uploads (or `AWS_S3_BUCKET`).
+- `AWS_SES_FROM_EMAIL` – sender address when using Amazon SES.
 - `Stripe__SecretKey` – your Stripe secret API key.
 - `Stripe__WebhookSecret` – signing secret for webhook verification.
 - `Gmail__FromEmail` – address the service sends email from.
@@ -20,7 +21,7 @@ Configuration settings are read from environment variables using the `Section__K
 - `ConnectionStrings__SqliteConnection` – connection string for the SQLite database.
 - `Playwright__BrowsersPath` – optional custom path for Playwright browsers.
 - `MAGIC_JWT_SECRET` – secret key for JWT magic link signing (minimum 32 characters).
-- `Frontend__BaseUrl` – base URL of the frontend application for magic link redirects.
+ - `Frontend__BaseUrl` – base URL of the frontend application for magic link redirects (or `FRONTEND_BASE_URL`).
 
 ## Database migrations
 

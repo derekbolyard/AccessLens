@@ -21,8 +21,8 @@ namespace AccessLensApi.Features.Payments
             ApplicationDbContext dbContext,
             ILogger<StripeWebhookController> logger)
         {
-            _webhookSecret = config["Stripe:WebhookSecret"]
-                ?? Environment.GetEnvironmentVariable("STRIPE_WEBHOOK_SECRET");
+            _webhookSecret = Environment.GetEnvironmentVariable("STRIPE_WEBHOOK_SECRET")
+                ?? config["Stripe:WebhookSecret"];
             _dbContext = dbContext;
             _logger = logger;
         }

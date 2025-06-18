@@ -11,7 +11,8 @@ namespace AccessLensApi.Features.Auth
 
         public MagicTokenService(IConfiguration cfg)
         {
-            _key = cfg["MagicJwt:SecretKey"] ??
+            _key = Environment.GetEnvironmentVariable("MAGIC_JWT_SECRET") ??
+                cfg["MagicJwt:SecretKey"] ??
                 throw new InvalidOperationException("MAGIC_JWT_SECRET is required");
             if (_key.Length < 32)
                 throw new InvalidOperationException("MAGIC_JWT_SECRET must be at least 32 characters");

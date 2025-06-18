@@ -14,7 +14,8 @@ namespace AccessLensApi.Services
         public EmailService(IAmazonSimpleEmailService sesClient, IConfiguration config)
         {
             _sesClient = sesClient;
-            _fromAddress = config["AWS:SesFromEmail"];
+            _fromAddress = Environment.GetEnvironmentVariable("AWS_SES_FROM_EMAIL") ??
+                          config["AWS:SesFromEmail"];
             _config = config;
         }
 
@@ -25,7 +26,9 @@ namespace AccessLensApi.Services
 
         public async Task SendMagicLinkAsync(string email, string magicToken)
         {
-            var baseUrl = _config["Frontend:BaseUrl"] ?? "http://localhost:4200";
+            var baseUrl = Environment.GetEnvironmentVariable("FRONTEND_BASE_URL") ??
+                         _config["Frontend:BaseUrl"] ??
+                         "http://localhost:4200";
             var magicLink = $"{baseUrl.TrimEnd('/')}/api/auth/magic/{magicToken}";
 
             var subject = "Your Access Lens Magic Link";
