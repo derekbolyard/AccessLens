@@ -180,6 +180,34 @@ namespace AccessLensApi.Migrations
                     b.ToTable("Scans");
                 });
 
+            modelBuilder.Entity("AccessLensApi.Models.BrandingInfo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LogoUrl")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PrimaryColor")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecondaryColor")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("BrandingInfos");
+                });
+
             modelBuilder.Entity("AccessLensApi.Models.Finding", b =>
                 {
                     b.Property<Guid>("FindingId")
@@ -457,6 +485,18 @@ namespace AccessLensApi.Migrations
                         .HasForeignKey("Email")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("AccessLensApi.Models.BrandingInfo", b =>
+                {
+                    b.HasOne("AccessLensApi.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .HasPrincipalKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AccessLensApi.Models.Finding", b =>

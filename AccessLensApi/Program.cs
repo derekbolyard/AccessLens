@@ -139,7 +139,7 @@ var awsRegionName = Environment.GetEnvironmentVariable("AWS_REGION") ??
 var awsRegion = RegionEndpoint.GetBySystemName(awsRegionName);
 builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(awsRegion));
 
-builder.Services.AddSingleton<IEmailService, EmailServiceSmtp>();
+builder.Services.AddSingleton<IEmailService, LocalEmailService>();
 builder.Services.AddSingleton<IStorageService, S3StorageService>();
 
 StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ??

@@ -4,13 +4,13 @@ using System.Net.Mail;
 
 namespace AccessLensApi.Services
 {
-    public sealed class EmailServiceSmtp : IEmailService
+    public sealed class LocalEmailService : IEmailService
     {
         private readonly SmtpClient _client;
         private readonly string _from;
         private readonly IConfiguration _config;
 
-        public EmailServiceSmtp(IConfiguration cfg)
+        public LocalEmailService(IConfiguration cfg)
         {
             _from = cfg["Mail:From"] ?? "demo@cancelwidget.local";
             _client = new SmtpClient(

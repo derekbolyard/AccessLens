@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 
-namespace AccessLensApi.Controllers
+namespace AccessLensApi.Features.Reports
 {
     [ApiController]
     [Route("api/[controller]")]
