@@ -6,6 +6,7 @@ import { ButtonComponent } from '../common/button/button.component';
 import { CardComponent } from '../common/card/card.component';
 import { BrandingService } from '../../services/branding.service';
 import { BrandingInfo } from '../../types/branding.interface';
+import { AuthService } from 'src/services/auth.service';
 
 @Component({
   selector: 'app-branding-page',

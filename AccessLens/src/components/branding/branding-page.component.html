@@ -2,7 +2,7 @@
   <div class="container">
     <app-card title="Create Branding" [elevated]="true">
       <form (ngSubmit)="createBrand()" class="brand-form">
-        <input type="file" accept="image/*" (change)="logoFile = $event.target.files?.[0] || null" />
+        <input type="file" accept="image/*" (change)="logoFile = $any($event.target).files?.[0] || null" />
         <label>
           Primary Color
           <input type="color" [(ngModel)]="newBrand.primaryColor" name="primary" />
@@ -29,7 +29,7 @@
         </div>
         <ng-template #editForm>
           <form (ngSubmit)="saveBrand(b)" class="brand-form">
-            <input type="file" accept="image/*" (change)="logoFile = $event.target.files?.[0] || null" />
+            <input type="file" accept="image/*" (change)="logoFile = $any($event.target).files?.[0] || null" />
             <label>Primary <input type="color" [(ngModel)]="b.primaryColor" name="p{{b.id}}" /></label>
             <label>Secondary <input type="color" [(ngModel)]="b.secondaryColor" name="s{{b.id}}" /></label>
             <app-button size="sm" variant="primary" type="submit">Save</app-button>

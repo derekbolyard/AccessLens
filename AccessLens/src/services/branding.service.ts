@@ -30,7 +30,6 @@ export class BrandingService {
         this.loadBranding().subscribe();
       })
     );
-    this.brandingSubject.next(list);
   }
 
   deleteBranding(id: string): Observable<void> {
