@@ -28,9 +28,9 @@ ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
 # Install MinIO binary
-RUN curl -sL https://dl.min.io/server/minio/release/linux-amd64/minio \
-    -o /usr/local/bin/minio && \
-    chmod +x /usr/local/bin/minio
+RUN wget -q -O /usr/local/bin/minio \
+      https://dl.min.io/server/minio/release/linux-amd64/minio \
+ && chmod +x /usr/local/bin/minio
 
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "AccessLensApi.dll"]
