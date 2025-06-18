@@ -2,6 +2,9 @@ using AccessLensApi.Data;
 using AccessLensApi.Models;
 using AccessLensApi.Storage;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
@@ -9,6 +12,7 @@ namespace AccessLensApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "Authenticated")]
 public class BrandingController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -21,11 +25,14 @@ public class BrandingController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] Guid userId)
+    public async Task<IActionResult> Get()
     {
+        var user = await GetCurrentUserAsync();
+        if (user == null) return Unauthorized();
+
         var infos = await _db.BrandingInfos
             .AsNoTracking()
-            .Where(b => b.UserId == userId)
+            .Where(b => b.UserId == user.UserId)
             .ToListAsync();
         return Ok(infos);
     }
@@ -33,9 +40,12 @@ public class BrandingController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] BrandingCreateRequest req)
     {
+        var user = await GetCurrentUserAsync();
+        if (user == null) return Unauthorized();
+
         var branding = new BrandingInfo
         {
-            UserId = req.UserId,
+            UserId = user.UserId,
             PrimaryColor = req.PrimaryColor,
             SecondaryColor = req.SecondaryColor
         };
@@ -58,7 +68,10 @@ public class BrandingController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromForm] BrandingUpdateRequest req)
     {
-        var branding = await _db.BrandingInfos.FindAsync(id);
+        var user = await GetCurrentUserAsync();
+        if (user == null) return Unauthorized();
+
+        var branding = await _db.BrandingInfos.FirstOrDefaultAsync(b => b.Id == id && b.UserId == user.UserId);
         if (branding == null) return NotFound();
 
         branding.PrimaryColor = req.PrimaryColor;
@@ -81,26 +94,39 @@ public class BrandingController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var branding = await _db.BrandingInfos.FindAsync(id);
+        var user = await GetCurrentUserAsync();
+        if (user == null) return Unauthorized();
+
+        var branding = await _db.BrandingInfos.FirstOrDefaultAsync(b => b.Id == id && b.UserId == user.UserId);
         if (branding == null) return NotFound();
 
         _db.BrandingInfos.Remove(branding);
         await _db.SaveChangesAsync();
         return NoContent();
     }
+
+    private async Task<User?> GetCurrentUserAsync()
+    {
+        var email = User.FindFirstValue("email");
+        if (string.IsNullOrEmpty(email)) return null;
+        return await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+    }
 }
 
 public class BrandingCreateRequest
 {
-    public Guid UserId { get; set; }
+    [RegularExpression("^#[0-9a-fA-F]{6}$")]
     public string PrimaryColor { get; set; } = "#4f46e5";
+    [RegularExpression("^#[0-9a-fA-F]{6}$")]
     public string SecondaryColor { get; set; } = "#e0e7ff";
     public IFormFile? Logo { get; set; }
 }
 
 public class BrandingUpdateRequest
 {
+    [RegularExpression("^#[0-9a-fA-F]{6}$")]
     public string PrimaryColor { get; set; } = "#4f46e5";
+    [RegularExpression("^#[0-9a-fA-F]{6}$")]
     public string SecondaryColor { get; set; } = "#e0e7ff";
     public IFormFile? Logo { get; set; }
 }

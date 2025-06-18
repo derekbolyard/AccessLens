@@ -6,7 +6,7 @@ import { ButtonComponent } from '../common/button/button.component';
 import { CardComponent } from '../common/card/card.component';
 import { BrandingService } from '../../services/branding.service';
 import { BrandingInfo } from '../../types/branding.interface';
-import { v4 as uuidv4 } from 'uuid';
+import { AuthService } from 'src/services/auth.service';
 
 @Component({
   selector: 'app-branding-page',
@@ -17,42 +17,72 @@ import { v4 as uuidv4 } from 'uuid';
 })
 export class BrandingPageComponent implements OnInit {
   brandings: BrandingInfo[] = [];
+  logoFile: File | null = null;
+  editingId: string | null = null;
 
   newBrand: BrandingInfo = {
     id: '',
-    userId: 'user_123',
+    userId: '',
     logoUrl: '',
     primaryColor: '#4f46e5',
     secondaryColor: '#e0e7ff'
   };
 
-  constructor(private brandingService: BrandingService) {}
+  constructor(
+    private brandingService: BrandingService,
+    private auth: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.brandingService.getBranding().subscribe(b => this.brandings = b);
+    this.brandingService.loadBranding().subscribe(b => (this.brandings = b));
   }
 
   createBrand(): void {
-    const brand = { ...this.newBrand, id: uuidv4() };
-    this.brandingService.createBranding(brand);
+    const userId = this.auth.currentUser?.id;
+    if (!userId) return;
+
+    const form = new FormData();
+    form.append('PrimaryColor', this.newBrand.primaryColor);
+    form.append('SecondaryColor', this.newBrand.secondaryColor);
+    if (this.logoFile) {
+      form.append('Logo', this.logoFile);
+    }
+
+    this.brandingService.createBranding(form).subscribe(() => {
     this.resetForm();
+    });
   }
 
-  updateBrand(brand: BrandingInfo): void {
-    this.brandingService.updateBranding(brand.id, brand);
+  startEdit(id: string): void {
+    this.editingId = id;
+  }
+
+  saveBrand(brand: BrandingInfo): void {
+    if (!this.editingId) return;
+    const form = new FormData();
+    form.append('PrimaryColor', brand.primaryColor);
+    form.append('SecondaryColor', brand.secondaryColor);
+    if (this.logoFile) {
+      form.append('Logo', this.logoFile);
+    }
+    this.brandingService.updateBranding(this.editingId, form).subscribe(() => {
+      this.editingId = null;
+      this.logoFile = null;
+    });
   }
 
   deleteBrand(id: string): void {
-    this.brandingService.deleteBranding(id);
+    this.brandingService.deleteBranding(id).subscribe();
   }
 
   private resetForm(): void {
     this.newBrand = {
       id: '',
-      userId: 'user_123',
+      userId: '',
       logoUrl: '',
       primaryColor: '#4f46e5',
       secondaryColor: '#e0e7ff'
     };
+    this.logoFile = null;
   }
 }
