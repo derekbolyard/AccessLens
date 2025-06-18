@@ -38,7 +38,8 @@ builder.Services.AddAntiforgery(o =>
 });
 
 // Jwt Authentication – single scheme reading from HttpOnly cookie *or* Authorization header.
-var jwtSecret = builder.Configuration["MagicJwt:SecretKey"] ??
+var jwtSecret = Environment.GetEnvironmentVariable("MAGIC_JWT_SECRET") ??
+                builder.Configuration["MagicJwt:SecretKey"] ??
                 throw new InvalidOperationException("MagicJwt SecretKey is required");
 var keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
 
@@ -81,8 +82,8 @@ builder.Host.UseSerilog((ctx, lc) => lc
     .ReadFrom.Configuration(ctx.Configuration));
 
 var configuration = builder.Configuration;
-var sqliteConnString = configuration.GetConnectionString("SqliteConnection")
-                        ?? Environment.GetEnvironmentVariable("SQLITE_CONNECTION_STRING")
+var sqliteConnString = Environment.GetEnvironmentVariable("SQLITE_CONNECTION_STRING")
+                        ?? configuration.GetConnectionString("SqliteConnection")
                         ?? "Data Source=accesslens.db";
 
 builder.Services.AddTransient<IDbConnection>(_ =>
@@ -132,7 +133,10 @@ builder.Services.AddSingleton<IA11yScanner, A11yScanner>();
 builder.Services.AddSingleton<IPdfService, PdfService>();
 builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();
 
-var awsRegion = RegionEndpoint.GetBySystemName(configuration["AWS:Region"]);
+var awsRegionName = Environment.GetEnvironmentVariable("AWS_REGION") ??
+                   configuration["AWS:Region"] ??
+                   "us-east-1";
+var awsRegion = RegionEndpoint.GetBySystemName(awsRegionName);
 builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(awsRegion));
 
 #if DEBUG
@@ -142,8 +146,8 @@ builder.Services.AddSingleton<IEmailService, SendGridEmailService>();
 #endif
 builder.Services.AddSingleton<IStorageService, S3StorageService>();
 
-StripeConfiguration.ApiKey = configuration["Stripe:SecretKey"] ??
-                             Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY");
+StripeConfiguration.ApiKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") ??
+                             configuration["Stripe:SecretKey"];
 
 builder.Services.Configure<RateLimitingOptions>(configuration.GetSection("RateLimitingOptions"));
 builder.Services.Configure<CaptchaOptions>(configuration.GetSection("Captcha"));

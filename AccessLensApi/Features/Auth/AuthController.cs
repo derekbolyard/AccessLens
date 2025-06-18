@@ -101,7 +101,7 @@ namespace AccessLensApi.Features.Auth
             catch (SecurityTokenException) { return Unauthorized("Invalid or expired link"); }
 
             var jti = jwt.FindFirstValue(JwtRegisteredClaimNames.Jti)!;
-            var email = jwt.FindFirstValue("email")!;
+            var email = jwt.FindFirstValue(ClaimTypes.Email);
 
             // Check if token was already used
             await using var tx = await _dbContext.Database.BeginTransactionAsync();

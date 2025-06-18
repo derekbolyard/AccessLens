@@ -77,6 +77,10 @@ export class HeaderComponent {
     this.router.navigate(['/sites']);
   }
 
+  onBrandingClick(): void {
+    this.router.navigate(['/branding']);
+  }
+
   onUpgradeClick(): void {
     this.router.navigate(['/upgrade']);
     this.showUserMenu = false;
