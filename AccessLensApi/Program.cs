@@ -10,6 +10,7 @@ using Amazon;
 using Amazon.S3;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -20,11 +21,9 @@ using QuestPDF.Infrastructure;
 using Serilog;
 using Stripe;
 using System.Data;
-using System.Security.Cryptography;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
 // --------------------------------------------------
 // 1️⃣  SECURITY SERVICES
 // --------------------------------------------------
@@ -208,7 +207,19 @@ builder.Services.AddSession(o =>
 // 3️⃣  BUILD APP / PIPELINE
 // --------------------------------------------------
 var app = builder.Build();
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+        {
+            context.Response.ContentType = "application/json";
+            var feat = context.Features.Get<IExceptionHandlerFeature>();
+            if (feat?.Error != null)
+                Log.Error(feat.Error, "Unhandled exception");
 
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
+        });
+});
 app.UseSession();
 app.UseRouting();
 
@@ -249,6 +260,7 @@ app.MapGet("/api/auth/csrf", (IAntiforgery anti, HttpContext ctx) =>
     var tokens = anti.GetAndStoreTokens(ctx);   // sets XSRF-TOKEN cookie
     return Results.Text(tokens.RequestToken!);  // send the matching request token
 });
+app.MapGet("/api/health", () => Results.Json(new { status = "ok" }));
 
 // Serve Angular front-end for non-API routes
 app.MapFallbackToFile("index.html");

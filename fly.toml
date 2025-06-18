@@ -1,37 +1,50 @@
-﻿app = "accesslens"
+﻿app            = "accesslens"
 primary_region = "iad"
 
 [build]
   dockerfile = "Dockerfile"
 
 [env]
-  ASPNETCORE_URLS = "http://+:8080"
-  MINIO_ROOT_USER = "minioadmin" 
+  ASPNETCORE_URLS          = "http://+:8080"            # redundant but explicit
+  SKIP_PLAYWRIGHT_INSTALL  = "1"                        # skip runtime download
+  MINIO_ROOT_USER          = "minioadmin"
+  MINIO_ROOT_PASSWORD      = "<set-via-fly-secrets>"
+  SQLITE_CONNECTION_STRING = "Data Source=/data/accesslens.db"
 
+# ---------- Process definitions --------------------------------------------
 [processes]
-  app = "dotnet AccessLensApi.dll"
-  minio = "minio server /data --address :9000 --console-address :9001"
+  app   = "dotnet AccessLensApi.dll"
+  minio = "/usr/local/bin/minio server /data --address :9000 --console-address :9001"
 
+# ---------- Networking ------------------------------------------------------
 [[services]]
-  processes = ["app"]
+  processes     = ["app"]
   internal_port = 8080
-  protocol = "tcp"
+  protocol      = "tcp"
 
   [[services.ports]]
     handlers = ["http"]
-    port = 80
+    port     = 80
 
   [[services.ports]]
     handlers = ["tls", "http"]
-    port = 443
+    port     = 443
+
+  [[services.http_checks]]
+    processes = ["app"]
+    port      = 80
+    method    = "get"
+    path      = "/api/health"
+    interval  = "30s"
+    timeout   = "5s"
 
 [[services]]
-  processes = ["minio"]
+  processes     = ["minio"]
   internal_port = 9000
-  protocol = "tcp"
+  protocol      = "tcp"
 
   [[services.ports]]
-    port = 9000
+    port = 9000   # no public handlers; purely internal unless you later expose
 
 [[mounts]]
   source      = "data"

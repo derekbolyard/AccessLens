@@ -19,7 +19,7 @@ namespace AccessLensApi.Tests.Integration
         {
             _client = factory.WithWebHostBuilder(builder =>
             {
-                builder.UseEnvironment("Testing");
+                builder.UseEnvironment("Development");
                 builder.ConfigureServices(services =>
                 {
                     var descriptor = services.SingleOrDefault(

@@ -76,7 +76,7 @@ namespace AccessLensApi.Tests.Integration
                      "TestScheme", _ => { });
                 });
 
-                builder.UseEnvironment("Testing");
+                builder.UseEnvironment("Development");
             });
 
             _client = _factory.CreateClient();

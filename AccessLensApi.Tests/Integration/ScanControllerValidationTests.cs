@@ -27,7 +27,7 @@ namespace AccessLensApi.Tests.Integration
             ScanHelper.SetupMockCaptcha(_fakeHttpHandler, true);
             _client = factory.WithWebHostBuilder(builder =>
             {
-                builder.UseEnvironment("Production");
+                builder.UseEnvironment("Development");
                 builder.ConfigureServices(services =>
                 {
                     services.AddSingleton(_fakeHttpHandler.Object);
