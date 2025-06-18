@@ -44,10 +44,6 @@ ENV ASPNETCORE_URLS="http://+:8080" \
     PLAYWRIGHT_BROWSERS_PATH="/ms-playwright" \
     DOTNET_RUNNING_IN_CONTAINER="true"
 
-# ▸ Install MinIO binary (used by the separate `minio` Fly process)
-RUN curl -sL "https://dl.min.io/server/minio/release/linux-amd64/minio" -o /usr/local/bin/minio \
- && chmod +x /usr/local/bin/minio
-
 # ▸ Create non‑root user
 RUN groupadd -g 10001 app && useradd -u 10000 -g app -s /usr/sbin/nologin -d /app app
 
