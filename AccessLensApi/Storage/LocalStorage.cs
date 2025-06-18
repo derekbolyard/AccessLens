@@ -21,7 +21,9 @@ public sealed class LocalStorage : IStorageService
         _basePath = Path.Combine(webRoot, "teasers");
         Directory.CreateDirectory(_basePath);
 
-        _baseUrl = cfg["BaseUrl"] ?? "https://localhost:7088";
+        _baseUrl = Environment.GetEnvironmentVariable("BASE_URL") ??
+                   cfg["BaseUrl"] ??
+                   "https://localhost:7088";
     }
 
     public async Task UploadAsync(string key, byte[] bytes, CancellationToken ct = default)
