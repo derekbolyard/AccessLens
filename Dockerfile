@@ -1,4 +1,12 @@
-﻿# ---------- Build stage -----------------------------------------------------
+﻿# ---------- client build ----------
+FROM node:20-alpine AS client
+WORKDIR /app/AccessLens
+COPY AccessLens/package*.json ./
+RUN npm ci
+COPY AccessLens .
+RUN npm run build --prod
+
+# ---------- API build ----------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
@@ -21,17 +29,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && chmod +x /usr/local/bin/minio \
     && rm -rf /var/lib/apt/lists/*
 
-# ▸ Copy package files first (cache friendly)
-COPY AccessLens/package*.json ./AccessLens/
-RUN npm --prefix ./AccessLens ci
-
-# ▸ Copy Angular code & build
-COPY AccessLens ./AccessLens
-RUN npm --prefix ./AccessLens run build
 
 # ▸ Copy compiled SPA into wwwroot of the publish folder
-RUN mkdir -p /publish/wwwroot \
- && cp -r ./AccessLens/dist/* /publish/wwwroot/
+RUN mkdir -p /publish/wwwroot
+COPY --from=client /app/AccessLens/dist /publish/wwwroot
 
 # ▸ Pre‑install Playwright browser binaries (skip at runtime)
 RUN dotnet tool install --tool-path /usr/local/bin Microsoft.Playwright.CLI \
@@ -53,7 +54,6 @@ RUN id -u app 2>/dev/null || (groupadd -g 10001 app \
 COPY --from=build /publish .
 RUN chown -R app:app /app
 
-ENV ASPNETCORE_URLS=http://+:8080
 # ▸ Bring MinIO binary across from build stage
 COPY --from=build /usr/local/bin/minio /usr/local/bin/minio
 EXPOSE 8080 9000 9001
