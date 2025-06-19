@@ -7,7 +7,6 @@ export const environment = {
     enableErrorReporting: false,
     maxFileUploadSize: 10 * 1024 * 1024,
     scanTimeout: 300000,
-    // New auth feature toggle
-    useMagicLinkAuth: true, // Set to true to use new magic link flow, false for old OAuth
+    useMagicLinkAuth: true,
   }
 };
