@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, tap } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap, map } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../environments/environment';
 import { BrandingInfo, DEFAULT_BRANDING } from '../types/branding.interface';
@@ -24,12 +24,7 @@ export class BrandingService {
     }
     
     return this.loadBranding().pipe(
-      tap(list => {
-        if (list.length === 0) {
-          return null;
-        }
-      }),
-      tap(list => list.length > 0 ? list[0] : null)
+      map(list => list.length > 0 ? list[0] : null)
     );
   }
 
