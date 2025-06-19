@@ -5,6 +5,7 @@ primary_region = "iad"
   dockerfile = "Dockerfile"
 
 [env]
+  ASPNETCORE_FORWARDEDHEADERS_ENABLED = "true"
   ASPNETCORE_URLS          = "http://+:8080"
   SKIP_PLAYWRIGHT_INSTALL  = "1"
   MINIO_ROOT_USER          = "minioadmin"

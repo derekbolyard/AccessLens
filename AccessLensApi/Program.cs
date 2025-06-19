@@ -22,6 +22,18 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto |
+        ForwardedHeaders.XForwardedHost;
+
+    // Important: clear the defaults so we don’t block Fly’s dynamic edge IPs
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // ------------------------------------------------------------------
 // 1️⃣  CONFIG + LOGGING
 // ------------------------------------------------------------------
@@ -192,10 +204,7 @@ app.UseExceptionHandler(a => a.Run(async ctx =>
     await ctx.Response.WriteAsJsonAsync(new { error = "Internal server error" });
 }));
 
-app.UseForwardedHeaders(new()
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+app.UseForwardedHeaders();
 
 app.UseSession();
 app.UseRouting();
