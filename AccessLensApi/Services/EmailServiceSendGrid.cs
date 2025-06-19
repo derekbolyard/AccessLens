@@ -10,8 +10,9 @@ namespace AccessLensApi.Services
         private readonly ISendGridClient _client;
         private readonly string _from;
         private readonly IConfiguration _config;
+        private readonly ILogger<SendGridEmailService> _logger;
 
-        public SendGridEmailService(IConfiguration cfg)
+        public SendGridEmailService(IConfiguration cfg, ILogger<SendGridEmailService> logger)
         {
             _config = cfg ?? throw new ArgumentNullException(nameof(cfg));
             var apiKey = cfg["SendGrid:ApiKey"];
@@ -19,6 +20,7 @@ namespace AccessLensApi.Services
                 throw new InvalidOperationException("SendGrid ApiKey configuration is missing");
             _client = new SendGridClient(apiKey);
             _from = cfg["SendGrid:FromEmail"] ?? throw new InvalidOperationException("SendGrid FromEmail configuration is missing");
+            _logger = logger;
         }
 
         public async Task SendAsync(string to, string subject, string body)
@@ -32,7 +34,12 @@ namespace AccessLensApi.Services
             msg.AddTo(new EmailAddress(to));
             var response = await _client.SendEmailAsync(msg);
             if ((int)response.StatusCode >= 400)
+            {
+                _logger.LogError("SendGrid failed to send email to {Email}: {StatusCode} - {ReasonPhrase}: {Message}",
+                    to, response.StatusCode, response.Body.ReadAsStringAsync().Result, msg);
                 throw new InvalidOperationException($"SendGrid failed: {(int)response.StatusCode}");
+            }
+                
         }
 
         public async Task SendMagicLinkAsync(string email, string magicToken)
