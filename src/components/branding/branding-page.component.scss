@@ -44,12 +44,11 @@
 .content-with-preview {
   display: flex;
   gap: var(--space-8);
-  position: relative;
 }
 
 .main-content {
   flex: 1;
-  max-width: 800px;
+  max-width: 65%;
 }
 
 .preview-panel {
@@ -469,6 +468,10 @@
 @media (max-width: 1200px) {
   .content-with-preview {
     flex-direction: column;
+  }
+  
+  .main-content {
+    max-width: 100%;
   }
   
   .preview-panel {
