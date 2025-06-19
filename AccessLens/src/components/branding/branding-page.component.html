@@ -1,42 +1,328 @@
 <div class="branding-page">
   <div class="container">
-    <app-card title="Create Branding" [elevated]="true">
+    <!-- Header -->
+    <div class="branding-header">
+      <button class="back-button" (click)="onBackToDashboard()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15,18 9,12 15,6"/>
+        </svg>
+        Back to Dashboard
+      </button>
+      
+      <div class="header-content">
+        <h1>Brand Settings</h1>
+        <p class="header-subtitle">
+          Customize your brand colors, logo, and company information for reports
+        </p>
+      </div>
+    </div>
+
+    <!-- Success/Error Alerts -->
+    <app-alert 
+      *ngIf="saveSuccess" 
+      variant="success" 
+      [dismissible]="true"
+      (dismiss)="saveSuccess = ''"
+    >
+      {{ saveSuccess }}
+    </app-alert>
+
+    <app-alert 
+      *ngIf="saveError" 
+      variant="error" 
+      [dismissible]="true"
+      (dismiss)="saveError = ''"
+    >
+      {{ saveError }}
+    </app-alert>
+
+    <!-- Create New Branding -->
+    <app-card title="Create Brand Settings" [elevated]="true" class="create-brand-card">
       <form (ngSubmit)="createBrand()" class="brand-form">
-        <input type="file" accept="image/*" (change)="logoFile = $any($event.target).files?.[0] || null" />
-        <label>
-          Primary Color
-          <input type="color" [(ngModel)]="newBrand.primaryColor" name="primary" />
-        </label>
-        <label>
-          Secondary Color
-          <input type="color" [(ngModel)]="newBrand.secondaryColor" name="secondary" />
-        </label>
-        <app-button variant="primary" type="submit">Add Brand</app-button>
+        <!-- Company Information -->
+        <div class="form-section">
+          <h3>Company Information</h3>
+          <div class="form-row">
+            <app-input
+              label="Company Name *"
+              placeholder="Your Company Name"
+              [(ngModel)]="newBrand.companyName"
+              name="companyName"
+              [required]="true"
+            ></app-input>
+            
+            <app-input
+              label="Contact Email"
+              type="email"
+              placeholder="contact@company.com"
+              [(ngModel)]="newBrand.contactEmail"
+              name="contactEmail"
+            ></app-input>
+          </div>
+          
+          <div class="form-row">
+            <app-input
+              label="Website"
+              type="url"
+              placeholder="https://company.com"
+              [(ngModel)]="newBrand.website"
+              name="website"
+            ></app-input>
+            
+            <app-input
+              label="Report Footer Text"
+              placeholder="Powered by AccessLens"
+              [(ngModel)]="newBrand.reportFooterText"
+              name="reportFooterText"
+            ></app-input>
+          </div>
+        </div>
+
+        <!-- Logo Upload -->
+        <div class="form-section">
+          <h3>Logo</h3>
+          <div class="logo-upload-section">
+            <div class="logo-upload-area">
+              <input 
+                type="file" 
+                id="logo-upload"
+                accept="image/*" 
+                (change)="onLogoUpload($event)"
+                class="file-input"
+              />
+              <label for="logo-upload" class="file-label">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17,8 12,3 7,8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>Upload Logo</span>
+                <small>PNG, JPG, SVG up to 2MB</small>
+              </label>
+            </div>
+            
+            <div class="logo-preview">
+              <img id="logo-preview" alt="Logo preview" style="display: none;" />
+              <button 
+                type="button" 
+                class="remove-logo-btn" 
+                (click)="removeLogo()"
+                *ngIf="logoFile"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color Settings -->
+        <div class="form-section">
+          <h3>Brand Colors</h3>
+          <div class="color-inputs">
+            <div class="color-input-group">
+              <label for="primary-color">Primary Color *</label>
+              <div class="color-input-wrapper">
+                <input 
+                  type="color" 
+                  id="primary-color"
+                  [(ngModel)]="newBrand.primaryColor" 
+                  name="primaryColor"
+                  (input)="onColorChange('primaryColor', $any($event.target).value)"
+                  required
+                />
+                <input 
+                  type="text" 
+                  [(ngModel)]="newBrand.primaryColor" 
+                  name="primaryColorText"
+                  placeholder="#4f46e5"
+                  class="color-text-input"
+                  (input)="onColorChange('primaryColor', $any($event.target).value)"
+                />
+              </div>
+            </div>
+            
+            <div class="color-input-group">
+              <label for="secondary-color">Secondary Color *</label>
+              <div class="color-input-wrapper">
+                <input 
+                  type="color" 
+                  id="secondary-color"
+                  [(ngModel)]="newBrand.secondaryColor" 
+                  name="secondaryColor"
+                  (input)="onColorChange('secondaryColor', $any($event.target).value)"
+                  required
+                />
+                <input 
+                  type="text" 
+                  [(ngModel)]="newBrand.secondaryColor" 
+                  name="secondaryColorText"
+                  placeholder="#e0e7ff"
+                  class="color-text-input"
+                  (input)="onColorChange('secondaryColor', $any($event.target).value)"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="form-section">
+          <h3>Live Preview</h3>
+          <div class="preview-area">
+            <div class="preview-header">
+              <h4>Sample Report Header</h4>
+              <p>This shows how your branding will appear in reports</p>
+            </div>
+            <div class="preview-content">
+              <app-button variant="primary">Primary Button</app-button>
+              <app-button variant="secondary">Secondary Button</app-button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <app-button 
+            variant="primary" 
+            type="submit"
+            [loading]="isSaving"
+            [disabled]="!isFormValid() || isSaving"
+          >
+            {{ isSaving ? 'Creating...' : 'Create Brand Settings' }}
+          </app-button>
+        </div>
       </form>
     </app-card>
 
-    <div class="brand-list">
-      <app-card *ngFor="let b of brandings" [title]="b.logoUrl" [elevated]="true" class="brand-item">
-        <div *ngIf="editingId !== b.id; else editForm">
-        <div class="colors">
-          <div class="color" [style.background]="b.primaryColor"></div>
-          <div class="color" [style.background]="b.secondaryColor"></div>
-        </div>
-        <div class="actions">
-            <app-button size="sm" variant="secondary" (click)="startEdit(b.id)">Edit</app-button>
-          <app-button size="sm" variant="secondary" (click)="deleteBrand(b.id)">Delete</app-button>
-        </div>
-        </div>
-        <ng-template #editForm>
-          <form (ngSubmit)="saveBrand(b)" class="brand-form">
-            <input type="file" accept="image/*" (change)="logoFile = $any($event.target).files?.[0] || null" />
-            <label>Primary <input type="color" [(ngModel)]="b.primaryColor" name="p{{b.id}}" /></label>
-            <label>Secondary <input type="color" [(ngModel)]="b.secondaryColor" name="s{{b.id}}" /></label>
-            <app-button size="sm" variant="primary" type="submit">Save</app-button>
-            <app-button size="sm" variant="secondary" (click)="editingId=null">Cancel</app-button>
-          </form>
-        </ng-template>
-      </app-card>
+    <!-- Existing Branding List -->
+    <div class="brand-list" *ngIf="brandings.length > 0">
+      <h2>Existing Brand Settings</h2>
+      <div class="brand-grid">
+        <app-card *ngFor="let brand of brandings" [elevated]="true" class="brand-item">
+          <div *ngIf="editingId !== brand.id; else editForm" class="brand-display">
+            <div class="brand-header">
+              <h4>{{ brand.companyName || 'Unnamed Brand' }}</h4>
+              <div class="brand-actions">
+                <app-button size="sm" variant="secondary" (click)="startEdit(brand.id)">
+                  Edit
+                </app-button>
+                <app-button size="sm" variant="error" (click)="deleteBrand(brand.id)">
+                  Delete
+                </app-button>
+              </div>
+            </div>
+            
+            <div class="brand-info">
+              <div class="brand-colors">
+                <div class="color-swatch" [style.background]="brand.primaryColor" [title]="'Primary: ' + brand.primaryColor"></div>
+                <div class="color-swatch" [style.background]="brand.secondaryColor" [title]="'Secondary: ' + brand.secondaryColor"></div>
+              </div>
+              
+              <div class="brand-details">
+                <p *ngIf="brand.contactEmail"><strong>Email:</strong> {{ brand.contactEmail }}</p>
+                <p *ngIf="brand.website"><strong>Website:</strong> {{ brand.website }}</p>
+                <p *ngIf="brand.reportFooterText"><strong>Footer:</strong> {{ brand.reportFooterText }}</p>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #editForm>
+            <form (ngSubmit)="saveBrand(brand)" class="edit-brand-form">
+              <div class="edit-header">
+                <h4>Edit Brand Settings</h4>
+                <div class="edit-actions">
+                  <app-button size="sm" variant="primary" type="submit" [loading]="isSaving">
+                    {{ isSaving ? 'Saving...' : 'Save' }}
+                  </app-button>
+                  <app-button size="sm" variant="secondary" type="button" (click)="cancelEdit()">
+                    Cancel
+                  </app-button>
+                </div>
+              </div>
+
+              <div class="edit-fields">
+                <app-input
+                  label="Company Name"
+                  [(ngModel)]="brand.companyName"
+                  name="editCompanyName{{brand.id}}"
+                ></app-input>
+                
+                <app-input
+                  label="Contact Email"
+                  type="email"
+                  [(ngModel)]="brand.contactEmail"
+                  name="editContactEmail{{brand.id}}"
+                ></app-input>
+                
+                <app-input
+                  label="Website"
+                  type="url"
+                  [(ngModel)]="brand.website"
+                  name="editWebsite{{brand.id}}"
+                ></app-input>
+                
+                <app-input
+                  label="Report Footer Text"
+                  [(ngModel)]="brand.reportFooterText"
+                  name="editFooterText{{brand.id}}"
+                ></app-input>
+
+                <div class="edit-colors">
+                  <div class="color-input-group">
+                    <label>Primary Color</label>
+                    <div class="color-input-wrapper">
+                      <input 
+                        type="color" 
+                        [(ngModel)]="brand.primaryColor" 
+                        name="editPrimary{{brand.id}}"
+                        (input)="onEditColorChange(brand, 'primaryColor', $any($event.target).value)"
+                      />
+                      <input 
+                        type="text" 
+                        [(ngModel)]="brand.primaryColor" 
+                        name="editPrimaryText{{brand.id}}"
+                        class="color-text-input"
+                        (input)="onEditColorChange(brand, 'primaryColor', $any($event.target).value)"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="color-input-group">
+                    <label>Secondary Color</label>
+                    <div class="color-input-wrapper">
+                      <input 
+                        type="color" 
+                        [(ngModel)]="brand.secondaryColor" 
+                        name="editSecondary{{brand.id}}"
+                        (input)="onEditColorChange(brand, 'secondaryColor', $any($event.target).value)"
+                      />
+                      <input 
+                        type="text" 
+                        [(ngModel)]="brand.secondaryColor" 
+                        name="editSecondaryText{{brand.id}}"
+                        class="color-text-input"
+                        (input)="onEditColorChange(brand, 'secondaryColor', $any($event.target).value)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="logo-upload-section">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    (change)="onLogoUpload($event)"
+                    class="file-input"
+                    id="edit-logo-upload{{brand.id}}"
+                  />
+                  <label [for]="'edit-logo-upload' + brand.id" class="file-label-small">
+                    Update Logo
+                  </label>
+                </div>
+              </div>
+            </form>
+          </ng-template>
+        </app-card>
+      </div>
     </div>
   </div>
 </div>
