@@ -44,18 +44,20 @@
 .content-with-preview {
   display: flex;
   gap: var(--space-8);
+  position: relative;
 }
 
 .main-content {
   flex: 1;
-  max-width: 65%;
+  max-width: calc(100% - 400px);
 }
 
 .preview-panel {
   width: 350px;
   position: sticky;
   top: var(--space-8);
-  height: calc(100vh - var(--space-16));
+  height: fit-content;
+  max-height: calc(100vh - var(--space-16));
   align-self: flex-start;
 }
 
@@ -81,7 +83,7 @@
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  height: calc(100% - 60px);
+  min-height: 400px;
 }
 
 .preview-header {
