@@ -5,7 +5,7 @@ import { ReportsListComponent } from '../components/reports-list/reports-list.co
 import { PagesListComponent } from '../components/pages-list/pages-list.component';
 import { PageDetailComponent } from '../components/page-detail/page-detail.component';
 import { UpgradePageComponent } from '../components/upgrade/upgrade-page.component';
-import { BrandingPageComponent } from '../components/branding/branding-page.component';
+import { BrandingSettingsComponent } from 'src/components/branding/branding-settings.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -15,6 +15,6 @@ export const routes: Routes = [
   { path: 'sites/:siteId/reports/:reportId/pages', component: PagesListComponent },
   { path: 'sites/:siteId/reports/:reportId/pages/:pageId', component: PageDetailComponent },
   { path: 'upgrade', component: UpgradePageComponent },
-  { path: 'branding', component: BrandingPageComponent },
+  { path: 'branding', component: BrandingSettingsComponent },
   { path: '**', redirectTo: 'dashboard' } // Fallback route
 ];

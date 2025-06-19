@@ -1,0 +1,254 @@
+<div class="branding-settings">
+  <div class="container">
+    <!-- Header -->
+    <div class="branding-header">
+      <button class="back-button" (click)="onBackToDashboard()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15,18 9,12 15,6"/>
+        </svg>
+        Back to Dashboard
+      </button>
+      
+      <div class="header-content">
+        <h1>Brand Settings</h1>
+        <p class="header-subtitle">
+          Customize your accessibility reports with your company's branding
+        </p>
+      </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <app-alert 
+      *ngIf="saveSuccess" 
+      variant="success" 
+      [dismissible]="true"
+      (dismiss)="saveSuccess = ''"
+    >
+      {{ saveSuccess }}
+    </app-alert>
+
+    <app-alert 
+      *ngIf="saveError" 
+      variant="error" 
+      [dismissible]="true"
+      (dismiss)="saveError = ''"
+    >
+      {{ saveError }}
+    </app-alert>
+
+    <div class="branding-content">
+      <!-- Settings Form -->
+      <div class="settings-section">
+        <app-card title="Company Information" [elevated]="true">
+          <div class="form-grid">
+            <app-input
+              label="Company Name"
+              placeholder="Your Company Name"
+              [value]="brandingForm.companyName ?? ''"
+              [required]="true"
+              (inputChange)="brandingForm.companyName = $event; updatePreview()"
+            ></app-input>
+
+            <app-input
+              label="Contact Email"
+              type="email"
+              placeholder="contact@yourcompany.com"
+              prefixIcon="email"
+              [value]="brandingForm.contactEmail ?? ''"
+              (inputChange)="brandingForm.contactEmail = $event; updatePreview()"
+            ></app-input>
+
+            <app-input
+              label="Website"
+              type="url"
+              placeholder="https://yourcompany.com"
+              prefixIcon="globe"
+              [value]="brandingForm.website ?? ''"
+              (inputChange)="brandingForm.website = $event; updatePreview()"
+            ></app-input>
+          </div>
+        </app-card>
+
+        <app-card title="Logo" [elevated]="true">
+          <div class="logo-section">
+            <div class="logo-upload">
+              <div class="logo-preview" *ngIf="brandingForm.logo">
+                <img [src]="brandingForm.logo" alt="Company Logo" />
+                <button class="remove-logo" (click)="removeLogo()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <div class="upload-area" *ngIf="!brandingForm.logo" (click)="fileInput.click()">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21,15 16,10 5,21"/>
+                </svg>
+                <p>Click to upload logo</p>
+                <span class="upload-hint">PNG, JPG up to 2MB</span>
+              </div>
+              
+              <input 
+                #fileInput 
+                type="file" 
+                accept="image/*" 
+                (change)="onLogoUpload($event)"
+                style="display: none"
+              />
+            </div>
+          </div>
+        </app-card>
+
+        <app-card title="Colors" [elevated]="true">
+          <div class="color-section">
+            <div class="color-grid">
+              <div class="color-input">
+                <label>Primary Color</label>
+                <div class="color-picker">
+                  <input 
+                    type="color" 
+                    [value]="brandingForm.primaryColor"
+                    (input)="onColorInputChange('primaryColor', $event)"
+                  />
+                  <input 
+                    type="text" 
+                    [value]="brandingForm.primaryColor"
+                    (input)="onColorInputChange('primaryColor', $event)"
+                    placeholder="#2563eb"
+                  />
+                </div>
+              </div>
+
+              <div class="color-input">
+                <label>Secondary Color</label>
+                <div class="color-picker">
+                  <input 
+                    type="color" 
+                    [value]="brandingForm.secondaryColor"
+                    (input)="onColorInputChange('secondaryColor', $event)"
+                  />
+                  <input 
+                    type="text" 
+                    [value]="brandingForm.secondaryColor"
+                    (input)="onColorInputChange('secondaryColor', $event)"
+                    placeholder="#64748b"
+                  />
+                </div>
+              </div>
+
+              <div class="color-input">
+                <label>Accent Color</label>
+                <div class="color-picker">
+                  <input 
+                    type="color" 
+                    [value]="brandingForm.accentColor"
+                    (input)="onColorInputChange('accentColor', $event)"
+                  />
+                  <input 
+                    type="text" 
+                    [value]="brandingForm.accentColor"
+                    (input)="onColorInputChange('accentColor', $event)"
+                    placeholder="#10b981"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </app-card>
+
+        <app-card title="Typography & Footer" [elevated]="true">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Font Family</label>
+              <select 
+                class="form-select" 
+                [(ngModel)]="brandingForm.fontFamily"
+                (change)="updatePreview()"
+              >
+                <option value="Inter">Inter (Default)</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Open Sans">Open Sans</option>
+                <option value="Lato">Lato</option>
+                <option value="Montserrat">Montserrat</option>
+                <option value="Poppins">Poppins</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Report Footer Text</label>
+              <textarea 
+                class="form-textarea"
+                placeholder="Custom footer text for your reports..."
+                [(ngModel)]="brandingForm.reportFooterText"
+                (input)="updatePreview()"
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+        </app-card>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <app-button 
+            variant="secondary" 
+            (click)="resetBranding()"
+            [disabled]="isSaving"
+          >
+            Reset to Default
+          </app-button>
+          
+          <app-button 
+            variant="primary" 
+            [loading]="isSaving"
+            [disabled]="!isFormValid() || isSaving"
+            (click)="saveBranding()"
+          >
+            {{ isSaving ? 'Saving...' : 'Save Branding' }}
+          </app-button>
+        </div>
+      </div>
+
+      <!-- Live Preview -->
+      <div class="preview-section">
+        <app-card title="Live Preview" [elevated]="true" class="preview-card">
+          <div class="preview-content">
+            <div class="preview-header" [style.background-color]="brandingForm.primaryColor">
+              <div class="preview-logo" *ngIf="brandingForm.logo">
+                <img [src]="brandingForm.logo" alt="Logo" />
+              </div>
+              <h3 [style.color]="'white'">{{ brandingForm.companyName || 'Your Company' }}</h3>
+            </div>
+            
+            <div class="preview-body">
+              <h4 [style.color]="brandingForm.primaryColor">Accessibility Report</h4>
+              <p>This is how your branded reports will look.</p>
+              
+              <div class="preview-button" [style.background-color]="brandingForm.accentColor">
+                View Details
+              </div>
+              
+              <div class="preview-stats">
+                <div class="stat-item">
+                  <span class="stat-number" [style.color]="brandingForm.primaryColor">85%</span>
+                  <span class="stat-label" [style.color]="brandingForm.secondaryColor">Score</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-number" [style.color]="brandingForm.accentColor">12</span>
+                  <span class="stat-label" [style.color]="brandingForm.secondaryColor">Fixed</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="preview-footer" [style.color]="brandingForm.secondaryColor">
+              {{ brandingForm.reportFooterText || 'Powered by AccessibilityReports' }}
+            </div>
+          </div>
+        </app-card>
+      </div>
+    </div>
+  </div>
+</div>
