@@ -177,10 +177,30 @@ builder.Services.AddControllers().AddJsonOptions(o =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(o =>
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddCors(o =>
     o.AddDefaultPolicy(p => p
         .WithOrigins("http://localhost:4200", "https://localhost:4200")
-        .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()));
+}
+else
+{
+    builder.Services.AddCors(options =>
+    {
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.WithOrigins("https://getaccesslens.com", "https://www.getaccesslens.com")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+    });
+}
+
+
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(o =>
