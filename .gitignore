@@ -56,3 +56,4 @@ nunit-*.xml
 accesslens.db
 *.csproj.user
 packages-microsoft-prod.deb
+.env
