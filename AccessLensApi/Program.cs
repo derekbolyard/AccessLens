@@ -34,7 +34,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
-
+builder.Configuration.AddEnvironmentVariables();
 // ------------------------------------------------------------------
 // 1️⃣  CONFIG + LOGGING
 // ------------------------------------------------------------------
