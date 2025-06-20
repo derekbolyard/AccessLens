@@ -45,8 +45,13 @@ builder.Services
     .AddOptions<S3Options>().BindConfiguration(S3Options.Section).ValidateDataAnnotations()
     .Services
     .AddOptions<AccessLensApi.Config.PlaywrightOptions>().BindConfiguration(AccessLensApi.Config.PlaywrightOptions.Section)
+    .ValidateDataAnnotations()
     .Services
-    .AddOptions<MinioOptions>().BindConfiguration(MinioOptions.Section);
+    .AddOptions<MinioOptions>().BindConfiguration(MinioOptions.Section).ValidateDataAnnotations()
+    .Services
+    .AddOptions<StripeOptions>().BindConfiguration(StripeOptions.Section).ValidateDataAnnotations()
+    .Services
+    .AddOptions<UrlOptions>().BindConfiguration(UrlOptions.Section).ValidateDataAnnotations();
 
 builder.Host.UseSerilog((ctx, cfg) =>
     cfg.ReadFrom.Configuration(ctx.Configuration)

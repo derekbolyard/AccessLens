@@ -31,4 +31,19 @@
         public string User { get; init; } = "minioadmin";
         public string Password { get; init; } = string.Empty;
     }
+
+    public record StripeOptions
+    {
+        public const string Section = "Stripe";
+        public string ApiKey { get; init; } = string.Empty;
+        public string WebhookSecret { get; init; } = string.Empty;
+    }
+
+    public record UrlOptions
+    {
+        public const string Section = "Url";
+        public string WebAppUrl { get; init; } = "https://accesslens.app";
+        public string MarketingUrl { get; set; } = "https://getaccesslens.com";
+        public string BaseUrl { get; init; } = "https://accesslens.app";
+    }
 }

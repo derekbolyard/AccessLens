@@ -163,7 +163,7 @@ namespace AccessLensApi.Features.Auth
             });
 
             // 6️⃣  Redirect to clean SPA root—no token/hash fragment needed
-            var frontend = _cfg["Urls:WebAppUrl"] ?? "http://localhost:4200";
+            var frontend = _cfg["Url:WebAppUrl"] ?? "http://localhost:4200";
             return Redirect($"{frontend}/");
         }
     }
