@@ -4,6 +4,7 @@ using AccessLensApi.Middleware;
 using AccessLensApi.Models;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Utilities;
+using Google.Apis.Util;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -121,8 +122,9 @@ namespace AccessLensApi.Features.Scans
                 {
                     scanResult = await _scanner.ScanFivePagesAsync(url, cts.Token);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException e)
                 {
+                    _logger.LogError(e, e.Message);
                     return StatusCode(500, new { error = "Scan timed out." });
                 }
                 catch (Exception ex)
@@ -228,8 +230,9 @@ namespace AccessLensApi.Features.Scans
 
                 scanResult = await _scanner.ScanAllPagesAsync(url, scanOptions, cts.Token);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException e)
             {
+                _logger.LogError(e, e.Message);
                 return StatusCode(500, new { error = "Full site scan timed out." });
             }
             catch (Exception ex)
