@@ -88,7 +88,7 @@ namespace AccessLensApi.Features.Auth
                 ValidIssuer = "accesslens",
                 ValidAudience = "magic",
                 IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(_cfg["MagicJwt:SecretKey"]!)),
+                    Encoding.UTF8.GetBytes(_cfg["Jwt:SecretKey"]!)),
                 ValidateIssuerSigningKey = true,
                 ValidateLifetime = true,
                 ValidateIssuer = true,
