@@ -12,7 +12,7 @@ primary_region = "iad"
   S3__Region                = "us-east-2"
   S3__BucketName            = accesslens-prod-reports
   SendGrid__FromEmail       = "derek@getaccesslens.com"
-  AWS_ACCESS_KEY_ID         = AKIAYCFEYLAYYRRHLU45
+  AWS_ACCESS_KEY_ID         = "AKIAYCFEYLAYYRRHLU45"
 
 [[vm]]
   # applies to all process groups
