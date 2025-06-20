@@ -54,8 +54,6 @@ namespace AccessLensApi.Services
         {
             options ??= new ScanOptions();
             var browser = await _provider.GetBrowserAsync();
-            await using var ctx = await browser.NewContextAsync();
-
             var rootUri = new Uri(rootUrl);
             var queue = new ConcurrentQueue<(string url, int depth)>();
             var visited = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
@@ -94,6 +92,8 @@ namespace AccessLensApi.Services
                         {
                             try
                             {
+                                await using var ctx = await browser.NewContextAsync();
+
                                 var result = await ProcessPageWithSemaphoreAsync(ctx, url, depth, rootUri, queue, pagesResults, options, semaphore, cancellationToken);
 
                                 if (options.GenerateTeaser && teaser is null && !string.IsNullOrEmpty(result.teaser?.Url))
