@@ -79,7 +79,7 @@ namespace AccessLensApi.Services
             await this.SendAsync(email, subject, htmlBody);
         }
 
-        public async Task SendScanResultEmailAsync(string email, string presignedPdfUrl, int score, string presignedTeaserUrl = null)
+        public async Task SendScanResultEmailAsync(string email, string presignedPdfUrl, int score, string? presignedTeaserUrl = null)
         {
             var subject = "Your Access Lens WCAG Snapshot is Ready";
             var teaserImgHtml = presignedTeaserUrl != null

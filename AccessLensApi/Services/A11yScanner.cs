@@ -41,9 +41,9 @@ namespace AccessLensApi.Services
         {
             var options = new ScanOptions
             {
-                MaxPages = 10,
+                MaxPages = 3,
                 MaxLinksPerPage = 30,
-                MaxConcurrency = 5,
+                MaxConcurrency = 3,
                 UseSitemap = true // Keep existing behavior
             };
 

@@ -29,6 +29,7 @@ namespace AccessLensApi.Features.Scans
         private readonly HttpClient _httpClient;
         private readonly IWebHostEnvironment _env;
         private readonly IConfiguration _config;
+        private readonly IEmailService _emailService;
 
         public ScanController(
             ApplicationDbContext dbContext,
@@ -40,7 +41,8 @@ namespace AccessLensApi.Features.Scans
             IOptions<RateLimitingOptions> rateOptions,
             IHttpClientFactory httpClientFactory,
             IWebHostEnvironment env,
-            IConfiguration config)
+            IConfiguration config,
+            IEmailService emailService)
         {
             _dbContext = dbContext;
             _creditManager = creditManager;
@@ -52,6 +54,7 @@ namespace AccessLensApi.Features.Scans
             _httpClient = httpClientFactory.CreateClient();
             _env = env;
             _config = config;
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -159,6 +162,7 @@ namespace AccessLensApi.Features.Scans
                 var teaser = ExtractTeaser(scanResult);
 
                 await SaveReportAsync(scanResult, email, url, pdfUrl);
+                await _emailService.SendScanResultEmailAsync(email, pdfUrl, score, teaser?.Url);
 
                 return Ok(new { score, pdfUrl, teaser });
             }
