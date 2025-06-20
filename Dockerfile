@@ -8,6 +8,21 @@ RUN npm run build --prod                       # dist/<project-name>
 
 # ─── api build (no Node install) ───────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+RUN apt-get update && apt-get install -y \
+    libglib2.0-0 \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    libxss1 \
+    libasound2 \
+    libdrm2 \
+    libgbm1 \
+    libxshmfence1 \
+    --no-install-recommends && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /src
 COPY AccessLensCli.sln ./
 COPY AccessLensApi/AccessLensApi.csproj ./AccessLensApi/
