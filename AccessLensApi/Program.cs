@@ -238,10 +238,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseCors();
-}
+
+app.UseCors();
+
 
 app.UseMiddleware<RateLimitMiddleware>();
 app.UseHttpsRedirection();
