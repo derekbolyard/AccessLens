@@ -10,7 +10,7 @@ primary_region = "iad"
   SKIP_PLAYWRIGHT_INSTALL   = "1"
   ConnectonStrings__Sqlite  = "Data Source=/data/accesslens.db"
   S3__Region                = "us-east-2"
-  S3__BucketName            = accesslens-prod-reports
+  S3__BucketName            = "accesslens-prod-reports"
   SendGrid__FromEmail       = "derek@getaccesslens.com"
   AWS_ACCESS_KEY_ID         = "AKIAYCFEYLAYYRRHLU45"
 
