@@ -11,9 +11,9 @@
     public record S3Options
     {
         public const string Section = "S3";
-        public string Region { get; init; } = "us-east-1";
+        public string Region { get; init; } = "us-east-2";
         public string? ServiceUrl { get; init; }   // null ⇒ real AWS
-        public string Bucket { get; init; } = default!;
+        public string BucketName { get; init; } = default!;
     }
 
     public record PlaywrightOptions

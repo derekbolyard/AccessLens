@@ -6,13 +6,13 @@ primary_region = "iad"
 
 [env]
   ASPNETCORE_FORWARDEDHEADERS_ENABLED = "true"
-  ASPNETCORE_URLS          = "http://+:8080"
-  SKIP_PLAYWRIGHT_INSTALL  = "1"
-  MINIO_ROOT_USER          = "minioadmin"
-  ConnectonStrings__Sqlite = "Data Source=/data/accesslens.db"
-  S3__SERVICE_URL           = "http://accesslens.internal:9000"
-  S3__REGION                = "us-east-1"
+  ASPNETCORE_URLS           = "http://+:8080"
+  SKIP_PLAYWRIGHT_INSTALL   = "1"
+  ConnectonStrings__Sqlite  = "Data Source=/data/accesslens.db"
+  S3__Region                = "us-east-2"
+  S3__BucketName            = accesslens-prod-reports
   SendGrid__FromEmail       = "derek@getaccesslens.com"
+  AWS_ACCESS_KEY_ID         = AKIAYCFEYLAYYRRHLU45
 
 [[vm]]
   # applies to all process groups
