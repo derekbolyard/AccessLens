@@ -35,10 +35,6 @@ primary_region = "iad"
     handlers = ["tls", "http"]
     port     = 443
 
-  # Expose MinIO S3 API internally (no handlers by default)
-  [[services.ports]]
-    processes = ["app"]
-    port = 9000
 
   [[services.http_checks]]
     processes = ["app"]
