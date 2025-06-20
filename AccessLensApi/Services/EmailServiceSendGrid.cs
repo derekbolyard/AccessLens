@@ -2,6 +2,7 @@ using AccessLensApi.Services.Interfaces;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using System.Net;
+using System.Text.Json;
 
 namespace AccessLensApi.Services
 {
@@ -36,7 +37,7 @@ namespace AccessLensApi.Services
             if ((int)response.StatusCode >= 400)
             {
                 _logger.LogError("SendGrid failed to send email to {Email}: {StatusCode} - {ReasonPhrase}: {Message}",
-                    to, response.StatusCode, response.Body.ReadAsStringAsync().Result, msg);
+                    to, response.StatusCode, response.Body.ReadAsStringAsync().Result, JsonSerializer.Serialize(msg));
                 throw new InvalidOperationException($"SendGrid failed: {(int)response.StatusCode}");
             }
                 
