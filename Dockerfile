@@ -45,6 +45,20 @@ RUN dotnet tool install --tool-path /usr/local/bin Microsoft.Playwright.CLI \
 # ─── runtime ───────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    libglib2.0-0 \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    libxss1 \
+    libasound2 \
+    libdrm2 \
+    libgbm1 \
+    libxshmfence1 \
+    --no-install-recommends && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 ENV ASPNETCORE_URLS=http://+:8080 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
     DOTNET_RUNNING_IN_CONTAINER=true
