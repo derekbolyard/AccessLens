@@ -150,13 +150,8 @@ builder.Services.AddSingleton<IPlaywright>(sp =>
     return Playwright.CreateAsync().GetAwaiter().GetResult();
 });
 
-builder.Services.AddSingleton<IBrowser>(sp =>
-{
-    var opts = sp.GetRequiredService<IOptions<AccessLensApi.Config.PlaywrightOptions>>().Value;
-    var pw = sp.GetRequiredService<IPlaywright>();
-    return pw[opts.Browser].LaunchAsync(new() { Headless = opts.Headless, Args = opts.Args })
-                            .GetAwaiter().GetResult();
-});
+builder.Services.AddSingleton<IBrowserProvider, BrowserProvider>();
+builder.Services.AddHostedService<BrowserWarmupService>();
 
 // ------------------------------------------------------------------
 // 6️⃣  Domain services, rate lim, etc.

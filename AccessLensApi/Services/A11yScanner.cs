@@ -16,7 +16,7 @@ namespace AccessLensApi.Services
 {
     public sealed class A11yScanner : IA11yScanner
     {
-        private readonly IBrowser _browser;
+        private readonly IBrowserProvider _provider;
         private readonly IStorageService _storage;
         private readonly ILogger<A11yScanner> _log;
         private readonly HttpClient _httpClient;
@@ -24,17 +24,17 @@ namespace AccessLensApi.Services
         private readonly IAxeScriptProvider _axe;
 
         public A11yScanner(
-            IBrowser browser,
             IStorageService storage,
             ILogger<A11yScanner> log,
             HttpClient httpClient,
-            IAxeScriptProvider axe)
+            IAxeScriptProvider axe,
+            IBrowserProvider provider)
         {
-            _browser = browser;
             _storage = storage;
             _log = log;
             _httpClient = httpClient;
             _axe = axe;
+            _provider = provider;
         }
 
         public async Task<JsonObject> ScanFivePagesAsync(string rootUrl, CancellationToken cancellationToken = default)
@@ -53,8 +53,8 @@ namespace AccessLensApi.Services
         public async Task<JsonObject> ScanAllPagesAsync(string rootUrl, ScanOptions? options = null, CancellationToken cancellationToken = default)
         {
             options ??= new ScanOptions();
-
-            await using var ctx = await _browser.NewContextAsync();
+            var browser = await _provider.GetBrowserAsync();
+            await using var ctx = await browser.NewContextAsync();
 
             var rootUri = new Uri(rootUrl);
             var queue = new ConcurrentQueue<(string url, int depth)>();
@@ -90,22 +90,28 @@ namespace AccessLensApi.Services
 
                         await semaphore.WaitAsync(cancellationToken);
 
-                        var task = ProcessPageWithSemaphoreAsync(ctx, url, depth, rootUri, queue, pagesResults, options, semaphore, cancellationToken);
-                        tasks.Add(task);
-
-                        // Update teaserUrl if this is the first page and we got a result
-                        if (options.GenerateTeaser && string.IsNullOrEmpty(teaser?.Url))
+                        var task = Task.Run(async () =>
                         {
-                            await task.ContinueWith(async t =>
+                            try
                             {
-                                if (t.IsCompletedSuccessfully)
+                                var result = await ProcessPageWithSemaphoreAsync(ctx, url, depth, rootUri, queue, pagesResults, options, semaphore, cancellationToken);
+
+                                if (options.GenerateTeaser && teaser is null && !string.IsNullOrEmpty(result.teaser?.Url))
                                 {
-                                    var result = await t;
-                                    if (result.teaser != null)
-                                        teaser = result.teaser;
+                                    teaser = result.teaser;
                                 }
-                            }, TaskContinuationOptions.OnlyOnRanToCompletion);
-                        }
+
+                                return result;
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.LogError(ex, "Error processing page {Url}", url);
+                                return default; // or some failed result
+                            }
+                            
+                        });
+
+                        tasks.Add(task);
                     }
 
                     // Wait for some tasks to complete
@@ -138,7 +144,6 @@ namespace AccessLensApi.Services
             }
             finally
             {
-                await ctx.DisposeAsync();
                 semaphore.Dispose();
             }
         }
