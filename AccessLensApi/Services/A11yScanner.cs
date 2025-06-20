@@ -6,6 +6,7 @@ using AccessLensApi.Utilities;
 using Amazon.S3.Model.Internal.MarshallTransformations;
 using Microsoft.Playwright;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -13,7 +14,7 @@ using System.Xml.Linq;
 
 namespace AccessLensApi.Services
 {
-    public sealed class A11yScanner : IA11yScanner, IAsyncDisposable
+    public sealed class A11yScanner : IA11yScanner
     {
         private readonly IBrowser _browser;
         private readonly IStorageService _storage;
@@ -40,10 +41,10 @@ namespace AccessLensApi.Services
         {
             var options = new ScanOptions
             {
-                MaxPages = 5,
+                MaxPages = 10,
                 MaxLinksPerPage = 30,
-                MaxConcurrency = 1,
-                UseSitemap = false // Keep existing behavior
+                MaxConcurrency = 5,
+                UseSitemap = true // Keep existing behavior
             };
 
             return await ScanAllPagesAsync(rootUrl, options, cancellationToken);
@@ -53,11 +54,7 @@ namespace AccessLensApi.Services
         {
             options ??= new ScanOptions();
 
-            var ctx = await _browser.NewContextAsync(new()
-            {
-                IgnoreHTTPSErrors = true,
-                ViewportSize = new() { Width = 1280, Height = 720 }
-            });
+            await using var ctx = await _browser.NewContextAsync();
 
             var rootUri = new Uri(rootUrl);
             var queue = new ConcurrentQueue<(string url, int depth)>();
@@ -141,7 +138,7 @@ namespace AccessLensApi.Services
             }
             finally
             {
-                await ctx.CloseAsync();
+                await ctx.DisposeAsync();
                 semaphore.Dispose();
             }
         }
@@ -357,11 +354,13 @@ namespace AccessLensApi.Services
             {
                 page = await ctx.NewPageAsync();
                 await page.SetViewportSizeAsync(1280, 720);
+                // Block fonts & images
+                await page.RouteAsync("**/*.{png,jpg,jpeg,gif,svg,webp,woff2,ttf}", r => r.AbortAsync());
 
                 // Navigate to the page
                 var response = await page.GotoAsync(url, new PageGotoOptions
                 {
-                    WaitUntil = WaitUntilState.DOMContentLoaded,
+                    WaitUntil = WaitUntilState.NetworkIdle,
                     Timeout = 30000
                 });
 
@@ -577,7 +576,5 @@ namespace AccessLensApi.Services
                 ["issues"] = issuesArr
             };
         }
-
-        public async ValueTask DisposeAsync() => await _browser.DisposeAsync();
     }
 }

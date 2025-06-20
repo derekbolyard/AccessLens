@@ -17,7 +17,7 @@ public sealed class S3StorageService : IStorageService
     {
         _s3 = s3;
         _bucket = Environment.GetEnvironmentVariable("AWS_S3_BUCKET") ??
-                 cfg["AWS:S3Bucket"] ??
+                 cfg["S3:BucketName"] ??
                  throw new ArgumentException("S3 bucket missing");
     }
 

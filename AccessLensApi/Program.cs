@@ -6,6 +6,7 @@ using AccessLensApi.Services;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Storage;
 using Amazon;
+using Amazon.Runtime;
 using Amazon.S3;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -182,7 +183,7 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddCors(o =>
     o.AddDefaultPolicy(p => p
-        .WithOrigins("http://localhost:4200", "https://localhost:4200")
+        .WithOrigins("http://localhost:4200", "https://localhost:4200", "https://localhost:3000","http://localhost:3000")
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials()));

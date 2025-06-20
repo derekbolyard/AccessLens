@@ -74,8 +74,12 @@ namespace AccessLensApi.Features.Scans
         {
             try
             {
-                if (!await VerifyTurnstileAsync(req.CaptchaToken, HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? string.Empty))
-                    return BadRequest("captcha_failed");
+                if (!_env.IsDevelopment())
+                {
+                    if (!await VerifyTurnstileAsync(req.CaptchaToken, HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? string.Empty))
+                        return BadRequest("captcha_failed");
+                }
+                
                 var validationError = ValidateRequest(req);
                 if (validationError != null)
                     return validationError;
