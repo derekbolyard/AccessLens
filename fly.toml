@@ -12,7 +12,7 @@ primary_region = "iad"
   ConnectonStrings__Sqlite = "Data Source=/data/accesslens.db"
   S3__SERVICE_URL           = "http://accesslens.internal:9000"
   S3__REGION                = "us-east-1"
-  SendGrid__FromEmail       = "derekbolyard@gmail.com"
+  SendGrid__FromEmail       = "derek@getaccesslens.com"
 
 [processes]
   app = "/entrypoint.sh"
