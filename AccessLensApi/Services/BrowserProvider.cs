@@ -1,5 +1,7 @@
 ﻿using AccessLensApi.Services.Interfaces;
 using Microsoft.Playwright;
+using System;
+using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 
 namespace AccessLensApi.Services
 {
@@ -22,7 +24,7 @@ namespace AccessLensApi.Services
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
                 "--disable-gpu",
-                "--no-zygote"
+                "--js-flags=--code-range-size=128"
             }
             });
             return _browser;
