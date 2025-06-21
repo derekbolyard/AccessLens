@@ -355,6 +355,7 @@ namespace AccessLensApi.Services
                     WaitUntil = WaitUntilState.NetworkIdle,
                     Timeout = 30000
                 });
+                await WaitForAboveTheFoldAsync(page);
 
                 if (response?.Status >= 400)
                 {
@@ -444,6 +445,40 @@ namespace AccessLensApi.Services
                     await page.CloseAsync();
                 }
             }
+        }
+        /// <summary>
+        /// Wait up to <paramref name="maxMs"/> (default 2000 ms) for EITHER:
+        ///   • document.fonts to finish loading   OR
+        ///   • the first visible, non-script element in &lt;body&gt;
+        /// Returns as soon as one of those is satisfied, or when the time limit hits.
+        /// </summary>
+        public async Task WaitForAboveTheFoldAsync(
+            IPage page,
+            int maxMs = 2_000)
+        {
+            // 1. Kick off both Playwright waits with their own timeouts.
+            var fontsTask = page.WaitForFunctionAsync(
+                "document.fonts && document.fonts.status === 'loaded'",
+                arg: null,
+                new PageWaitForFunctionOptions { Timeout = maxMs });
+
+            var visibleTask = page.WaitForSelectorAsync(
+                "body *:not(script):not(style)",
+                new PageWaitForSelectorOptions
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = maxMs
+                });
+
+            // 2. Hard wall: a simple delay equal to maxMs.
+            var delayTask = Task.Delay(maxMs);
+
+            // 3. Wait for whichever finishes first.
+            var winner = await Task.WhenAny(fontsTask, visibleTask, delayTask);
+
+            // 4. Swallow any Playwright timeout exceptions from the *losing* tasks.
+            //    (If they didn't finish in time they'll fault here; ignore.)
+            try { await winner; } catch (TimeoutException) { /* ignore */ }
         }
 
         private async Task DiscoverLinksFromPage(
