@@ -83,13 +83,35 @@ public static class ScreenshotHelper
                 if (clipY + clipH > viewportHeight)
                     clipH = viewportHeight - clipY;
 
+                // --- 5½)  Decide if crop would be “too zoomed” -----------------------------
+                // element % of viewport area
+                double elementAreaPct = (rawW * rawH) / (double)(viewportWidth * viewportHeight);
+
+                // element width/height % of viewport
+                double elementWpct = rawW / (double)viewportWidth;
+                double elementHpct = rawH / (double)viewportHeight;
+
+                // thresholds: tweak to taste
+                const double MIN_AREA_PCT = 0.25;   // 25 % of viewport area
+                const double MIN_DIM_PCT = 0.50;   // 50 % of width OR height
+
+                bool cropWouldBeTiny = elementAreaPct < MIN_AREA_PCT &&
+                                       elementWpct < MIN_DIM_PCT &&
+                                       elementHpct < MIN_DIM_PCT;
+
+                if (cropWouldBeTiny)
+                {
+                    // force full-viewport – ignore selector
+                    selector = null;
+                }
+
                 // 6) Ensure the final clipped box is still valid
                 bool isValidClip = clipW > 0 && clipH > 0
                                    && clipX >= 0 && clipY >= 0
                                    && clipX + clipW <= viewportWidth
                                    && clipY + clipH <= viewportHeight;
 
-                if (isValidClip)
+                if (isValidClip && selector != null)
                 {
                     options.Clip = new()
                     {
