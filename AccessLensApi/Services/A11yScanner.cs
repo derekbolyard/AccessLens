@@ -50,21 +50,39 @@ namespace AccessLensApi.Services
             return await ScanAllPagesAsync(rootUrl, options, cancellationToken);
         }
 
-        public async Task<JsonObject> ScanAllPagesAsync(string rootUrl, ScanOptions? options = null, CancellationToken cancellationToken = default)
+        public async Task<JsonObject> ScanAllPagesAsync(
+    string rootUrl,
+    ScanOptions? options = null,
+    CancellationToken ct = default)
         {
             options ??= new ScanOptions();
+
             var browser = await _provider.GetBrowserAsync();
             var rootUri = new Uri(rootUrl);
             var queue = new ConcurrentQueue<(string url, int depth)>();
             var visited = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
             var pagesResults = new ConcurrentBag<JsonObject>();
-            var excludePatterns = options.ExcludePatterns.Select(p => new Regex(p, RegexOptions.IgnoreCase)).ToArray();
+            var excludeRx = options.ExcludePatterns
+                                      .Select(p => new Regex(p, RegexOptions.IgnoreCase))
+                                      .ToArray();
             Teaser? teaser = null;
 
-            // Initialize URL discovery
-            await InitializeUrlDiscovery(rootUrl, rootUri, queue, options, cancellationToken);
+            // ── 0️⃣  shared incognito context ────────────────────────────────────────────
+            await using var ctx = await browser.NewContextAsync(new()
+            {
+                ViewportSize = new() { Width = 1280, Height = 720 }
+            });
 
-            var semaphore = new SemaphoreSlim(options.MaxConcurrency, options.MaxConcurrency);
+            var axeSrc = await _axe.GetAsync(ct);
+            await ctx.AddInitScriptAsync(axeSrc);
+
+            // block heavy assets once (applies to all future pages)
+            await ctx.RouteAsync("**/*.{png,jpg,jpeg,gif,svg,webp,woff2,ttf}", r => r.AbortAsync());
+
+            // ── 1️⃣  seed the crawl queue ────────────────────────────────────────────────
+            await InitializeUrlDiscovery(rootUrl, rootUri, queue, options, ct);
+
+            var sem = new SemaphoreSlim(options.MaxConcurrency, options.MaxConcurrency);
             var tasks = new List<Task>();
 
             try
@@ -72,9 +90,8 @@ namespace AccessLensApi.Services
                 while ((!queue.IsEmpty || tasks.Any()) &&
                        (options.MaxPages == 0 || pagesResults.Count < options.MaxPages))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    ct.ThrowIfCancellationRequested();
 
-                    // Start new tasks for available URLs
                     while (queue.TryDequeue(out var item) &&
                            (options.MaxPages == 0 || pagesResults.Count < options.MaxPages))
                     {
@@ -83,94 +100,66 @@ namespace AccessLensApi.Services
                         if (!visited.TryAdd(url, true) || depth > options.MaxDepth)
                             continue;
 
-                        if (ShouldExcludeUrl(url, excludePatterns))
+                        if (ShouldExcludeUrl(url, excludeRx))
                             continue;
 
-                        await semaphore.WaitAsync(cancellationToken);
+                        await sem.WaitAsync(ct);
 
-                        var task = Task.Run(async () =>
+                        _log.LogDebug("⇢ {Url}  (depth {Depth})", url, depth);
+
+                        tasks.Add(Task.Run(async () =>
                         {
+                            IPage? page = null;
+
                             try
                             {
-                                await using var ctx = await browser.NewContextAsync();
+                                page = await ctx.NewPageAsync();
+                                var (pageResult, pageTeaser) = await ProcessPageAsync(
+                                    page, url, depth, rootUri, queue, pagesResults, options, ct);
 
-                                var result = await ProcessPageWithSemaphoreAsync(ctx, url, depth, rootUri, queue, pagesResults, options, semaphore, cancellationToken);
-
-                                if (options.GenerateTeaser && teaser is null && !string.IsNullOrEmpty(result.teaser?.Url))
+                                if (options.GenerateTeaser && teaser is null &&
+                                    !string.IsNullOrEmpty(pageTeaser?.Url))
                                 {
-                                    teaser = result.teaser;
+                                    teaser = pageTeaser;
                                 }
-
-                                return result;
                             }
                             catch (Exception ex)
                             {
                                 _log.LogError(ex, "Error processing page {Url}", url);
-                                return default; // or some failed result
                             }
-                            
-                        });
-
-                        tasks.Add(task);
+                            finally
+                            {
+                                if (page is not null) await page.CloseAsync();
+                                sem.Release();
+                            }
+                        }, ct));
                     }
 
-                    // Wait for some tasks to complete
-                    if (tasks.Count > 0)
-                    {
-                        var completed = await Task.WhenAny(tasks);
-                        tasks.Remove(completed);
-                    }
+                    // drain completed tasks to keep the list small
+                    tasks.RemoveAll(t => t.IsCompleted);
 
-                    // Small delay to prevent tight loop
                     if (queue.IsEmpty && tasks.Any())
-                        await Task.Delay(100, cancellationToken);
+                        await Task.Delay(50, ct);
                 }
 
-                // Wait for all remaining tasks
                 await Task.WhenAll(tasks);
 
-                var sortedPages = pagesResults
-                    .OrderBy(p => p["pageUrl"]?.ToString())
-                    .ToArray();
+                var sorted = pagesResults.OrderBy(p => p["pageUrl"]?.ToString())
+                                         .Cast<JsonNode>()
+                                         .ToArray();
 
                 return new JsonObject
                 {
-                    ["pages"] = new JsonArray(sortedPages.Cast<JsonNode>().ToArray()),
+                    ["pages"] = new JsonArray(sorted),
                     ["teaser"] = JsonSerializer.SerializeToNode(teaser)!,
-                    ["totalPages"] = sortedPages.Length,
+                    ["totalPages"] = sorted.Length,
                     ["scannedAt"] = DateTime.UtcNow.ToString("O"),
                     ["discoveryMethod"] = options.UseSitemap ? "sitemap+crawling" : "crawling"
                 };
             }
             finally
             {
-                semaphore.Dispose();
-            }
-        }
-
-        private async Task<(JsonObject? pageResult, Teaser? teaser)> ProcessPageWithSemaphoreAsync(
-            IBrowserContext ctx,
-            string url,
-            int depth,
-            Uri rootUri,
-            ConcurrentQueue<(string url, int depth)> queue,
-            ConcurrentBag<JsonObject> pagesResults,
-            ScanOptions options,
-            SemaphoreSlim semaphore,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                return await ProcessPageAsync(ctx, url, depth, rootUri, queue, pagesResults, options, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _log.LogError(ex, "Failed to process page: {Url}", url);
-                return (null, null);
-            }
-            finally
-            {
-                semaphore.Release(); // Ensure semaphore is always released
+                sem.Dispose();
             }
         }
 
@@ -345,7 +334,7 @@ namespace AccessLensApi.Services
         }
 
         private async Task<(JsonObject? pageResult, Teaser? teaser)> ProcessPageAsync(
-            IBrowserContext ctx,
+            IPage page,
             string url,
             int depth,
             Uri rootUri,
@@ -354,10 +343,8 @@ namespace AccessLensApi.Services
             ScanOptions options,
             CancellationToken cancellationToken)
         {
-            IPage? page = null;
             try
             {
-                page = await ctx.NewPageAsync();
                 await page.SetViewportSizeAsync(1280, 720);
                 // Block fonts & images
                 await page.RouteAsync("**/*.{png,jpg,jpeg,gif,svg,webp,woff2,ttf}", r => r.AbortAsync());
