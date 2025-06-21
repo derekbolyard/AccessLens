@@ -23,8 +23,7 @@ namespace AccessLensApi.Services
                 {
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
-                "--disable-gpu",
-                "--js-flags=--code-range-size=128"
+                "--disable-gpu"
             }
             });
             return _browser;
