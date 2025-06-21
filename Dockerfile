@@ -43,7 +43,7 @@ RUN dotnet tool install --tool-path /usr/local/bin Microsoft.Playwright.CLI \
     && cp -r /root/.cache/ms-playwright/* /ms-playwright
 
 # ─── runtime ───────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/playwright/dotnet:v1.44.0-jammy AS runtime
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \

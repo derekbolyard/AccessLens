@@ -6,25 +6,25 @@ namespace AccessLensApi.Services
     public class BrowserProvider : IBrowserProvider
     {
         private static IBrowser? _browser;
-        private static IPlaywright? _playwright;
+        private static IPlaywright? _pw;
+        public BrowserProvider(IPlaywright pw) => _pw = pw;
 
         public async Task<IBrowser> GetBrowserAsync()
         {
-            if (_browser != null) return _browser;
+            if (_browser is { IsConnected: true }) return _browser;
 
-            _playwright ??= await Playwright.CreateAsync();
-            _browser = await _playwright.Chromium.LaunchAsync(new()
+            _browser = await _pw.Chromium.LaunchAsync(new()
             {
                 Headless = true,
+                ChromiumSandbox = false,
                 Args = new[]
                 {
                 "--no-sandbox",
+                "--disable-dev-shm-usage",
                 "--disable-gpu",
-                "--disable-dev-shm-usage"
-            },
-                ChromiumSandbox = false
+                "--no-zygote"
+            }
             });
-
             return _browser;
         }
     }

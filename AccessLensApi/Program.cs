@@ -36,6 +36,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 builder.Configuration.AddEnvironmentVariables();
+if (!builder.Environment.IsDevelopment())
+{
+    Environment.SetEnvironmentVariable("DEBUG", "pw:browser*");
+    Environment.SetEnvironmentVariable("PLAYWRIGHT_LOG", "1");
+}
+
 // ------------------------------------------------------------------
 // 1️⃣  CONFIG + LOGGING
 // ------------------------------------------------------------------
@@ -142,10 +148,6 @@ builder.Services.AddSingleton<IPlaywright>(sp =>
 {
     var opts = sp.GetRequiredService<IOptions<AccessLensApi.Config.PlaywrightOptions>>().Value;
     Environment.SetEnvironmentVariable("PLAYWRIGHT_BROWSERS_PATH", opts.BrowsersPath);
-
-    // optional install step
-    if (Environment.GetEnvironmentVariable("SKIP_PLAYWRIGHT_INSTALL") != "1")
-        Microsoft.Playwright.Program.Main(new[] { "install" });
 
     return Playwright.CreateAsync().GetAwaiter().GetResult();
 });
