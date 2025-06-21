@@ -19,10 +19,10 @@ namespace AccessLensApi.Services
                 Args = new[]
                 {
                 "--no-sandbox",
-                "--single-process",
                 "--disable-gpu",
                 "--disable-dev-shm-usage"
-            }
+            },
+                ChromiumSandbox = false
             });
 
             return _browser;
