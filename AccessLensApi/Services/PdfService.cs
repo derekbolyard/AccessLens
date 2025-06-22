@@ -47,7 +47,7 @@ namespace AccessLensApi.Services
             _log.LogInformation("PDF uploaded as {Key} ({Bytes} bytes)", key, bytes.Length);
 
             // 30-day presigned URL
-            return _storage.GetPresignedUrl(key, TimeSpan.FromDays(7));
+            return _storage.GetPresignedUrl(key, TimeSpan.FromDays(6.95));
         }
 
         private List<Issue> LoadIssues(JsonNode? raw)
