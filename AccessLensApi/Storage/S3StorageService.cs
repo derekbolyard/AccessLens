@@ -36,10 +36,14 @@ public sealed class S3StorageService : IStorageService
 
     public string GetPresignedUrl(string key, TimeSpan ttl)
     {
+        if (ttl > TimeSpan.FromDays(7))
+            ttl = TimeSpan.FromDays(7);
+
         var req = new GetPreSignedUrlRequest
         {
             BucketName = _bucket,
             Key = key,
+            Verb = HttpVerb.GET,
             Expires = DateTime.UtcNow.Add(ttl),
             Protocol = Protocol.HTTPS
         };
