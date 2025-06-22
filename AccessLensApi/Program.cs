@@ -19,6 +19,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Playwright;
 using QuestPDF.Infrastructure;
 using Serilog;
+using Serilog.Events;
 using System.Data;
 using System.Text;
 
@@ -56,7 +57,8 @@ builder.Services
 
 builder.Host.UseSerilog((ctx, cfg) =>
     cfg.ReadFrom.Configuration(ctx.Configuration)
-       .WriteTo.Console());
+        .MinimumLevel.Information()
+        .WriteTo.Console());
 
 // ------------------------------------------------------------------
 // 2️⃣  SECURITY (Antiforgery + JWT)
@@ -228,6 +230,15 @@ app.UseForwardedHeaders();
 app.UseSession();
 app.UseRouting();
 app.UseStaticFiles();
+
+app.UseSerilogRequestLogging(opts =>
+{
+    opts.GetLevel = (httpCtx, elapsed, ex) =>
+        httpCtx.Request.Path.StartsWithSegments("/api/health")
+            ? LogEventLevel.Debug      // will be dropped by the console sink
+            : LogEventLevel.Information;
+});
+
 
 if (app.Environment.IsDevelopment())
 {
