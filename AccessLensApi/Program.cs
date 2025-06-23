@@ -182,7 +182,9 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddCors(o =>
     o.AddDefaultPolicy(p => p
-        .WithOrigins("http://localhost:4200", "https://localhost:4200", "https://localhost:3000","http://localhost:3000")
+        .WithOrigins(Enumerable.Range(1024, 64511)
+                .Select(port => $"http://localhost:{port}")
+                .ToArray())
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials()));
