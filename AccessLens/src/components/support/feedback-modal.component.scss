@@ -24,52 +24,68 @@
 
 .form-label {
   font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--gray-700);
+  font-weight: 700;
+  color: var(--slate-700);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .form-select {
   padding: var(--space-3);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
+  border: 3px solid var(--slate-900);
+  border-radius: var(--radius-brutal);
   font-size: var(--text-sm);
+  font-weight: 600;
   background: white;
   transition: all 0.2s ease;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right var(--space-3) center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  padding-right: var(--space-10);
 }
 
 .form-select:focus {
   outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--blue-600);
+  box-shadow: 3px 3px 0px 0px var(--blue-600);
+  transform: translate(-1px, -1px);
 }
 
 .form-select:disabled {
-  background-color: var(--gray-100);
-  color: var(--gray-500);
+  background-color: var(--slate-100);
+  color: var(--slate-500);
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .form-textarea {
   padding: var(--space-3);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
+  border: 3px solid var(--slate-900);
+  border-radius: var(--radius-brutal);
   font-size: var(--text-sm);
+  font-weight: 600;
   font-family: inherit;
   resize: vertical;
   min-height: 120px;
   transition: all 0.2s ease;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
 .form-textarea:focus {
   outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--blue-600);
+  box-shadow: 3px 3px 0px 0px var(--blue-600);
+  transform: translate(-1px, -1px);
 }
 
 .form-textarea:disabled {
-  background-color: var(--gray-100);
-  color: var(--gray-500);
+  background-color: var(--slate-100);
+  color: var(--slate-500);
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 @media (max-width: 768px) {

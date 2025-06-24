@@ -16,6 +16,7 @@ export interface Toast {
 export class ToastService {
   private toastsSubject = new BehaviorSubject<Toast[]>([]);
   public toasts$ = this.toastsSubject.asObservable();
+  private maxToasts = 5; // Limit the number of toasts shown at once
 
   private generateId(): string {
     return Math.random().toString(36).substr(2, 9);
@@ -29,8 +30,10 @@ export class ToastService {
       dismissible: toast.dismissible ?? true
     };
 
+    // Get current toasts and add new one (limit to maxToasts)
     const currentToasts = this.toastsSubject.value;
-    this.toastsSubject.next([...currentToasts, newToast]);
+    const updatedToasts = [...currentToasts, newToast].slice(-this.maxToasts);
+    this.toastsSubject.next(updatedToasts);
 
     if (newToast.duration && newToast.duration > 0) {
       setTimeout(() => {

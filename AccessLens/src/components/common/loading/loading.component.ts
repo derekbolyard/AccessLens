@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export type LoadingType = 'spinner' | 'dots' | 'pulse' | 'skeleton';
@@ -8,7 +8,24 @@ export type LoadingSize = 'sm' | 'md' | 'lg';
   selector: 'app-loading',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './loading.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div [class]="getLoadingClasses()" [attr.aria-label]="getAriaLabel()" role="status">
+      <div *ngIf="type === 'spinner'" class="loading-spinner" aria-hidden="true"></div>
+      <div *ngIf="type === 'dots'" class="loading-dots" aria-hidden="true">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <div *ngIf="type === 'pulse'" class="loading-pulse" aria-hidden="true"></div>
+      <div *ngIf="type === 'skeleton'" class="loading-skeleton" aria-hidden="true">
+        <div class="skeleton-line" *ngFor="let line of skeletonLinesArray"></div>
+      </div>
+      
+      <p *ngIf="text" class="loading-text">{{ text }}</p>
+      <span *ngIf="!text" class="sr-only">Loading...</span>
+    </div>
+  `,
   styleUrls: ['./loading.component.scss']
 })
 export class LoadingComponent {
@@ -35,6 +52,10 @@ export class LoadingComponent {
     }
     
     return classes.join(' ');
+  }
+
+  getAriaLabel(): string {
+    return this.text || 'Loading content';
   }
 
   get skeletonLinesArray(): number[] {

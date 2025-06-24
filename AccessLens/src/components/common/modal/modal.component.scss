@@ -1,10 +1,11 @@
+/* Professional Brutalism Modal Component */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(15, 23, 42, 0.8); /* slate-900 with opacity */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,14 +16,16 @@
 
 .modal-container {
   background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-brutal);
+  border: 6px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal-lg);
   max-height: 90vh;
   overflow-y: auto;
   animation: slideIn 0.2s ease-out;
   position: relative;
 }
 
+/* Professional Brutalism Modal Sizes */
 .modal-sm {
   width: 100%;
   max-width: 400px;
@@ -50,48 +53,67 @@
   max-height: none;
 }
 
+/* Professional Brutalism Modal Header */
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: var(--space-6);
-  border-bottom: 1px solid var(--gray-200);
+  border-bottom: 4px solid var(--slate-900);
+  background: var(--slate-100);
 }
 
 .modal-title {
   margin: 0;
-  color: var(--gray-900);
+  color: var(--slate-900);
   font-size: var(--text-xl);
-  font-weight: 600;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
 }
 
 .modal-close {
-  background: none;
-  border: none;
-  color: var(--gray-500);
+  background: var(--error-600);
+  border: 3px solid var(--slate-900);
+  color: white;
   cursor: pointer;
-  padding: var(--space-1);
-  border-radius: var(--radius-sm);
+  padding: var(--space-2);
   transition: all 0.2s ease;
+  box-shadow: 2px 2px 0px 0px var(--slate-900);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-close:hover {
-  color: var(--gray-700);
-  background-color: var(--gray-100);
+  background: var(--error-700);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px 0px var(--slate-900);
 }
 
+.modal-close:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px var(--slate-900);
+}
+
+/* Professional Brutalism Modal Body */
 .modal-body {
   padding: var(--space-6);
 }
 
+/* Professional Brutalism Modal Footer */
 .modal-footer {
   padding: var(--space-6);
-  border-top: 1px solid var(--gray-200);
+  border-top: 4px solid var(--slate-900);
   display: flex;
   justify-content: flex-end;
   gap: var(--space-3);
+  background: var(--slate-100);
 }
 
+/* Professional Brutalism Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -112,6 +134,7 @@
   }
 }
 
+/* Professional Brutalism Mobile Responsive */
 @media (max-width: 768px) {
   .modal-overlay {
     padding: var(--space-2);
@@ -119,6 +142,7 @@
   
   .modal-container {
     max-height: 95vh;
+    border-width: 4px;
   }
   
   .modal-header,
@@ -126,8 +150,34 @@
   .modal-footer {
     padding: var(--space-4);
   }
-  
+
+  .modal-header {
+    border-bottom-width: 3px;
+  }
+
   .modal-footer {
+    border-top-width: 3px;
     flex-direction: column;
   }
+
+  .modal-title {
+    font-size: var(--text-lg);
+  }
+
+  .modal-close {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+    box-shadow: 1px 1px 0px 0px var(--slate-900);
+  }
+
+  .modal-close:hover {
+    box-shadow: 2px 2px 0px 0px var(--slate-900);
+  }
+}
+
+/* Professional Brutalism Focus Management */
+.modal-container:focus {
+  outline: 3px solid var(--blue-600);
+  outline-offset: -3px;
 }

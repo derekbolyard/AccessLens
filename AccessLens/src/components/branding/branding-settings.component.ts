@@ -5,14 +5,16 @@ import { CardComponent } from '../common/card/card.component';
 import { ButtonComponent } from '../common/button/button.component';
 import { InputComponent } from '../common/input/input.component';
 import { AlertComponent } from '../common/alert/alert.component';
+import { LoadingComponent } from '../common/loading/loading.component';
 import { Validators } from '../../utils/validators';
 import { BrandingSettings, DEFAULT_BRANDING } from './branding.interface';
 import { BrandingService } from './branding.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-branding-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, InputComponent, AlertComponent],
+  imports: [CommonModule, FormsModule, CardComponent, ButtonComponent, InputComponent, AlertComponent, LoadingComponent],
   templateUrl: './branding-settings.component.html',
   styleUrls: ['./branding-settings.component.scss']
 })
@@ -31,19 +33,33 @@ export class BrandingSettingsComponent implements OnInit {
   isSaving = false;
   saveSuccess = '';
   saveError = '';
+  isLoading = true;
 
-  constructor(private brandingService: BrandingService) {}
+  constructor(
+    private brandingService: BrandingService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadCurrentBranding();
   }
 
   private loadCurrentBranding(): void {
-    this.brandingService.getBranding().subscribe(branding => {
-      if (branding) {
-        this.brandingForm = { ...branding };
-      } else {
+    this.isLoading = true;
+    this.brandingService.getBranding().subscribe({
+      next: (branding) => {
+        if (branding) {
+          this.brandingForm = { ...branding };
+        } else {
+          this.brandingForm = { ...DEFAULT_BRANDING };
+        }
+        this.isLoading = false;
+        this.updatePreview();
+      },
+      error: (error) => {
+        console.error('Failed to load branding:', error);
         this.brandingForm = { ...DEFAULT_BRANDING };
+        this.isLoading = false;
       }
     });
   }
@@ -103,6 +119,7 @@ export class BrandingSettingsComponent implements OnInit {
     const root = document.documentElement;
     root.style.setProperty('--brand-primary', this.brandingForm.primaryColor || '#2563eb');
     root.style.setProperty('--primary-600', this.brandingForm.primaryColor || '#2563eb');
+    root.style.setProperty('--blue-600', this.brandingForm.primaryColor || '#2563eb');
   }
 
   isFormValid(): boolean {
@@ -131,15 +148,18 @@ export class BrandingSettingsComponent implements OnInit {
 
     this.isSaving = true;
     this.saveError = '';
+    this.saveSuccess = '';
 
     this.brandingService.updateBranding(this.brandingForm).subscribe({
-      next: (success: any) => {
+      next: (success: boolean) => {
         this.isSaving = false;
         if (success) {
           this.saveSuccess = 'Branding settings saved successfully!';
           setTimeout(() => {
             this.saveSuccess = '';
           }, 3000);
+        } else {
+          this.saveError = 'Failed to save branding settings. Please try again.';
         }
       },
       error: (error: any) => {
@@ -152,13 +172,15 @@ export class BrandingSettingsComponent implements OnInit {
 
   resetBranding(): void {
     this.brandingService.resetBranding().subscribe({
-      next: (success: any) => {
+      next: (success: boolean) => {
         if (success) {
           this.brandingForm = { ...DEFAULT_BRANDING };
           this.saveSuccess = 'Branding reset to default settings';
           setTimeout(() => {
             this.saveSuccess = '';
           }, 3000);
+        } else {
+          this.saveError = 'Failed to reset branding settings';
         }
       },
       error: (error: any) => {
@@ -169,6 +191,6 @@ export class BrandingSettingsComponent implements OnInit {
   }
 
   onBackToDashboard(): void {
-    this.backToDashboard.emit();
+    this.router.navigate(['/dashboard']);
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { ToastService, Toast } from './toast.service';
@@ -8,12 +8,12 @@ import { AlertComponent } from '../alert/alert.component';
   selector: 'app-toast-container',
   standalone: true,
   imports: [CommonModule, AlertComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="toast-container">
       <div 
         *ngFor="let toast of toasts; trackBy: trackByToastId"
         class="toast-item"
-        [@slideIn]
       >
         <app-alert
           [variant]="toast.type"
@@ -50,19 +50,22 @@ import { AlertComponent } from '../alert/alert.component';
         max-width: none;
       }
     }
-  `],
-  animations: []
+  `]
 })
 export class ToastContainerComponent implements OnInit, OnDestroy {
   toasts: Toast[] = [];
   private subscription?: Subscription;
 
-  constructor(private toastService: ToastService) {}
+  constructor(
+    private toastService: ToastService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     if (this.toastService?.toasts$) {
       this.subscription = this.toastService.toasts$.subscribe(toasts => {
         this.toasts = toasts || [];
+        this.cdr.markForCheck();
       });
     } else {
       this.toasts = [];

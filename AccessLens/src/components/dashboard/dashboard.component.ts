@@ -4,6 +4,7 @@ import { Site, Report } from '../../types/report.interface';
 import { ReportService } from '../../services/report.service';
 import { CardComponent } from '../common/card/card.component';
 import { BadgeComponent, BadgeVariant } from '../common/badge/badge.component';
+import { LoadingComponent } from '../common/loading/loading.component';
 import { Router } from '@angular/router';
 
 interface ChartDataPoint {
@@ -15,21 +16,34 @@ interface ChartDataPoint {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, CardComponent, BadgeComponent],
+  imports: [CommonModule, CardComponent, BadgeComponent, LoadingComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
   sites: Site[] = [];
+  isLoading = true;
 
   constructor(
     private reportService: ReportService,
-    private router: Router
+    public router: Router
   ) {}
 
   ngOnInit(): void {
-    this.reportService.getSites().subscribe(sites => {
-      this.sites = sites;
+    this.loadDashboardData();
+  }
+
+  private loadDashboardData(): void {
+    this.isLoading = true;
+    this.reportService.getSites().subscribe({
+      next: (sites) => {
+        this.sites = sites;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Failed to load dashboard data:', error);
+        this.isLoading = false;
+      }
     });
   }
 
@@ -180,10 +194,20 @@ export class DashboardComponent implements OnInit {
   }
 
   onSiteClick(site: Site): void {
-    this.router.navigate(['/sites', site.id, 'reports']);
+    console.log('Dashboard: Navigating to site reports:', site.id);
+    this.router.navigate(['/sites', site.id, 'reports']).then(success => {
+      if (!success) {
+        console.error('Dashboard: Navigation to site reports failed');
+      }
+    });
   }
 
   onReportClick(report: Report): void {
-    this.router.navigate(['/sites', report.siteId, 'reports']);
+    console.log('Dashboard: Navigating to report:', report.siteId, report.id);
+    this.router.navigate(['/sites', report.siteId, 'reports']).then(success => {
+      if (!success) {
+        console.error('Dashboard: Navigation to report failed');
+      }
+    });
   }
 }

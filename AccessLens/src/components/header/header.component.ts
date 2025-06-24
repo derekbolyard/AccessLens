@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonComponent } from '../common/button/button.component';
 import { ModalComponent } from '../common/modal/modal.component';
@@ -14,6 +14,7 @@ import { SupportService } from '../../services/support.service';
 import { SubscriptionService } from '../../services/subscription.service';
 import { UserSubscription, SubscriptionPlan } from '../../types/subscription.interface';
 import { Router } from '@angular/router';
+import { ToastService } from '../common/toast/toast.service';
 
 @Component({
   selector: 'app-header',
@@ -31,7 +32,7 @@ import { Router } from '@angular/router';
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss']
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   showScanModal = false;
   showAuthModal = false;
   showFeedbackModal = false;
@@ -50,8 +51,11 @@ export class HeaderComponent {
     private authService: AuthService,
     private supportService: SupportService,
     public subscriptionService: SubscriptionService,
-    private router: Router
-  ) {
+    private router: Router,
+    private toastService: ToastService
+  ) {}
+
+  ngOnInit(): void {
     this.authService.user$.subscribe((user: any) => {
       this.currentUser = user;
     });
@@ -86,12 +90,20 @@ export class HeaderComponent {
     this.showUserMenu = false;
   }
 
-  onRequestScan(): void {
-    if (!this.currentUser) {
-      this.showAuthModal = true;
-      return;
-    }
+  onSignIn(): void {
+    this.showAuthModal = true;
+  }
 
+  onCloseAuthModal(): void {
+    this.showAuthModal = false;
+  }
+
+  onAuthSuccess(user: User): void {
+    this.showAuthModal = false;
+    this.toastService.success(`Welcome, ${user.name}!`);
+  }
+
+  onRequestScan(): void {
     // Check if user has scans remaining
     if (!this.subscriptionService.canRequestScan()) {
       this.showUpgradeModal = true;
@@ -102,19 +114,18 @@ export class HeaderComponent {
     this.resetScanState();
   }
 
-  onSignIn(): void {
-    this.showAuthModal = true;
-  }
-
   onSignOut(): void {
     this.isSigningOut = true;
     this.authService.signOut().subscribe({
       next: () => {
         this.isSigningOut = false;
         this.showUserMenu = false;
+        this.toastService.success('You have been signed out successfully');
+        // User will be redirected to auth modal by the app component
       },
       error: (error: any) => {
         this.isSigningOut = false;
+        this.toastService.error('Failed to sign out. Please try again.');
         console.error('Sign out failed:', error);
       }
     });
@@ -135,10 +146,6 @@ export class HeaderComponent {
     this.resetScanState();
   }
 
-  onCloseAuthModal(): void {
-    this.showAuthModal = false;
-  }
-
   onCloseFeedbackModal(): void {
     this.showFeedbackModal = false;
   }
@@ -147,16 +154,9 @@ export class HeaderComponent {
     this.showUpgradeModal = false;
   }
 
-  onAuthSuccess(user: User): void {
-    this.currentUser = user;
-    // If they were trying to scan, open the scan modal
-    if (!this.showScanModal) {
-      this.onRequestScan();
-    }
-  }
-
   onUpgradeSuccess(): void {
     this.showUpgradeModal = false;
+    this.toastService.success('Your plan has been upgraded successfully!');
     // After successful upgrade, allow them to scan
     this.onRequestScan();
   }
@@ -195,6 +195,7 @@ export class HeaderComponent {
           // Increment scan usage
           this.subscriptionService.incrementScanUsage();
           this.scanSuccess = true;
+          this.toastService.success('Scan requested successfully! You will be notified when it completes.');
           setTimeout(() => {
             this.onCloseScanModal();
           }, 2000);

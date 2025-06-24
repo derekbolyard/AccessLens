@@ -1,15 +1,16 @@
+/* Professional Brutalism Card Component */
 .card {
   background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-brutal);
+  border: 4px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal);
   transition: all 0.2s ease;
   overflow: hidden;
 }
 
 .card-hover:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-pro-brutal-lg);
+  transform: translate(-2px, -2px);
 }
 
 .card-clickable {
@@ -17,19 +18,20 @@
 }
 
 .card-elevated {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-pro-brutal-lg);
 }
 
 .card-bordered {
-  border: 2px solid var(--gray-200);
+  border: 6px solid var(--slate-900);
 }
 
 .card-header {
   padding: var(--space-6);
-  border-bottom: 1px solid var(--gray-200);
+  border-bottom: 4px solid var(--slate-900);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  background: var(--slate-100);
 }
 
 .card-title-section {
@@ -39,16 +41,19 @@
 .card-title {
   margin: 0;
   font-size: var(--text-lg);
-  font-weight: 600;
-  color: var(--gray-900);
+  font-weight: 900;
+  color: var(--slate-900);
   line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
 }
 
 .card-subtitle {
   margin: var(--space-1) 0 0 0;
   font-size: var(--text-sm);
-  color: var(--gray-600);
+  color: var(--slate-600);
   line-height: 1.4;
+  font-weight: 600;
 }
 
 .card-header-action {
@@ -66,45 +71,65 @@
 
 .card-footer {
   padding: var(--space-6);
-  border-top: 1px solid var(--gray-200);
-  background-color: var(--gray-50);
+  border-top: 4px solid var(--slate-900);
+  background-color: var(--slate-100);
 }
 
-// Variants
+// Professional Brutalism Variants
 .card-primary {
-  border-color: var(--primary-200);
+  border-color: var(--blue-600);
+  box-shadow: 4px 4px 0px 0px var(--blue-600);
 }
 
 .card-primary .card-header {
-  background-color: var(--primary-50);
-  border-bottom-color: var(--primary-200);
+  background-color: var(--blue-50);
+  border-bottom-color: var(--blue-600);
+}
+
+.card-primary .card-footer {
+  border-top-color: var(--blue-600);
 }
 
 .card-success {
-  border-color: var(--success-200);
+  border-color: var(--success-600);
+  box-shadow: 4px 4px 0px 0px var(--success-600);
 }
 
 .card-success .card-header {
   background-color: var(--success-50);
-  border-bottom-color: var(--success-200);
+  border-bottom-color: var(--success-600);
+}
+
+.card-success .card-footer {
+  border-top-color: var(--success-600);
 }
 
 .card-warning {
-  border-color: var(--warning-200);
+  border-color: var(--warning-600);
+  box-shadow: 4px 4px 0px 0px var(--warning-600);
 }
 
 .card-warning .card-header {
   background-color: var(--warning-50);
-  border-bottom-color: var(--warning-200);
+  border-bottom-color: var(--warning-600);
+}
+
+.card-warning .card-footer {
+  border-top-color: var(--warning-600);
 }
 
 .card-error {
-  border-color: var(--error-200);
+  border-color: var(--error-600);
+  box-shadow: 4px 4px 0px 0px var(--error-600);
 }
 
 .card-error .card-header {
   background-color: var(--error-50);
-  border-bottom-color: var(--error-200);
+  border-bottom-color: var(--error-600);
+}
+
+.card-error .card-footer {
+  border-top-color: var(--error-600);
 }
 
 @media (max-width: 768px) {

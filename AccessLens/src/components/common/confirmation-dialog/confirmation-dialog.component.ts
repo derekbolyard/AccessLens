@@ -1,12 +1,14 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../modal/modal.component';
 import { ButtonComponent } from '../button/button.component';
+import { IconComponent } from '../icons/icon.component';
 
 @Component({
   selector: 'app-confirmation-dialog',
   standalone: true,
-  imports: [CommonModule, ModalComponent, ButtonComponent],
+  imports: [CommonModule, ModalComponent, ButtonComponent, IconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal 
       [isOpen]="isOpen"
@@ -17,9 +19,7 @@ import { ButtonComponent } from '../button/button.component';
     >
       <div class="confirmation-content">
         <div class="confirmation-icon" [class]="iconClass">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path [attr.d]="iconPath"/>
-          </svg>
+          <app-icon [name]="getIconName()" [size]="24"></app-icon>
         </div>
         <p class="confirmation-message">{{ message }}</p>
       </div>
@@ -102,13 +102,13 @@ export class ConfirmationDialogComponent {
     return this.type;
   }
 
-  get iconPath(): string {
-    const icons = {
-      warning: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01',
-      error: 'M12 2L2 7v10c0 5.55 3.84 10 9 9s9-4.45 9-9V7l-10-5z M12 8v4 M12 16h.01',
-      info: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z M12 6v6 M12 16h.01'
-    };
-    return icons[this.type];
+  getIconName(): string {
+    switch (this.type) {
+      case 'warning': return 'issues';
+      case 'error': return 'x';
+      case 'info': return 'info';
+      default: return 'info';
+    }
   }
 
   onConfirm(): void {

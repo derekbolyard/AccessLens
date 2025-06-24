@@ -1,33 +1,52 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { AuthService } from '../../../services/auth.service'; // Change this!
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
+import { AuthService } from '../../../services/auth.service';
 import { ButtonComponent } from "../../common/button/button.component";
-import { HCaptchaComponent } from "../../common/hcaptcha-component/hcaptcha-component";
 import { AlertComponent } from "../../common/alert/alert.component";
 import { ModalComponent } from "../../common/modal/modal.component";
+import { InputComponent } from "../../common/input/input.component";
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../environments/environment';
+import { ToastService } from '../../common/toast/toast.service';
 
 @Component({
   selector: 'app-magic-auth-modal',
   templateUrl: './magic-auth-modal.html',
   styleUrls: ['./magic-auth-modal.scss'],
-  imports: [ButtonComponent, HCaptchaComponent, AlertComponent, ModalComponent, FormsModule, CommonModule]
+  imports: [ButtonComponent, AlertComponent, ModalComponent, InputComponent, FormsModule, CommonModule],
+  standalone: true
 })
-export class MagicAuthModalComponent {
+export class MagicAuthModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
   @Output() authSuccess = new EventEmitter<any>();
 
-  currentStep: 'email' | 'verification' = 'email';
+  currentStep: 'email' | 'email-sent' = 'email';
   email = '';
-  verificationCode = '';
   isLoading = false;
+  isMockLoggingIn = false;
   authError = '';
-  requiresCaptcha = false;
-  hcaptchaToken = '';
-  hcaptchaSiteKey = 'your-hcaptcha-site-key';
 
-  constructor(private authService: AuthService) {} // Change this!
+  constructor(
+    private authService: AuthService,
+    private toastService: ToastService
+  ) {}
+
+  ngOnInit(): void {
+    // Reset form when component initializes
+    this.resetForm();
+  }
+
+  ngOnChanges(): void {
+    // Reset form when modal opens
+    if (this.isOpen) {
+      this.resetForm();
+    }
+  }
+
+  get isMockBackendEnabled(): boolean {
+    return environment.features.useMockBackend;
+  }
 
   onSubmitEmail(): void {
     if (!this.email.trim() || !this.isValidEmail(this.email)) {
@@ -38,76 +57,59 @@ export class MagicAuthModalComponent {
     this.isLoading = true;
     this.authError = '';
 
-    this.authService.sendVerificationCode(this.email).subscribe({ // Change this!
+    this.authService.sendVerificationCode(this.email).subscribe({
       next: (response: any) => {
         this.isLoading = false;
-        this.currentStep = 'verification';
+        this.currentStep = 'email-sent';
+        this.toastService.success('Verification code sent to your email');
       },
       error: (error: any) => {
         this.isLoading = false;
-        this.authError = error.error?.error || 'Failed to send verification code. Please try again.';
+        this.authError = error.error?.error || 'Failed to send sign-in link. Please try again.';
+        this.toastService.error(this.authError);
       }
     });
   }
 
-  onSubmitVerification(): void {
-    if (!this.verificationCode.trim() || this.verificationCode.length !== 6) {
-      this.authError = 'Please enter a valid 6-digit verification code';
+  onMockLogin(): void {
+    if (!this.isMockBackendEnabled) {
       return;
     }
 
-    if (this.requiresCaptcha && !this.hcaptchaToken) {
-      this.authError = 'Please complete the captcha verification';
-      return;
-    }
-
-    this.isLoading = true;
+    this.isMockLoggingIn = true;
     this.authError = '';
 
-    this.authService.verifyCode(this.email, this.verificationCode, this.hcaptchaToken).subscribe({ // Change this!
+    // Simulate the verification process with a mock code
+    this.authService.verifyCode(this.email, '123456').subscribe({
       next: (response: any) => {
-        this.isLoading = false;
+        this.isMockLoggingIn = false;
         this.authSuccess.emit({ email: this.email, provider: 'magic-link' });
         this.close.emit();
         this.resetForm();
       },
       error: (error: any) => {
-        this.isLoading = false;
-        if (error.error?.error === 'hCaptcha required.') {
-          this.requiresCaptcha = true;
-          this.authError = 'Please complete the captcha verification';
-        } else {
-          this.authError = error.error?.error || 'Invalid verification code. Please try again.';
-        }
+        this.isMockLoggingIn = false;
+        this.authError = error.error?.error || 'Mock login failed. Please try again.';
+        this.toastService.error(this.authError);
       }
     });
   }
 
   onBackToEmail(): void {
     this.currentStep = 'email';
-    this.verificationCode = '';
     this.authError = '';
-    this.requiresCaptcha = false;
-    this.hcaptchaToken = '';
   }
 
-  onResendCode(): void {
+  onResendEmail(): void {
     this.onSubmitEmail();
-  }
-
-  onHCaptchaSuccess(token: string): void {
-    this.hcaptchaToken = token;
-    this.authError = '';
   }
 
   private resetForm(): void {
     this.currentStep = 'email';
     this.email = '';
-    this.verificationCode = '';
     this.isLoading = false;
+    this.isMockLoggingIn = false;
     this.authError = '';
-    this.requiresCaptcha = false;
-    this.hcaptchaToken = '';
   }
 
   private isValidEmail(email: string): boolean {

@@ -1,10 +1,11 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ModalComponent } from '../common/modal/modal.component';
 import { ButtonComponent } from '../common/button/button.component';
 import { AlertComponent } from '../common/alert/alert.component';
 import { SubscriptionService } from '../../services/subscription.service';
 import { SubscriptionPlan } from '../../types/subscription.interface';
+import { ToastService } from '../common/toast/toast.service';
 
 @Component({
   selector: 'app-upgrade-modal',
@@ -13,7 +14,7 @@ import { SubscriptionPlan } from '../../types/subscription.interface';
   templateUrl: './upgrade-modal.component.html',
   styleUrls: ['./upgrade-modal.component.scss']
 })
-export class UpgradeModalComponent {
+export class UpgradeModalComponent implements OnChanges {
   @Input() isOpen = false;
   @Input() plan: SubscriptionPlan | null = null;
   @Output() close = new EventEmitter<void>();
@@ -23,7 +24,10 @@ export class UpgradeModalComponent {
   upgradeError = '';
   isUpgradeComplete = false; // Renamed from upgradeSuccess to avoid conflict
 
-  constructor(private subscriptionService: SubscriptionService) {}
+  constructor(
+    private subscriptionService: SubscriptionService,
+    private toastService: ToastService
+  ) {}
 
   ngOnChanges(): void {
     if (this.isOpen) {
@@ -56,11 +60,13 @@ export class UpgradeModalComponent {
         this.isUpgrading = false;
         if (success) {
           this.isUpgradeComplete = true;
+          this.toastService.success(`Successfully upgraded to ${this.plan?.name} plan!`);
         }
       },
       error: (error) => {
         this.isUpgrading = false;
         this.upgradeError = 'Failed to process upgrade. Please try again or contact support.';
+        this.toastService.error(this.upgradeError);
         console.error('Upgrade failed:', error);
       }
     });

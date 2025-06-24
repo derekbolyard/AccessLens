@@ -17,6 +17,11 @@
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container">
+      <app-loading type="skeleton" [skeletonLines]="4" text="Loading branding settings..."></app-loading>
+    </div>
+
     <!-- Success/Error Messages -->
     <app-alert 
       *ngIf="saveSuccess" 
@@ -36,7 +41,7 @@
       {{ saveError }}
     </app-alert>
 
-    <div class="branding-content">
+    <div *ngIf="!isLoading" class="branding-content">
       <!-- Settings Form -->
       <div class="settings-section">
         <app-card title="Company Information" [elevated]="true">

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../services/auth.service';
 import { environment } from '../../environments/environment';
@@ -7,14 +7,16 @@ import { ModalComponent } from "../common/modal/modal.component";
 import { AlertComponent } from "../common/alert/alert.component";
 import { CommonModule } from '@angular/common';
 import { MagicAuthModalComponent } from "./magic-auth-modal/magic-auth-modal";
+import { ToastService } from '../common/toast/toast.service';
 
 @Component({
   selector: 'app-auth-modal',
   templateUrl: './auth-modal.component.html',
   styleUrls: ['./auth-modal.component.scss'],
-  imports: [ButtonComponent, ModalComponent, AlertComponent, CommonModule, MagicAuthModalComponent]
+  imports: [ButtonComponent, ModalComponent, AlertComponent, CommonModule, MagicAuthModalComponent],
+  standalone: true
 })
-export class AuthModalComponent {
+export class AuthModalComponent implements OnInit {
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
   @Output() authSuccess = new EventEmitter<User>();
@@ -22,7 +24,17 @@ export class AuthModalComponent {
   isSigningIn: 'google' | 'github' | null = null;
   authError = '';
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private toastService: ToastService
+  ) {}
+
+  ngOnInit(): void {
+    // Reset error state when modal opens
+    if (this.isOpen) {
+      this.authError = '';
+    }
+  }
 
   get isMagicLinkAuthEnabled(): boolean {
     return environment.features.useMagicLinkAuth;
@@ -43,6 +55,7 @@ export class AuthModalComponent {
         this.isSigningIn = null;
         this.authSuccess.emit(user);
         this.close.emit();
+        this.toastService.success(`Welcome, ${user.name}!`);
       },
       error: (error) => {
         this.isSigningIn = null;
@@ -67,6 +80,7 @@ export class AuthModalComponent {
         this.isSigningIn = null;
         this.authSuccess.emit(user);
         this.close.emit();
+        this.toastService.success(`Welcome, ${user.name}!`);
       },
       error: (error) => {
         this.isSigningIn = null;
@@ -78,5 +92,6 @@ export class AuthModalComponent {
 
   onMagicAuthSuccess(user: any): void {
     this.authSuccess.emit(user);
+    this.toastService.success(`Welcome, ${user.name || user.email}!`);
   }
 }

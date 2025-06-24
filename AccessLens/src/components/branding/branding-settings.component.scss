@@ -1,48 +1,91 @@
+/* Professional Brutalism Branding Settings */
 .branding-settings {
   padding: var(--space-8) 0;
-  min-height: 100vh;
+  background-color: var(--slate-50);
 }
 
 .branding-header {
   margin-bottom: var(--space-8);
 }
 
+/* Loading Container */
+.loading-container {
+  margin-top: var(--space-8);
+  padding: var(--space-8);
+  background: white;
+  border: 4px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal);
+}
+
+/* Professional Brutalism Back Button */
 .back-button {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  background: none;
-  border: none;
-  color: var(--primary-600);
+  background: var(--slate-100);
+  border: 3px solid var(--slate-900);
+  color: var(--slate-900);
   font-size: var(--text-sm);
   cursor: pointer;
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
   transition: all 0.2s ease;
   margin-bottom: var(--space-6);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
 .back-button:hover {
-  background-color: var(--primary-50);
-  color: var(--primary-700);
+  background-color: var(--blue-100);
+  color: var(--blue-700);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px 0px var(--slate-800);
 }
 
 .header-content {
   text-align: center;
+  background: white;
+  padding: var(--space-8);
+  border: 6px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.header-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(90deg, var(--blue-600), var(--success-600), var(--warning-600));
+  z-index: 1;
 }
 
 .header-content h1 {
-  color: var(--gray-900);
+  color: var(--slate-900);
   margin-bottom: var(--space-2);
+  font-weight: 900;
+  font-size: var(--text-4xl);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 2;
 }
 
 .header-subtitle {
-  color: var(--gray-600);
+  color: var(--slate-600);
   font-size: var(--text-lg);
   max-width: 600px;
   margin: 0 auto;
+  font-weight: 600;
+  position: relative;
+  z-index: 2;
 }
 
+/* Professional Brutalism Branding Content */
 .branding-content {
   display: grid;
   grid-template-columns: 1fr 400px;
@@ -56,6 +99,7 @@
   gap: var(--space-6);
 }
 
+/* Professional Brutalism Form Grid */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -74,41 +118,52 @@
 
 .form-label {
   font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--gray-700);
+  font-weight: 700;
+  color: var(--slate-700);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .form-select {
   padding: var(--space-3);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
+  border: 3px solid var(--slate-900);
   font-size: var(--text-sm);
   background: white;
   transition: all 0.2s ease;
+  font-weight: 600;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right var(--space-3) center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  padding-right: var(--space-10);
 }
 
 .form-select:focus {
   outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--blue-600);
+  box-shadow: 3px 3px 0px 0px var(--blue-600);
 }
 
 .form-textarea {
   padding: var(--space-3);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
+  border: 3px solid var(--slate-900);
   font-size: var(--text-sm);
   font-family: inherit;
   resize: vertical;
   transition: all 0.2s ease;
+  font-weight: 600;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
 .form-textarea:focus {
   outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--blue-600);
+  box-shadow: 3px 3px 0px 0px var(--blue-600);
 }
 
+/* Professional Brutalism Logo Section */
 .logo-section {
   display: flex;
   flex-direction: column;
@@ -128,8 +183,8 @@
 .logo-preview img {
   max-width: 100%;
   max-height: 100px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--gray-200);
+  border: 3px solid var(--slate-900);
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
 .remove-logo {
@@ -138,51 +193,57 @@
   right: -8px;
   background: var(--error-600);
   color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  border: 3px solid var(--slate-900);
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
 .remove-logo:hover {
   background: var(--error-700);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px 0px var(--slate-800);
 }
 
 .upload-area {
-  border: 2px dashed var(--gray-300);
-  border-radius: var(--radius-lg);
+  border: 4px dashed var(--slate-900);
   padding: var(--space-8);
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  background: white;
 }
 
 .upload-area:hover {
-  border-color: var(--primary-400);
-  background-color: var(--primary-50);
+  border-color: var(--blue-600);
+  background-color: var(--blue-50);
 }
 
 .upload-area svg {
-  color: var(--gray-400);
+  color: var(--slate-400);
   margin-bottom: var(--space-3);
 }
 
 .upload-area p {
   margin: 0 0 var(--space-1) 0;
-  color: var(--gray-700);
-  font-weight: 500;
+  color: var(--slate-700);
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .upload-hint {
   font-size: var(--text-sm);
-  color: var(--gray-500);
+  color: var(--slate-500);
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
+/* Professional Brutalism Color Section */
 .color-section {
   display: flex;
   flex-direction: column;
@@ -203,8 +264,10 @@
 
 .color-input label {
   font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--gray-700);
+  font-weight: 700;
+  color: var(--slate-700);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .color-picker {
@@ -214,30 +277,39 @@
 }
 
 .color-picker input[type="color"] {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
+  width: 50px;
+  height: 50px;
+  border: 3px solid var(--slate-900);
   cursor: pointer;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
 .color-picker input[type="text"] {
   flex: 1;
   padding: var(--space-2);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
+  border: 3px solid var(--slate-900);
   font-size: var(--text-sm);
   font-family: monospace;
+  font-weight: 600;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
+.color-picker input[type="text"]:focus {
+  outline: none;
+  border-color: var(--blue-600);
+  box-shadow: 3px 3px 0px 0px var(--blue-600);
+}
+
+/* Professional Brutalism Action Buttons */
 .action-buttons {
   display: flex;
   gap: var(--space-3);
   justify-content: flex-end;
   padding-top: var(--space-6);
-  border-top: 1px solid var(--gray-200);
+  border-top: 4px solid var(--slate-900);
 }
 
+/* Professional Brutalism Preview Section */
 .preview-section {
   position: sticky;
   top: var(--space-8);
@@ -257,15 +329,17 @@
   align-items: center;
   gap: var(--space-4);
   color: white;
+  border-bottom: 4px solid var(--slate-900);
 }
 
 .preview-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
+  width: 50px;
+  height: 50px;
   overflow: hidden;
   background: white;
   padding: var(--space-1);
+  border: 3px solid var(--slate-900);
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
 .preview-logo img {
@@ -277,6 +351,9 @@
 .preview-header h3 {
   margin: 0;
   font-size: var(--text-xl);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
 }
 
 .preview-body {
@@ -286,21 +363,28 @@
 .preview-body h4 {
   margin: 0 0 var(--space-3) 0;
   font-size: var(--text-lg);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
 }
 
 .preview-body p {
   margin: 0 0 var(--space-4) 0;
-  color: var(--gray-600);
+  color: var(--slate-600);
+  font-weight: 600;
 }
 
 .preview-button {
   display: inline-block;
   padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
   color: white;
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: 700;
   margin-bottom: var(--space-4);
+  border: 3px solid var(--slate-900);
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .preview-stats {
@@ -312,12 +396,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: var(--space-2);
+  border: 2px solid var(--slate-900);
+  background: var(--slate-100);
+  box-shadow: 1px 1px 0px 0px var(--slate-800);
 }
 
 .stat-number {
   font-size: var(--text-xl);
-  font-weight: 700;
+  font-weight: 900;
   line-height: 1;
+  text-transform: uppercase;
 }
 
 .stat-label {
@@ -325,14 +414,16 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: var(--space-1);
+  font-weight: 700;
 }
 
 .preview-footer {
   padding: var(--space-4) var(--space-6);
-  border-top: 1px solid var(--gray-200);
+  border-top: 4px solid var(--slate-900);
   font-size: var(--text-sm);
   text-align: center;
-  background-color: var(--gray-50);
+  background-color: var(--slate-100);
+  font-weight: 600;
 }
 
 @media (max-width: 1200px) {
@@ -361,5 +452,13 @@
   
   .preview-stats {
     justify-content: space-around;
+  }
+
+  .header-content {
+    padding: var(--space-4);
+  }
+
+  .header-content h1 {
+    font-size: var(--text-2xl);
   }
 }

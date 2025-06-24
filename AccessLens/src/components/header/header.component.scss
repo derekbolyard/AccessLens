@@ -1,7 +1,8 @@
+/* Professional Brutalism Header */
 .header {
-  background: white;
-  border-bottom: 1px solid var(--gray-200);
-  box-shadow: var(--shadow-sm);
+  background: var(--slate-900);
+  border-bottom: 6px solid var(--blue-600);
+  box-shadow: 0 6px 0px 0px var(--slate-800);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -14,69 +15,92 @@
   padding: var(--space-4) 0;
 }
 
+/* Professional Brutalism Logo */
 .logo {
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
+  padding: var(--space-2);
+  border: 3px solid transparent;
 }
 
 .logo:hover {
-  opacity: 0.8;
+  border-color: var(--blue-600);
+  transform: translate(-2px, -2px);
+  box-shadow: 2px 2px 0px 0px var(--blue-600);
 }
 
 .logo h1 {
-  font-size: var(--text-xl);
-  color: var(--primary-600);
+  font-size: var(--text-2xl);
+  color: white;
   margin: 0;
   line-height: 1;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
 }
 
 .tagline {
-  font-size: var(--text-sm);
-  color: var(--gray-600);
-  font-weight: 400;
+  font-size: var(--text-xs);
+  color: var(--slate-300);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: var(--space-1);
 }
 
+/* Professional Brutalism Navigation */
 .nav {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2);
 }
 
 .nav-link {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  background: none;
-  border: none;
-  color: var(--gray-700);
+  padding: var(--space-3) var(--space-4);
+  background: var(--slate-800);
+  border: 3px solid var(--slate-700);
+  color: white;
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
-  border-radius: var(--radius-md);
   transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  box-shadow: 2px 2px 0px 0px var(--slate-700);
 }
 
 .nav-link:hover {
-  background-color: var(--gray-100);
-  color: var(--gray-900);
+  background-color: var(--blue-600);
+  border-color: var(--blue-500);
+  color: white;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px 0px var(--slate-700);
 }
 
+.nav-link:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px var(--slate-700);
+}
+
+/* Professional Brutalism Scan Form */
 .scan-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
 }
 
 .scan-limit-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-3);
-  background-color: var(--primary-50);
-  border: 1px solid var(--primary-200);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-2);
+  padding: var(--space-4);
+  background-color: var(--blue-50);
+  border: 4px solid var(--blue-600);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-pro-brutal-blue);
 }
 
 .limit-display {
@@ -86,29 +110,41 @@
 }
 
 .scans-remaining {
-  font-weight: 600;
-  color: var(--primary-700);
+  font-weight: 900;
+  color: var(--blue-900);
+  font-size: var(--text-lg);
+  text-transform: uppercase;
 }
 
 .plan-name {
   font-size: var(--text-sm);
-  color: var(--primary-600);
+  color: var(--blue-700);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .upgrade-link {
-  background: none;
-  border: none;
-  color: var(--primary-600);
+  background: var(--blue-600);
+  border: 3px solid var(--slate-900);
+  color: white;
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
-  text-decoration: underline;
+  padding: var(--space-2) var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  box-shadow: 2px 2px 0px 0px var(--slate-900);
+  transition: all 0.2s ease;
 }
 
 .upgrade-link:hover {
-  color: var(--primary-700);
+  background: var(--blue-700);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px 0px var(--slate-900);
 }
 
+/* Professional Brutalism Auth Section */
 .auth-section {
   position: relative;
 }
@@ -125,42 +161,46 @@
 .user-menu-trigger {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2);
-  background: none;
-  border: none;
-  border-radius: var(--radius-md);
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--slate-800);
+  border: 3px solid var(--slate-700);
   cursor: pointer;
   transition: all 0.2s ease;
+  color: white;
+  box-shadow: 2px 2px 0px 0px var(--slate-700);
 }
 
 .user-menu-trigger:hover {
-  background-color: var(--gray-100);
+  background-color: var(--slate-700);
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px 0px var(--slate-600);
 }
 
 .user-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
   object-fit: cover;
+  border: 2px solid var(--slate-600);
 }
 
 .user-name {
   font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--gray-700);
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
 }
 
+/* Professional Brutalism User Menu */
 .user-menu {
   position: absolute;
   top: 100%;
   right: 0;
   margin-top: var(--space-2);
   background: white;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  min-width: 300px;
+  border: 4px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal-lg);
+  min-width: 320px;
   z-index: 1000;
   overflow: hidden;
 }
@@ -169,15 +209,16 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-4);
-  background-color: var(--gray-50);
+  padding: var(--space-6);
+  background-color: var(--slate-100);
+  border-bottom: 3px solid var(--slate-900);
 }
 
 .user-avatar-large {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
   object-fit: cover;
+  border: 3px solid var(--slate-900);
 }
 
 .user-info {
@@ -185,20 +226,24 @@
 }
 
 .user-name-large {
-  font-weight: 600;
-  color: var(--gray-900);
+  font-weight: 900;
+  color: var(--slate-900);
   margin-bottom: var(--space-1);
+  text-transform: uppercase;
+  font-size: var(--text-base);
 }
 
 .user-email {
   font-size: var(--text-sm);
-  color: var(--gray-600);
+  color: var(--slate-600);
+  font-weight: 600;
 }
 
+/* Professional Brutalism Subscription Info */
 .subscription-info {
   padding: var(--space-4);
-  background-color: var(--primary-50);
-  border-bottom: 1px solid var(--primary-200);
+  background-color: var(--blue-50);
+  border-bottom: 3px solid var(--blue-600);
 }
 
 .subscription-plan {
@@ -209,13 +254,17 @@
 }
 
 .subscription-plan .plan-name {
-  font-weight: 600;
-  color: var(--primary-700);
+  font-weight: 900;
+  color: var(--blue-900);
+  text-transform: uppercase;
+  font-size: var(--text-base);
 }
 
 .subscription-plan .scans-remaining {
   font-size: var(--text-sm);
-  color: var(--primary-600);
+  color: var(--blue-700);
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .upgrade-button {
@@ -223,24 +272,28 @@
   align-items: center;
   gap: var(--space-2);
   width: 100%;
-  padding: var(--space-2) var(--space-3);
-  background: var(--primary-600);
+  padding: var(--space-3) var(--space-4);
+  background: var(--blue-600);
   color: white;
-  border: none;
-  border-radius: var(--radius-md);
+  border: 3px solid var(--slate-900);
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  box-shadow: 2px 2px 0px 0px var(--slate-900);
 }
 
 .upgrade-button:hover {
-  background: var(--primary-700);
+  background: var(--blue-700);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px 0px var(--slate-900);
 }
 
 .user-menu-divider {
-  height: 1px;
-  background-color: var(--gray-200);
+  height: 3px;
+  background-color: var(--slate-900);
 }
 
 .user-menu-item {
@@ -248,19 +301,22 @@
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  padding: var(--space-3) var(--space-4);
-  background: none;
+  padding: var(--space-4) var(--space-6);
+  background: white;
   border: none;
   text-align: left;
   font-size: var(--text-sm);
-  color: var(--gray-700);
+  color: var(--slate-700);
   cursor: pointer;
   transition: all 0.2s ease;
+  font-weight: 600;
+  border-bottom: 2px solid var(--slate-200);
 }
 
 .user-menu-item:hover {
-  background-color: var(--gray-50);
-  color: var(--gray-900);
+  background-color: var(--slate-100);
+  color: var(--slate-900);
+  border-bottom-color: var(--slate-900);
 }
 
 .user-menu-item:disabled {
@@ -270,11 +326,13 @@
 
 .user-menu-item.sign-out {
   color: var(--error-600);
+  border-bottom-color: var(--error-200);
 }
 
 .user-menu-item.sign-out:hover {
   background-color: var(--error-50);
   color: var(--error-700);
+  border-bottom-color: var(--error-600);
 }
 
 .user-menu-overlay {
@@ -286,6 +344,7 @@
   z-index: 999;
 }
 
+/* Professional Brutalism Mobile Responsive */
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -296,6 +355,11 @@
   .nav {
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .nav-link {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
   }
 
   .user-menu {
@@ -313,4 +377,50 @@
     gap: var(--space-2);
     text-align: center;
   }
+
+  .logo h1 {
+    font-size: var(--text-xl);
+  }
+
+  .tagline {
+    font-size: 10px;
+  }
+}
+
+/* Professional Brutalism Button Overrides for Header */
+.header .btn {
+  border: 3px solid var(--slate-900);
+  box-shadow: 2px 2px 0px 0px var(--slate-900);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+.header .btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px 0px var(--slate-900);
+}
+
+.header .btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px var(--slate-900);
+}
+
+.header .btn-primary {
+  background: var(--blue-600);
+  border-color: var(--slate-900);
+}
+
+.header .btn-primary:hover {
+  background: var(--blue-700);
+}
+
+.header .btn-secondary {
+  background: white;
+  color: var(--slate-900);
+  border-color: var(--slate-900);
+}
+
+.header .btn-secondary:hover {
+  background: var(--slate-100);
 }

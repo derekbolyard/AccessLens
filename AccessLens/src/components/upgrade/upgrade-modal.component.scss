@@ -12,7 +12,10 @@
 
 .plan-details h3 {
   margin: 0 0 var(--space-2) 0;
-  color: var(--gray-900);
+  color: var(--slate-900);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
 }
 
 .plan-price {
@@ -24,12 +27,14 @@
 
 .price-amount {
   font-size: var(--text-2xl);
-  font-weight: 700;
-  color: var(--primary-600);
+  font-weight: 900;
+  color: var(--blue-600);
+  text-transform: uppercase;
 }
 
 .price-interval {
-  color: var(--gray-600);
+  color: var(--slate-600);
+  font-weight: 600;
 }
 
 .plan-highlights {
@@ -43,7 +48,8 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--text-sm);
-  color: var(--gray-700);
+  color: var(--slate-700);
+  font-weight: 600;
 }
 
 .highlight-item svg {
@@ -52,9 +58,11 @@
 }
 
 .billing-info {
-  background-color: var(--gray-50);
+  background-color: var(--slate-50);
   padding: var(--space-4);
-  border-radius: var(--radius-md);
+  border: 3px solid var(--slate-900);
+  border-radius: var(--radius-brutal);
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
 .billing-item {
@@ -65,26 +73,32 @@
 }
 
 .billing-item.total {
-  border-top: 1px solid var(--gray-200);
+  border-top: 3px solid var(--slate-900);
   margin-top: var(--space-2);
   padding-top: var(--space-3);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .billing-label {
-  color: var(--gray-600);
+  color: var(--slate-600);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  font-size: var(--text-sm);
 }
 
 .billing-value {
-  color: var(--gray-900);
-  font-weight: 500;
+  color: var(--slate-900);
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .payment-note {
-  background-color: var(--primary-50);
+  background-color: var(--blue-50);
   padding: var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--primary-200);
+  border: 3px solid var(--blue-600);
+  border-radius: var(--radius-brutal);
+  box-shadow: 2px 2px 0px 0px var(--blue-600);
 }
 
 .payment-note p {
@@ -93,10 +107,11 @@
   gap: var(--space-2);
   margin: 0;
   font-size: var(--text-sm);
-  color: var(--primary-700);
+  color: var(--blue-700);
+  font-weight: 600;
 }
 
 .payment-note svg {
-  color: var(--primary-600);
+  color: var(--blue-600);
   flex-shrink: 0;
 }

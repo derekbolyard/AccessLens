@@ -1,0 +1,20 @@
+.virtual-scroll-container {
+  overflow-y: auto;
+  position: relative;
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
+}
+
+.virtual-scroll-spacer {
+  position: relative;
+  width: 100%;
+}
+
+.virtual-scroll-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  will-change: transform;
+  transform: translateZ(0);
+}

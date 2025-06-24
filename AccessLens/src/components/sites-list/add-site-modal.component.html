@@ -1,0 +1,97 @@
+<div class="add-site-modal">
+  <app-modal 
+    [isOpen]="isOpen"
+    title="Add New Site"
+    size="md"
+    [showFooter]="true"
+    (close)="close.emit()"
+  >
+    <div class="add-site-content">
+      <app-alert 
+        *ngIf="submitSuccess" 
+        variant="success" 
+        title="Site Added Successfully!"
+        [dismissible]="false"
+      >
+        Your site has been added and is ready for accessibility scanning.
+      </app-alert>
+
+      <app-alert 
+        *ngIf="submitError" 
+        variant="error" 
+        [dismissible]="true"
+        (dismiss)="submitError = ''"
+      >
+        {{ submitError }}
+      </app-alert>
+
+      <div *ngIf="!submitSuccess" class="site-form">
+        <app-input
+          label="Site Name"
+          placeholder="My Website"
+          [value]="siteData.name"
+          [disabled]="isSubmitting"
+          [required]="true"
+          helpText="A friendly name to identify your site"
+          (inputChange)="siteData.name = $event"
+        ></app-input>
+
+        <app-input
+          label="Website URL"
+          type="url"
+          placeholder="example.com"
+          prefixIcon="globe"
+          [value]="siteData.url"
+          [disabled]="isSubmitting"
+          [required]="true"
+          helpText="Enter your domain (we'll add https:// automatically)"
+          (inputChange)="siteData.url = $event"
+        ></app-input>
+
+        <div class="url-preview" *ngIf="siteData.url.trim()">
+          <span class="preview-label">Full URL:</span>
+          <span class="preview-url">{{ getPreviewUrl() }}</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description (optional)</label>
+          <textarea 
+            class="form-textarea"
+            placeholder="Brief description of your website..."
+            [(ngModel)]="siteData.description"
+            [disabled]="isSubmitting"
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div slot="footer" *ngIf="!submitSuccess">
+      <app-button 
+        variant="secondary" 
+        [disabled]="isSubmitting"
+        (click)="close.emit()"
+      >
+        Cancel
+      </app-button>
+      <app-button 
+        variant="primary" 
+        [loading]="isSubmitting"
+        [disabled]="!isFormValid() || isSubmitting"
+        (click)="submitSite()"
+      >
+        {{ isSubmitting ? 'Adding Site...' : 'Add Site' }}
+      </app-button>
+    </div>
+
+    <div slot="footer" *ngIf="submitSuccess">
+      <app-button 
+        variant="primary" 
+        [fullWidth]="true"
+        (click)="onComplete()"
+      >
+        Continue
+      </app-button>
+    </div>
+  </app-modal>
+</div>
