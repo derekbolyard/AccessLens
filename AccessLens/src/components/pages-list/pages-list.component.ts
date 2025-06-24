@@ -1,37 +1,71 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Site, Page } from '../../types/report.interface';
 import { ReportService } from '../../services/report.service';
+import { BreadcrumbComponent, BreadcrumbItem } from '../common/breadcrumb/breadcrumb.component';
+import { PageContextComponent } from '../common/page-context/page-context.component';
+import { BadgeComponent, BadgeVariant } from '../common/badge/badge.component';
+import { CardComponent } from '../common/card/card.component';
+import { LoadingComponent } from '../common/loading/loading.component';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-pages-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BreadcrumbComponent, PageContextComponent, BadgeComponent, CardComponent, LoadingComponent],
   templateUrl: './pages-list.component.html',
   styleUrls: ['./pages-list.component.scss']
 })
 export class PagesListComponent implements OnInit {
   siteId: string = '';
   reportId: string = '';
-  
   site: Site | null = null;
+  breadcrumbItems: BreadcrumbItem[] = [];
+  isLoading = true;
 
   constructor(
     private reportService: ReportService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.siteId = this.route.snapshot.paramMap.get('siteId') || '';
     this.reportId = this.route.snapshot.paramMap.get('reportId') || '';
     
+    this.updateBreadcrumbItems();
+    
     if (this.siteId) {
-      this.reportService.getSiteById(this.siteId).subscribe(site => {
-        this.site = site || null;
-      });
+      this.loadSite();
     }
+  }
+
+  private loadSite(): void {
+    this.isLoading = true;
+    this.cdr.markForCheck();
+    this.reportService.getSiteById(this.siteId).subscribe({
+      next: (site) => {
+        this.site = site || null;
+        this.updateBreadcrumbItems();
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('Failed to load site:', error);
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private updateBreadcrumbItems(): void {
+    this.breadcrumbItems = [
+      { label: 'All Sites', icon: 'sites', action: () => this.onBackToSites() },
+      { label: this.site?.name || 'Site', icon: 'reports', action: () => this.onBackToReports() },
+      { label: 'Pages', icon: 'pages' }
+    ];
+    this.cdr.markForCheck();
   }
 
   allPagesForSite(): Page[] {
@@ -43,11 +77,22 @@ export class PagesListComponent implements OnInit {
     return page.id;
   }
 
-  getScoreClass(score: number): string {
-    if (score >= 90) return 'excellent';
-    if (score >= 80) return 'good';
-    if (score >= 70) return 'fair';
-    return 'poor';
+  getStatusVariant(status: string): BadgeVariant {
+    switch (status) {
+      case 'completed': return 'success';
+      case 'in-progress': return 'warning';
+      case 'failed': return 'error';
+      default: return 'secondary';
+    }
+  }
+
+  getStatusIcon(status: string): string {
+    switch (status) {
+      case 'completed': return 'check';
+      case 'in-progress': return '';
+      case 'failed': return 'x';
+      default: return '';
+    }
   }
 
   getStatusLabel(status: string): string {

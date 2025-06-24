@@ -6,200 +6,236 @@
       <p class="text-muted">Monitor your accessibility compliance across all sites</p>
     </div>
 
-    <!-- Key Performance Indicators -->
-    <div class="kpi-grid">
-      <app-card variant="default" [elevated]="true">
-        <div class="kpi-content">
-          <div class="kpi-icon success">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20,6 9,17 4,12"/>
-            </svg>
-          </div>
-          <div class="kpi-info">
-            <div class="kpi-number">{{ getTotalFixedIssues() }}</div>
-            <div class="kpi-label">Total Issues Fixed</div>
-            <div class="kpi-change positive">+{{ getFixedIssuesChange() }} this month</div>
-          </div>
-        </div>
-      </app-card>
-
-      <app-card variant="default" [elevated]="true">
-        <div class="kpi-content">
-          <div class="kpi-icon warning">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-          </div>
-          <div class="kpi-info">
-            <div class="kpi-number">{{ getTotalPendingIssues() }}</div>
-            <div class="kpi-label">Pending Issues</div>
-            <div class="kpi-change" [class.positive]="getPendingIssuesChange() < 0" [class.negative]="getPendingIssuesChange() > 0">
-              {{ getPendingIssuesChange() > 0 ? '+' : '' }}{{ getPendingIssuesChange() }} this month
-            </div>
-          </div>
-        </div>
-      </app-card>
-
-      <app-card variant="default" [elevated]="true">
-        <div class="kpi-content">
-          <div class="kpi-icon info">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-            </svg>
-          </div>
-          <div class="kpi-info">
-            <div class="kpi-number">{{ getAverageScore() }}%</div>
-            <div class="kpi-label">Average Score</div>
-            <div class="kpi-change" [class.positive]="getScoreChange() > 0" [class.negative]="getScoreChange() < 0">
-              {{ getScoreChange() > 0 ? '+' : '' }}{{ getScoreChange() }}% this month
-            </div>
-          </div>
-        </div>
-      </app-card>
-
-      <app-card variant="default" [elevated]="true">
-        <div class="kpi-content">
-          <div class="kpi-icon primary">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14,2 14,8 20,8"/>
-            </svg>
-          </div>
-          <div class="kpi-info">
-            <div class="kpi-number">{{ getTotalPages() }}</div>
-            <div class="kpi-label">Pages Monitored</div>
-            <div class="kpi-change positive">{{ sites.length }} active sites</div>
-          </div>
-        </div>
-      </app-card>
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container">
+      <app-loading type="skeleton" [skeletonLines]="6" text="Loading dashboard data..."></app-loading>
     </div>
 
-    <!-- Charts Section -->
-    <div class="charts-section">
-      <div class="charts-grid">
-        <!-- Score Trend Chart -->
-        <app-card title="Score Trend" subtitle="Average accessibility score over time" [elevated]="true">
-          <div class="chart-container">
-            <div class="chart-placeholder">
-              <div class="chart-line">
-                <div class="chart-points">
-                  <div *ngFor="let point of getScoreTrendData(); let i = index" 
-                       class="chart-point" 
-                       [style.left.%]="(i / (getScoreTrendData().length - 1)) * 100"
-                       [style.bottom.%]="point.value"
-                       [title]="point.label + ': ' + point.score + '%'">
-                  </div>
-                </div>
-                <svg class="chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <polyline 
-                    [attr.points]="getScorePolylinePoints()" 
-                    fill="none" 
-                    stroke="var(--primary-500)" 
-                    stroke-width="2"
-                    vector-effect="non-scaling-stroke">
-                  </polyline>
-                </svg>
-              </div>
-              <div class="chart-labels">
-                <span *ngFor="let point of getScoreTrendData()" class="chart-label">{{ point.label }}</span>
-              </div>
+    <!-- Dashboard Content -->
+    <div *ngIf="!isLoading">
+      <!-- Empty State -->
+      <div *ngIf="sites.length === 0" class="empty-dashboard">
+        <app-card [elevated]="true" class="empty-dashboard-card">
+          <div class="empty-dashboard-content">
+            <div class="empty-dashboard-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
             </div>
-          </div>
-        </app-card>
-
-        <!-- Issues Breakdown Chart -->
-        <app-card title="Issues Breakdown" subtitle="Current status of all issues" [elevated]="true">
-          <div class="chart-container">
-            <div class="pie-chart">
-              <div class="pie-segment fixed" [style.--percentage]="getFixedPercentage()"></div>
-              <div class="pie-segment pending" [style.--percentage]="getPendingPercentage()"></div>
-              <div class="pie-segment ignored" [style.--percentage]="getIgnoredPercentage()"></div>
-            </div>
-            <div class="pie-legend">
-              <div class="legend-item">
-                <div class="legend-color fixed"></div>
-                <span>Fixed ({{ getTotalFixedIssues() }})</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color pending"></div>
-                <span>Pending ({{ getTotalPendingIssues() }})</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color ignored"></div>
-                <span>Ignored ({{ getTotalIgnoredIssues() }})</span>
-              </div>
-            </div>
+            <h3>Welcome to AccessibilityReports</h3>
+            <p>Get started by adding your first website to monitor its accessibility compliance.</p>
+            <button class="get-started-btn" (click)="router.navigate(['/sites'])">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add Your First Site
+            </button>
           </div>
         </app-card>
       </div>
-    </div>
 
-    <!-- Recent Activity -->
-    <div class="recent-activity-section">
-      <app-card title="Recent Reports" subtitle="Latest accessibility scans across your sites" [elevated]="true">
-        <div class="recent-reports">
-          <div *ngFor="let report of getRecentReports(); trackBy: trackByReportId" 
-               class="recent-report-item"
-               (click)="onReportClick(report)">
-            <div class="report-info">
-              <div class="report-header">
-                <h4>{{ report.name }}</h4>
-                <app-badge [variant]="getStatusVariant(report.status)">
-                  {{ getStatusLabel(report.status) }}
-                </app-badge>
+      <!-- Dashboard with Data -->
+      <div *ngIf="sites.length > 0">
+        <!-- Key Performance Indicators -->
+        <div class="kpi-grid">
+          <app-card variant="default" [elevated]="true">
+            <div class="kpi-content">
+              <div class="kpi-icon success">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20,6 9,17 4,12"/>
+                </svg>
               </div>
-              <div class="report-meta">
-                <span class="site-name">{{ getSiteName(report.siteId!) }}</span>
-                <span class="report-date">{{ formatDate(report.createdDate) }}</span>
+              <div class="kpi-info">
+                <div class="kpi-number">{{ getTotalFixedIssues() }}</div>
+                <div class="kpi-label">Total Issues Fixed</div>
+                <div class="kpi-change positive">+{{ getFixedIssuesChange() }} this month</div>
               </div>
             </div>
-            <div class="report-metrics" *ngIf="report.status === 'completed'">
-              <div class="metric-item">
-                <span class="metric-value">{{ report.averageScore }}%</span>
-                <span class="metric-label">Score</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-value">{{ report.totalPages }}</span>
-                <span class="metric-label">Pages</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-value error">{{ report.totalIssues - report.fixedIssues - report.ignoredIssues }}</span>
-                <span class="metric-label">Pending</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </app-card>
-    </div>
+          </app-card>
 
-    <!-- Site Performance -->
-    <div class="site-performance-section">
-      <app-card title="Site Performance" subtitle="Accessibility scores by site" [elevated]="true">
-        <div class="site-performance-list">
-          <div *ngFor="let site of sites; trackBy: trackBySiteId" 
-               class="site-performance-item"
-               (click)="onSiteClick(site)">
-            <div class="site-info">
-              <h4>{{ site.name }}</h4>
-              <span class="site-url">{{ site.url }}</span>
-            </div>
-            <div class="site-metrics">
-              <div class="score-bar-container">
-                <div class="score-bar">
-                  <div class="score-fill" [style.width.%]="getSiteAverageScore(site)"></div>
+          <app-card variant="default" [elevated]="true">
+            <div class="kpi-content">
+              <div class="kpi-icon warning">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-number">{{ getTotalPendingIssues() }}</div>
+                <div class="kpi-label">Pending Issues</div>
+                <div class="kpi-change" [class.positive]="getPendingIssuesChange() < 0" [class.negative]="getPendingIssuesChange() > 0">
+                  {{ getPendingIssuesChange() > 0 ? '+' : '' }}{{ getPendingIssuesChange() }} this month
                 </div>
-                <span class="score-text">{{ getSiteAverageScore(site) }}%</span>
-              </div>
-              <div class="site-stats">
-                <span class="stat-item">{{ getSiteTotalPages(site) }} pages</span>
-                <span class="stat-item">{{ getSitePendingIssues(site) }} pending</span>
               </div>
             </div>
+          </app-card>
+
+          <app-card variant="default" [elevated]="true">
+            <div class="kpi-content">
+              <div class="kpi-icon info">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-number">{{ getAverageScore() }}%</div>
+                <div class="kpi-label">Average Score</div>
+                <div class="kpi-change" [class.positive]="getScoreChange() > 0" [class.negative]="getScoreChange() < 0">
+                  {{ getScoreChange() > 0 ? '+' : '' }}{{ getScoreChange() }}% this month
+                </div>
+              </div>
+            </div>
+          </app-card>
+
+          <app-card variant="default" [elevated]="true">
+            <div class="kpi-content">
+              <div class="kpi-icon primary">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                </svg>
+              </div>
+              <div class="kpi-info">
+                <div class="kpi-number">{{ getTotalPages() }}</div>
+                <div class="kpi-label">Pages Monitored</div>
+                <div class="kpi-change positive">{{ sites.length }} active sites</div>
+              </div>
+            </div>
+          </app-card>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+          <div class="charts-grid">
+            <!-- Score Trend Chart -->
+            <app-card title="Score Trend" subtitle="Average accessibility score over time" [elevated]="true">
+              <div class="chart-container">
+                <div class="chart-placeholder">
+                  <div class="chart-line">
+                    <div class="chart-points">
+                      <div *ngFor="let point of getScoreTrendData(); let i = index" 
+                           class="chart-point" 
+                           [style.left.%]="(i / (getScoreTrendData().length - 1)) * 100"
+                           [style.bottom.%]="point.value"
+                           [title]="point.label + ': ' + point.score + '%'">
+                      </div>
+                    </div>
+                    <svg class="chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                      <polyline 
+                        [attr.points]="getScorePolylinePoints()" 
+                        fill="none" 
+                        stroke="var(--primary-500)" 
+                        stroke-width="2"
+                        vector-effect="non-scaling-stroke">
+                      </polyline>
+                    </svg>
+                  </div>
+                  <div class="chart-labels">
+                    <span *ngFor="let point of getScoreTrendData()" class="chart-label">{{ point.label }}</span>
+                  </div>
+                </div>
+              </div>
+            </app-card>
+
+            <!-- Issues Breakdown Chart -->
+            <app-card title="Issues Breakdown" subtitle="Current status of all issues" [elevated]="true">
+              <div class="chart-container">
+                <div class="pie-chart">
+                  <div class="pie-segment fixed" [style.--percentage]="getFixedPercentage()"></div>
+                  <div class="pie-segment pending" [style.--percentage]="getPendingPercentage()"></div>
+                  <div class="pie-segment ignored" [style.--percentage]="getIgnoredPercentage()"></div>
+                </div>
+                <div class="pie-legend">
+                  <div class="legend-item">
+                    <div class="legend-color fixed"></div>
+                    <span>Fixed ({{ getTotalFixedIssues() }})</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color pending"></div>
+                    <span>Pending ({{ getTotalPendingIssues() }})</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color ignored"></div>
+                    <span>Ignored ({{ getTotalIgnoredIssues() }})</span>
+                  </div>
+                </div>
+              </div>
+            </app-card>
           </div>
         </div>
-      </app-card>
+
+        <!-- Recent Activity -->
+        <div class="recent-activity-section">
+          <app-card title="Recent Reports" subtitle="Latest accessibility scans across your sites" [elevated]="true">
+            <div class="recent-reports">
+              <div *ngFor="let report of getRecentReports(); trackBy: trackByReportId" 
+                   class="recent-report-item"
+                   (click)="onReportClick(report)">
+                <div class="report-info">
+                  <div class="report-header">
+                    <h4>{{ report.name }}</h4>
+                    <app-badge [variant]="getStatusVariant(report.status)">
+                      {{ getStatusLabel(report.status) }}
+                    </app-badge>
+                  </div>
+                  <div class="report-meta">
+                    <span class="site-name">{{ getSiteName(report.siteId!) }}</span>
+                    <span class="report-date">{{ formatDate(report.createdDate) }}</span>
+                  </div>
+                </div>
+                <div class="report-metrics" *ngIf="report.status === 'completed'">
+                  <div class="metric-item">
+                    <span class="metric-value">{{ report.averageScore }}%</span>
+                    <span class="metric-label">Score</span>
+                  </div>
+                  <div class="metric-item">
+                    <span class="metric-value">{{ report.totalPages }}</span>
+                    <span class="metric-label">Pages</span>
+                  </div>
+                  <div class="metric-item">
+                    <span class="metric-value error">{{ report.totalIssues - report.fixedIssues - report.ignoredIssues }}</span>
+                    <span class="metric-label">Pending</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </app-card>
+        </div>
+
+        <!-- Site Performance -->
+        <div class="site-performance-section">
+          <app-card title="Site Performance" subtitle="Accessibility scores by site" [elevated]="true">
+            <div class="site-performance-list">
+              <div *ngFor="let site of sites; trackBy: trackBySiteId" 
+                   class="site-performance-item"
+                   (click)="onSiteClick(site)">
+                <div class="site-info">
+                  <h4>{{ site.name }}</h4>
+                  <span class="site-url">{{ site.url }}</span>
+                </div>
+                <div class="site-metrics">
+                  <div class="score-bar-container">
+                    <div class="score-bar">
+                      <div class="score-fill" [style.width.%]="getSiteAverageScore(site)"></div>
+                    </div>
+                    <span class="score-text">{{ getSiteAverageScore(site) }}%</span>
+                  </div>
+                  <div class="site-stats">
+                    <span class="stat-item">{{ getSiteTotalPages(site) }} pages</span>
+                    <span class="stat-item">{{ getSitePendingIssues(site) }} pending</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </app-card>
+        </div>
+      </div>
     </div>
   </div>
 </div>

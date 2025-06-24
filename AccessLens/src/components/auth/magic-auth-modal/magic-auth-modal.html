@@ -18,23 +18,20 @@
     <!-- Email Step -->
     <div *ngIf="currentStep === 'email'" class="auth-step">
       <div class="auth-description">
-        <p>Enter your email address to receive a verification code and sign in securely.</p>
+        <p>Enter your email address to receive a secure sign-in link.</p>
       </div>
 
       <form (ngSubmit)="onSubmitEmail()" class="auth-form">
-        <div class="form-group">
-          <label for="email">Email Address</label>
-          <input 
-            type="email" 
-            id="email"
-            [(ngModel)]="email"
-            name="email"
-            placeholder="Enter your email address"
-            class="form-control"
-            [disabled]="isLoading"
-            required
-          >
-        </div>
+        <app-input
+          label="Email Address"
+          type="email"
+          placeholder="Enter your email address"
+          prefixIcon="email"
+          [value]="email"
+          [disabled]="isLoading"
+          [required]="true"
+          (inputChange)="email = $event"
+        ></app-input>
 
         <app-button 
           type="submit"
@@ -43,64 +40,49 @@
           [loading]="isLoading"
           [disabled]="!email.trim()"
         >
-          {{ isLoading ? 'Sending...' : 'Send Verification Code' }}
+          {{ isLoading ? 'Sending...' : 'Send Sign-In Link' }}
         </app-button>
       </form>
     </div>
 
-    <!-- Verification Step -->
-    <div *ngIf="currentStep === 'verification'" class="auth-step">
+    <!-- Email Sent Step -->
+    <div *ngIf="currentStep === 'email-sent'" class="auth-step">
       <div class="auth-description">
-        <p>We've sent a 6-digit verification code to <strong>{{ email }}</strong></p>
-        <p class="text-muted">Enter the code below to sign in.</p>
+        <div class="success-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+        </div>
+        <h3>Check Your Email</h3>
+        <p>We've sent a secure sign-in link to <strong>{{ email }}</strong></p>
+        <p class="text-muted">Click the link in your email to sign in. The link will expire in 15 minutes.</p>
       </div>
 
-      <form (ngSubmit)="onSubmitVerification()" class="auth-form">
-        <div class="form-group">
-          <label for="code">Verification Code</label>
-          <input 
-            type="text" 
-            id="code"
-            [(ngModel)]="verificationCode"
-            name="code"
-            placeholder="Enter 6-digit code"
-            class="form-control code-input"
-            [disabled]="isLoading"
-            maxlength="6"
-            pattern="[0-9]{6}"
-            required
-          >
+      <!-- Mock Login Button (only shown when mock backend is enabled) -->
+      <div *ngIf="isMockBackendEnabled" class="mock-login-section">
+        <div class="mock-divider">
+          <span>Development Mode</span>
         </div>
+        <app-button 
+          variant="success" 
+          [fullWidth]="true"
+          [loading]="isMockLoggingIn"
+          (click)="onMockLogin()"
+        >
+          {{ isMockLoggingIn ? 'Signing In...' : 'Mock Login (Dev Only)' }}
+        </app-button>
+        <p class="mock-help-text">This button is only available in development mode</p>
+      </div>
 
-        <!-- hCaptcha container (show only when required) -->
-        <div *ngIf="requiresCaptcha" class="captcha-container">
-          <app-hcaptcha
-            [siteKey]="hcaptchaSiteKey"
-            (success)="onHCaptchaSuccess($event)"
-          ></app-hcaptcha>
-        </div>
-
-        <div class="form-actions">
-          <app-button 
-            type="submit"
-            variant="primary" 
-            [fullWidth]="true"
-            [loading]="isLoading"
-            [disabled]="verificationCode.length !== 6 || (requiresCaptcha && !hcaptchaToken)"
-          >
-            {{ isLoading ? 'Verifying...' : 'Verify & Sign In' }}
-          </app-button>
-
-          <div class="form-links">
-            <button type="button" class="link-button" (click)="onBackToEmail()">
-              Change Email Address
-            </button>
-            <button type="button" class="link-button" (click)="onResendCode()" [disabled]="isLoading">
-              Resend Code
-            </button>
-          </div>
-        </div>
-      </form>
+      <div class="form-actions">
+        <button type="button" class="link-button" (click)="onBackToEmail()">
+          Use Different Email
+        </button>
+        <button type="button" class="link-button" (click)="onResendEmail()" [disabled]="isLoading">
+          Resend Email
+        </button>
+      </div>
     </div>
 
     <div class="auth-footer">

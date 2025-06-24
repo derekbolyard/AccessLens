@@ -1,103 +1,159 @@
 <div class="sites-list">
   <div class="container">
-    <div class="sites-header">
-      <h2>Your Sites</h2>
-      <p class="text-muted">Monitor and manage accessibility compliance across all your websites</p>
+    <!-- Enhanced Navigation Context -->
+    <app-page-context 
+      [context]="{
+        title: 'Your Sites',
+        subtitle: 'Monitor and manage accessibility compliance across all your websites',
+        icon: 'sites',
+        stats: [
+          { label: 'Sites', value: getFilteredAndSortedSites().length, variant: 'default' },
+          { label: 'Fixed', value: getTotalFixed(), variant: 'success' },
+          { label: 'Pending', value: getTotalPending(), variant: 'error' }
+        ]
+      }"
+      [hasActions]="true"
+    >
+      <div slot="actions">
+        <button class="add-site-btn" (click)="onAddSite()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add New Site
+        </button>
+      </div>
+    </app-page-context>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container">
+      <app-loading type="skeleton" [skeletonLines]="3" text="Loading your sites..."></app-loading>
     </div>
 
-    <div class="stats-grid">
-      <app-card variant="default" [elevated]="true">
-        <div class="stat-content">
-          <div class="stat-icon success">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20,6 9,17 4,12"/>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ getTotalFixed() }}</div>
-            <div class="stat-label">Issues Fixed</div>
-          </div>
-        </div>
-      </app-card>
-
-      <app-card variant="default" [elevated]="true">
-        <div class="stat-content">
-          <div class="stat-icon warning">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ getTotalPending() }}</div>
-            <div class="stat-label">Pending Issues</div>
-          </div>
-        </div>
-      </app-card>
-
-      <app-card variant="default" [elevated]="true">
-        <div class="stat-content">
-          <div class="stat-icon info">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && sites.length === 0" class="empty-state">
+      <app-card [elevated]="true" class="empty-state-card">
+        <div class="empty-state-content">
+          <div class="empty-state-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
             </svg>
           </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ sites.length }}</div>
-            <div class="stat-label">Total Sites</div>
-          </div>
+          <h3>No Sites Added Yet</h3>
+          <p>Get started by adding your first website to monitor its accessibility compliance.</p>
+          <app-button variant="primary" (click)="onAddSite()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Your First Site
+          </app-button>
         </div>
       </app-card>
     </div>
 
-    <div class="sites-section">
-      <div class="sites-grid">
-        <app-card 
-          *ngFor="let site of sites; trackBy: trackBySiteId" 
-          [title]="site.name"
-          [subtitle]="site.url"
-          [hover]="true"
-          [clickable]="true"
-          [showFooter]="true"
-          (cardClick)="onSiteClick(site)"
-          class="fade-in"
+    <!-- Filter and Sort Controls -->
+    <div *ngIf="!isLoading && sites.length > 0" class="filter-sort-controls">
+      <div class="controls-container">
+        <div class="search-control">
+          <app-input
+            placeholder="Search sites by name or URL..."
+            prefixIcon="search"
+            [value]="searchTerm"
+            (inputChange)="onSearchChange($event)"
+          ></app-input>
+        </div>
+        
+        <div class="sort-control">
+          <label class="form-label">Sort By</label>
+          <select 
+            class="form-select" 
+            [(ngModel)]="sortKey"
+            (change)="onSortChange()"
+          >
+            <option value="name-asc">Name (A-Z)</option>
+            <option value="name-desc">Name (Z-A)</option>
+            <option value="lastScan-desc">Last Scan (Newest)</option>
+            <option value="lastScan-asc">Last Scan (Oldest)</option>
+            <option value="reports-desc">Most Reports</option>
+            <option value="reports-asc">Fewest Reports</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sites List -->
+    <div *ngIf="!isLoading && getFilteredAndSortedSites().length > 0" class="sites-section">
+      <div class="sites-list-container">
+        <div 
+          *ngFor="let site of getFilteredAndSortedSites(); trackBy: trackBySiteId" 
+          class="site-item"
+          (click)="onSiteClick(site)"
         >
-          <div class="site-metrics">
-            <div class="metric-row">
-              <div class="metric">
-                <span class="metric-value">{{ site.totalReports }}</span>
-                <span class="metric-label">Reports</span>
+          <div class="site-main">
+            <div class="site-info">
+              <div class="site-header">
+                <h3>{{ site.name }}</h3>
+                <span class="site-url">{{ site.url }}</span>
               </div>
-              <div class="metric">
+              <div class="site-meta">
+                <span class="last-scan">Last scan {{ site.lastScanDate ? formatDate(site.lastScanDate) : 'Never' }}</span>
+                <span class="reports-count">{{ site.totalReports }} reports</span>
+              </div>
+            </div>
+
+            <div class="site-metrics-inline">
+              <div class="metric-group">
                 <span class="metric-value">{{ getTotalPagesForSite(site) }}</span>
                 <span class="metric-label">Pages</span>
               </div>
-              <div class="metric">
-                <span class="metric-value">{{ getTotalPendingForSite(site) }}</span>
+              <div class="metric-group">
+                <span class="metric-value pending">{{ getTotalPendingForSite(site) }}</span>
                 <span class="metric-label">Pending</span>
               </div>
-              <div class="metric">
+              <div class="metric-group">
                 <span class="metric-value success">{{ getTotalFixedForSite(site) }}</span>
                 <span class="metric-label">Fixed</span>
               </div>
             </div>
           </div>
 
-          <div slot="footer" class="site-footer-content">
-            <span class="last-scan text-muted">
-              Last scan {{ site.lastScanDate ? formatDate(site.lastScanDate) : 'Never' }}
-            </span>
-            <app-button 
-              variant="secondary" 
-              size="sm" 
+          <div class="site-action">
+            <button 
+              class="view-reports-btn"
               (click)="onViewSite(site, $event)"
             >
               View Reports
-            </app-button>
+            </button>
           </div>
-        </app-card>
+        </div>
       </div>
     </div>
+
+    <!-- No Results State -->
+    <div *ngIf="!isLoading && sites.length > 0 && getFilteredAndSortedSites().length === 0" class="no-results-state">
+      <app-card [elevated]="true" class="no-results-card">
+        <div class="no-results-content">
+          <div class="no-results-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+          </div>
+          <h4>No Sites Found</h4>
+          <p>No sites match your search criteria. Try adjusting your search terms.</p>
+          <button class="clear-search-btn" (click)="clearSearch()">
+            Clear Search
+          </button>
+        </div>
+      </app-card>
+    </div>
   </div>
+
+  <!-- Add Site Modal -->
+  <app-add-site-modal
+    [isOpen]="showAddSiteModal"
+    (close)="onCloseAddSiteModal()"
+    (siteAdded)="onSiteAdded($event)"
+  ></app-add-site-modal>
 </div>

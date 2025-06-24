@@ -1,14 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Page, AccessibilityIssue, IssueStatus, IssueType } from '../../types/report.interface';
 import { ReportService } from '../../services/report.service';
+import { BreadcrumbComponent } from '../common/breadcrumb/breadcrumb.component';
+import { PageContextComponent } from '../common/page-context/page-context.component';
 import { AlertComponent } from '../common/alert/alert.component';
+import { LoadingComponent } from '../common/loading/loading.component';
+import { CardComponent } from '../common/card/card.component';
+import { ToastService } from '../common/toast/toast.service';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-page-detail',
   standalone: true,
-  imports: [CommonModule, AlertComponent],
+  imports: [CommonModule, BreadcrumbComponent, PageContextComponent, AlertComponent, LoadingComponent, CardComponent],
   templateUrl: './page-detail.component.html',
   styleUrls: ['./page-detail.component.scss']
 })
@@ -23,11 +28,14 @@ export class PageDetailComponent implements OnInit {
   updatingIssues: Set<string> = new Set();
   updateSuccess: string = '';
   updateError: string = '';
+  isLoading = true;
 
   constructor(
     private reportService: ReportService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private toastService: ToastService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -35,17 +43,49 @@ export class PageDetailComponent implements OnInit {
     this.siteId = this.route.snapshot.paramMap.get('siteId') || '';
     this.reportId = this.route.snapshot.paramMap.get('reportId') || '';
     
+    this.loadPageData();
+  }
+
+  private loadPageData(): void {
+    this.isLoading = true;
+    this.cdr.markForCheck();
+    
     if (this.pageId) {
-      this.reportService.getPageById(this.pageId).subscribe(page => {
-        this.page = page || null;
+      this.reportService.getPageById(this.pageId).subscribe({
+        next: (page) => {
+          this.page = page || null;
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error('Failed to load page:', error);
+          this.toastService.error('Failed to load page details');
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        }
       });
     }
     
     if (this.siteId) {
-      this.reportService.getSiteById(this.siteId).subscribe(site => {
-        this.siteName = site?.name || '';
+      this.reportService.getSiteById(this.siteId).subscribe({
+        next: (site) => {
+          this.siteName = site?.name || '';
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error('Failed to load site:', error);
+        }
       });
     }
+  }
+
+  get breadcrumbItems() {
+    return [
+      { label: 'All Sites', icon: 'sites', action: () => this.onBackToSites() },
+      { label: this.siteName, icon: 'reports', action: () => this.onBackToReports() },
+      { label: 'Pages', icon: 'pages', action: () => this.onBackToPages() },
+      { label: this.page?.title || 'Page Issues', icon: 'issues' }
+    ];
   }
 
   trackByIssueId(index: number, issue: AccessibilityIssue): string {
@@ -54,6 +94,7 @@ export class PageDetailComponent implements OnInit {
 
   setFilter(filter: 'all' | 'pending' | 'fixed' | 'ignored'): void {
     this.activeFilter = filter;
+    this.cdr.markForCheck();
   }
 
   getFilteredIssues(): AccessibilityIssue[] {
@@ -73,21 +114,6 @@ export class PageDetailComponent implements OnInit {
 
   getPendingIssues(): AccessibilityIssue[] {
     return this.page?.issues.filter(issue => issue.status === 'open') || [];
-  }
-
-  private getOpenIssues(): AccessibilityIssue[] {
-    return this.page?.issues.filter(issue => issue.status === 'open') || [];
-  }
-
-  get openIssues(): AccessibilityIssue[] {
-    return this.page?.issues.filter(issue => issue.status === 'open') || [];
-  }
-
-  getScoreClass(score: number): string {
-    if (score >= 90) return 'excellent';
-    if (score >= 80) return 'good';
-    if (score >= 70) return 'fair';
-    return 'poor';
   }
 
   getTypeLabel(type: IssueType): string {
@@ -121,37 +147,26 @@ export class PageDetailComponent implements OnInit {
     }
   }
 
-  formatDate(date: Date): string {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(date);
-  }
-
   updateIssueStatus(issueId: string, status: IssueStatus): void {
     if (this.page && !this.updatingIssues.has(issueId)) {
       this.updatingIssues.add(issueId);
       this.updateError = '';
+      this.cdr.markForCheck();
       
       try {
         this.reportService.updateIssueStatus(this.page.id, issueId, status);
         
-        // Simulate API delay
         setTimeout(() => {
           this.updatingIssues.delete(issueId);
-          this.updateSuccess = `Issue status updated to ${this.getStatusLabel(status)}`;
-          
-          // Clear success message after 3 seconds
-          setTimeout(() => {
-            this.updateSuccess = '';
-          }, 3000);
+          this.toastService.success(`Issue status updated to ${this.getStatusLabel(status)}`);
+          this.cdr.markForCheck();
         }, 500);
         
       } catch (error) {
         this.updatingIssues.delete(issueId);
-        this.updateError = 'Failed to update issue status. Please try again.';
+        this.toastService.error('Failed to update issue status. Please try again.');
         console.error('Failed to update issue status:', error);
+        this.cdr.markForCheck();
       }
     }
   }

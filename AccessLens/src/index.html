@@ -1,11 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>My app</title>
+    <title>AccessibilityReports - Professional Accessibility Auditing</title>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Professional accessibility auditing to help you build inclusive web experiences. Monitor WCAG compliance across all your websites.">
+    <meta name="keywords" content="accessibility, WCAG, compliance, auditing, web accessibility, inclusive design">
+    <meta name="author" content="AccessibilityReports">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://accessibilityreports.com/">
+    <meta property="og:title" content="AccessibilityReports - Professional Accessibility Auditing">
+    <meta property="og:description" content="Professional accessibility auditing to help you build inclusive web experiences.">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://accessibilityreports.com/">
+    <meta property="twitter:title" content="AccessibilityReports - Professional Accessibility Auditing">
+    <meta property="twitter:description" content="Professional accessibility auditing to help you build inclusive web experiences.">
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
     <base href="/">
+    
+    <!-- Skip to main content link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Google Analytics -->
+    <script>
+      // Only initialize GA if analytics is enabled
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      
+      // We'll configure this dynamically in the analytics service
+      // This is just the initialization
+    </script>
   </head>
   <body>
-    <app-root>Loading...</app-root>
+    <app-root>
+      <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: system-ui, sans-serif;">
+        <div style="text-align: center;">
+          <div style="width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;" aria-hidden="true"></div>
+          <p style="color: #64748b; font-weight: 600;">Loading AccessibilityReports...</p>
+          <span class="sr-only">Application is loading, please wait</span>
+        </div>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
+        }
+        .skip-link {
+          position: absolute;
+          top: -40px;
+          left: 6px;
+          background: #2563eb;
+          color: white;
+          padding: 8px;
+          text-decoration: none;
+          border-radius: 4px;
+          z-index: 1000;
+          font-weight: 600;
+        }
+        .skip-link:focus {
+          top: 6px;
+        }
+      </style>
+    </app-root>
   </body>
 </html>

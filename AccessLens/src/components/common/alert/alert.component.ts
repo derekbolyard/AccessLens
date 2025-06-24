@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../icons/icon.component';
 
 export type AlertVariant = 'success' | 'warning' | 'error' | 'info';
 export type AlertSize = 'sm' | 'md' | 'lg';
@@ -7,8 +8,31 @@ export type AlertSize = 'sm' | 'md' | 'lg';
 @Component({
   selector: 'app-alert',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './alert.component.html',
+  imports: [CommonModule, IconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div [class]="getAlertClasses()" *ngIf="!dismissed">
+      <div class="alert-icon" *ngIf="showIcon">
+        <app-icon [name]="getIconName()" [size]="getIconSize()"></app-icon>
+      </div>
+      
+      <div class="alert-content">
+        <h4 *ngIf="title" class="alert-title">{{ title }}</h4>
+        <div class="alert-message">
+          <ng-content></ng-content>
+        </div>
+      </div>
+      
+      <button 
+        *ngIf="dismissible" 
+        class="alert-dismiss"
+        (click)="onDismiss()"
+        aria-label="Dismiss alert"
+      >
+        <app-icon name="x" [size]="16"></app-icon>
+      </button>
+    </div>
+  `,
   styleUrls: ['./alert.component.scss']
 })
 export class AlertComponent {
@@ -39,15 +63,22 @@ export class AlertComponent {
     return classes.join(' ');
   }
 
-  getIconSvg(): string {
-    const icons: { [key: string]: string } = {
-      'success': '<polyline points="20,6 9,17 4,12"/>',
-      'warning': '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
-      'error': '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
-      'info': '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'
-    };
-    
-    return icons[this.variant] || icons['info'];
+  getIconName(): string {
+    switch (this.variant) {
+      case 'success': return 'check';
+      case 'warning': return 'issues';
+      case 'error': return 'x';
+      case 'info': return 'info';
+      default: return 'info';
+    }
+  }
+
+  getIconSize(): number {
+    switch (this.size) {
+      case 'sm': return 14;
+      case 'lg': return 20;
+      default: return 16;
+    }
   }
 
   onDismiss(): void {

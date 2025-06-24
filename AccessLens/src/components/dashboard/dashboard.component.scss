@@ -1,17 +1,139 @@
+/* Professional Brutalism Dashboard */
 .dashboard {
   padding: var(--space-8) 0;
+  background-color: var(--slate-50);
 }
 
+/* Loading Container */
+.loading-container {
+  margin-top: var(--space-8);
+  padding: var(--space-8);
+  background: white;
+  border: 4px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal);
+}
+
+/* Empty Dashboard State */
+.empty-dashboard {
+  margin-top: var(--space-8);
+}
+
+.empty-dashboard-card {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.empty-dashboard-content {
+  text-align: center;
+  padding: var(--space-12) var(--space-8);
+}
+
+.empty-dashboard-icon {
+  margin-bottom: var(--space-6);
+  color: var(--slate-400);
+}
+
+.empty-dashboard-content h3 {
+  margin: 0 0 var(--space-4) 0;
+  color: var(--slate-900);
+  font-size: var(--text-2xl);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+}
+
+.empty-dashboard-content p {
+  margin: 0 0 var(--space-8) 0;
+  color: var(--slate-600);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.get-started-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--success-600);
+  border: 4px solid var(--slate-900);
+  color: white;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: var(--space-3) var(--space-6);
+  transition: all 0.2s ease;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  box-shadow: 4px 4px 0px 0px var(--slate-900);
+  margin: 0 auto;
+}
+
+.get-started-btn:hover {
+  background: var(--success-700);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px var(--slate-900);
+}
+
+.get-started-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px var(--slate-900);
+}
+
+/* Professional Brutalism Dashboard Header */
 .dashboard-header {
   margin-bottom: var(--space-8);
   text-align: center;
+  background: white;
+  color: var(--slate-900);
+  padding: var(--space-8);
+  border: 6px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: linear-gradient(90deg, var(--blue-600), var(--success-600), var(--warning-600), var(--error-600));
+  z-index: 1;
+}
+
+.dashboard-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--slate-900);
+  z-index: 1;
 }
 
 .dashboard-header h1 {
-  color: var(--gray-900);
+  color: var(--slate-900);
   margin-bottom: var(--space-2);
+  font-weight: 900;
+  font-size: var(--text-4xl);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 2;
 }
 
+.dashboard-header p {
+  color: var(--slate-600);
+  font-weight: 600;
+  font-size: var(--text-lg);
+  position: relative;
+  z-index: 2;
+}
+
+/* Professional Brutalism KPI Grid */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -23,37 +145,49 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-2);
+  padding: var(--space-6);
+  background: white;
+  border: 4px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal);
+  transition: all 0.2s ease;
+}
+
+.kpi-content:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-pro-brutal-lg);
 }
 
 .kpi-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
+  width: 64px;
+  height: 64px;
+  border: 4px solid var(--slate-900);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: var(--slate-900);
+  color: white;
+  box-shadow: 2px 2px 0px 0px var(--slate-700);
 }
 
 .kpi-icon.success {
-  background-color: var(--success-100);
-  color: var(--success-600);
+  background-color: var(--success-600);
+  border-color: var(--slate-900);
 }
 
 .kpi-icon.warning {
-  background-color: var(--warning-100);
-  color: var(--warning-600);
+  background-color: var(--warning-600);
+  border-color: var(--slate-900);
 }
 
 .kpi-icon.info {
-  background-color: var(--primary-100);
-  color: var(--primary-600);
+  background-color: var(--blue-600);
+  border-color: var(--slate-900);
 }
 
 .kpi-icon.primary {
-  background-color: var(--primary-100);
-  color: var(--primary-600);
+  background-color: var(--blue-600);
+  border-color: var(--slate-900);
 }
 
 .kpi-info {
@@ -61,31 +195,46 @@
 }
 
 .kpi-number {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  color: var(--gray-900);
+  font-size: var(--text-3xl);
+  font-weight: 900;
+  color: var(--slate-900);
   line-height: 1;
+  text-transform: uppercase;
 }
 
 .kpi-label {
   font-size: var(--text-sm);
-  color: var(--gray-600);
+  color: var(--slate-600);
   margin: var(--space-1) 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .kpi-change {
   font-size: var(--text-xs);
-  font-weight: 500;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 2px solid var(--slate-900);
+  padding: var(--space-1) var(--space-2);
+  display: inline-block;
+  margin-top: var(--space-2);
+  box-shadow: 1px 1px 0px 0px var(--slate-800);
 }
 
 .kpi-change.positive {
-  color: var(--success-600);
+  background-color: var(--success-100);
+  color: var(--success-900);
+  border-color: var(--success-600);
 }
 
 .kpi-change.negative {
-  color: var(--error-600);
+  background-color: var(--error-100);
+  color: var(--error-900);
+  border-color: var(--error-600);
 }
 
+/* Professional Brutalism Charts Section */
 .charts-section {
   margin-bottom: var(--space-10);
 }
@@ -97,21 +246,29 @@
 }
 
 .chart-container {
-  height: 200px;
+  height: 280px;
   position: relative;
+  background: white;
+  border: 4px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .chart-placeholder {
-  height: 100%;
+  height: calc(100% - 40px);
   position: relative;
   padding: var(--space-4) 0;
+  background: var(--slate-100);
+  border: 2px solid var(--slate-900);
 }
 
 .chart-line {
   height: calc(100% - 40px);
   position: relative;
-  background: linear-gradient(to right, transparent 0%, var(--gray-100) 50%, transparent 100%);
-  border-radius: var(--radius-md);
+  background: linear-gradient(to right, transparent 0%, var(--slate-200) 50%, transparent 100%);
 }
 
 .chart-svg {
@@ -129,50 +286,60 @@
 
 .chart-point {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  background-color: var(--primary-500);
-  border: 2px solid white;
-  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  background-color: var(--blue-600);
+  border: 3px solid var(--slate-900);
   transform: translate(-50%, 50%);
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
 }
 
 .chart-point:hover {
   transform: translate(-50%, 50%) scale(1.2);
-  box-shadow: var(--shadow-md);
+  box-shadow: 3px 3px 0px 0px var(--slate-800);
 }
 
 .chart-labels {
   display: flex;
   justify-content: space-between;
   margin-top: var(--space-2);
+  padding: 0 var(--space-2);
 }
 
 .chart-label {
   font-size: var(--text-xs);
-  color: var(--gray-600);
+  color: var(--slate-600);
   text-align: center;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
+/* Professional Brutalism Pie Chart */
 .pie-chart {
   width: 120px;
   height: 120px;
-  border-radius: 50%;
   position: relative;
-  margin: 0 auto var(--space-4);
+  margin: 0 auto;
   background: conic-gradient(
     var(--success-500) 0deg var(--fixed-angle, 120deg),
     var(--error-500) var(--fixed-angle, 120deg) var(--pending-angle, 240deg),
-    var(--gray-400) var(--pending-angle, 240deg) 360deg
+    var(--slate-400) var(--pending-angle, 240deg) 360deg
   );
+  border: 4px solid var(--slate-900);
+  box-shadow: var(--shadow-pro-brutal);
+  flex-shrink: 0;
 }
 
 .pie-legend {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--slate-100);
+  border: 2px solid var(--slate-900);
 }
 
 .legend-item {
@@ -180,12 +347,14 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--text-sm);
+  font-weight: 700;
 }
 
 .legend-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--slate-900);
+  flex-shrink: 0;
 }
 
 .legend-color.fixed {
@@ -197,9 +366,10 @@
 }
 
 .legend-color.ignored {
-  background-color: var(--gray-400);
+  background-color: var(--slate-400);
 }
 
+/* Professional Brutalism Activity Section */
 .recent-activity-section,
 .site-performance-section {
   margin-bottom: var(--space-8);
@@ -215,16 +385,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-4);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  border: 4px solid var(--slate-900);
+  background: white;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: var(--shadow-pro-brutal);
 }
 
 .recent-report-item:hover {
-  border-color: var(--primary-300);
-  background-color: var(--primary-50);
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-pro-brutal-lg);
+  background-color: var(--blue-50);
 }
 
 .report-info {
@@ -240,20 +412,25 @@
 
 .report-header h4 {
   margin: 0;
-  color: var(--gray-900);
+  color: var(--slate-900);
   font-size: var(--text-base);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
 }
 
 .report-meta {
   display: flex;
   gap: var(--space-4);
   font-size: var(--text-sm);
-  color: var(--gray-600);
+  color: var(--slate-600);
+  font-weight: 600;
 }
 
 .site-name {
-  font-weight: 500;
-  color: var(--primary-600);
+  font-weight: 700;
+  color: var(--blue-600);
+  text-transform: uppercase;
 }
 
 .report-metrics {
@@ -266,13 +443,19 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  padding: var(--space-2);
+  border: 2px solid var(--slate-900);
+  background: var(--slate-100);
+  min-width: 60px;
+  box-shadow: 1px 1px 0px 0px var(--slate-800);
 }
 
 .metric-value {
   font-size: var(--text-lg);
-  font-weight: 700;
-  color: var(--gray-900);
+  font-weight: 900;
+  color: var(--slate-900);
   line-height: 1;
+  text-transform: uppercase;
 }
 
 .metric-value.error {
@@ -281,11 +464,13 @@
 
 .metric-label {
   font-size: var(--text-xs);
-  color: var(--gray-600);
+  color: var(--slate-600);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-weight: 700;
 }
 
+/* Professional Brutalism Site Performance */
 .site-performance-list {
   display: flex;
   flex-direction: column;
@@ -296,27 +481,33 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-4);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  border: 4px solid var(--slate-900);
+  background: white;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: var(--shadow-pro-brutal);
 }
 
 .site-performance-item:hover {
-  border-color: var(--primary-300);
-  background-color: var(--primary-50);
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-pro-brutal-lg);
+  background-color: var(--blue-50);
 }
 
 .site-info h4 {
   margin: 0 0 var(--space-1) 0;
-  color: var(--gray-900);
+  color: var(--slate-900);
   font-size: var(--text-base);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
 }
 
 .site-url {
   font-size: var(--text-sm);
-  color: var(--gray-600);
+  color: var(--slate-600);
+  font-weight: 600;
 }
 
 .site-metrics {
@@ -334,9 +525,9 @@
 
 .score-bar {
   width: 120px;
-  height: 8px;
-  background-color: var(--gray-200);
-  border-radius: var(--radius-lg);
+  height: 12px;
+  background-color: var(--slate-200);
+  border: 2px solid var(--slate-900);
   overflow: hidden;
 }
 
@@ -344,13 +535,15 @@
   height: 100%;
   background: linear-gradient(90deg, var(--error-500) 0%, var(--warning-500) 50%, var(--success-500) 100%);
   transition: width 0.3s ease;
+  border-right: 2px solid var(--slate-900);
 }
 
 .score-text {
-  font-weight: 600;
-  color: var(--gray-900);
+  font-weight: 900;
+  color: var(--slate-900);
   font-size: var(--text-sm);
   min-width: 40px;
+  text-transform: uppercase;
 }
 
 .site-stats {
@@ -360,7 +553,40 @@
 
 .stat-item {
   font-size: var(--text-xs);
-  color: var(--gray-600);
+  color: var(--slate-600);
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 2px solid var(--slate-900);
+  padding: var(--space-1) var(--space-2);
+  background: var(--slate-100);
+  box-shadow: 1px 1px 0px 0px var(--slate-800);
+}
+
+/* Professional Brutalism Badge Overrides */
+.badge {
+  border: 2px solid var(--slate-900);
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.badge-success {
+  background-color: var(--success-100);
+  color: var(--success-900);
+  border-color: var(--success-600);
+}
+
+.badge-warning {
+  background-color: var(--warning-100);
+  color: var(--warning-900);
+  border-color: var(--warning-600);
+}
+
+.badge-error {
+  background-color: var(--error-100);
+  color: var(--error-900);
+  border-color: var(--error-600);
 }
 
 @media (max-width: 768px) {
@@ -383,5 +609,30 @@
   .site-metrics {
     align-self: stretch;
     justify-content: space-around;
+  }
+
+  .dashboard-header {
+    padding: var(--space-4);
+  }
+
+  .dashboard-header h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .chart-container {
+    height: 240px;
+  }
+  
+  .pie-chart {
+    width: 100px;
+    height: 100px;
+  }
+
+  .empty-dashboard-content {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .empty-dashboard-content h3 {
+    font-size: var(--text-xl);
   }
 }

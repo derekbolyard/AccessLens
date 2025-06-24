@@ -1,151 +1,165 @@
 <div class="reports-list" *ngIf="site">
   <div class="container">
-    <div class="reports-header">
-      <div class="breadcrumb">
-        <app-button 
-          variant="ghost" 
-          size="sm" 
-          icon="arrow-left" 
-          (click)="onBackToSites()"
-        >
-          All Sites
-        </app-button>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current">{{ site.name }}</span>
+    <!-- Enhanced Breadcrumb Navigation -->
+    <app-breadcrumb [items]="breadcrumbItems">
+      <div slot="actions">
+        <button class="request-scan-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14"/>
+            <path d="M5 12h14"/>
+          </svg>
+          Request New Scan
+        </button>
       </div>
-      
-      <div class="site-overview">
-        <h2>{{ site.name }}</h2>
-        <div class="site-meta">
-          <span class="site-url">{{ site.url }}</span>
-          <span class="last-scan">Last scan {{ site.lastScanDate ? formatDate(site.lastScanDate) : 'Never' }}</span>
-        </div>
-      </div>
+    </app-breadcrumb>
+
+    <!-- Enhanced Page Context -->
+    <app-page-context 
+      [context]="{
+        title: site.name,
+        subtitle: site.url,
+        icon: 'reports',
+        stats: [
+          { label: 'Reports', value: getFilteredAndSortedReports().length, variant: 'default' },
+          { label: 'Pending', value: getTotalPending(), variant: 'error' },
+          { label: 'Fixed', value: getTotalFixed(), variant: 'success' },
+          { label: 'Avg Score', value: getAverageScore() + '%', variant: getAverageScore() >= 80 ? 'success' : 'warning' }
+        ]
+      }"
+    ></app-page-context>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-container">
+      <app-loading type="skeleton" [skeletonLines]="3" text="Loading reports..."></app-loading>
     </div>
 
-    <div class="site-stats-grid">
-      <app-card variant="default" [elevated]="true">
-        <div class="stat-content">
-          <div class="stat-icon info">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && site.reports.length === 0" class="empty-state">
+      <app-card [elevated]="true" class="empty-state-card">
+        <div class="empty-state-content">
+          <div class="empty-state-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14,2 14,8 20,8"/>
             </svg>
           </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ site.totalReports }}</div>
-            <div class="stat-label">Total Reports</div>
-          </div>
-        </div>
-      </app-card>
-
-      <app-card variant="default" [elevated]="true">
-        <div class="stat-content">
-          <div class="stat-icon error">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
+          <h3>No Reports Yet</h3>
+          <p>This site hasn't been scanned for accessibility issues yet. Request your first scan to get started.</p>
+          <button class="request-scan-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14"/>
+              <path d="M5 12h14"/>
             </svg>
-          </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ getTotalPending() }}</div>
-            <div class="stat-label">Pending Issues</div>
-          </div>
-        </div>
-      </app-card>
-
-      <app-card variant="default" [elevated]="true">
-        <div class="stat-content">
-          <div class="stat-icon success">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20,6 9,17 4,12"/>
-            </svg>
-          </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ getTotalFixed() }}</div>
-            <div class="stat-label">Fixed Issues</div>
-          </div>
-        </div>
-      </app-card>
-
-      <app-card variant="default" [elevated]="true">
-        <div class="stat-content">
-          <div class="stat-icon">
-            <div class="score-circle" [class]="getAverageScoreClass()">
-              <span class="score-value">{{ getAverageScore() }}%</span>
-            </div>
-          </div>
-          <div class="stat-info">
-            <div class="stat-number">{{ getAverageScore() }}%</div>
-            <div class="stat-label">Average Score</div>
-          </div>
+            Request First Scan
+          </button>
         </div>
       </app-card>
     </div>
 
-    <div class="reports-section">
+    <!-- Filter and Sort Controls -->
+    <div *ngIf="!isLoading && site.reports.length > 0" class="filter-sort-controls">
+      <div class="controls-container">
+        <div class="search-control">
+          <app-input
+            placeholder="Search reports by name..."
+            prefixIcon="search"
+            [value]="searchTerm"
+            (inputChange)="onSearchChange($event)"
+          ></app-input>
+        </div>
+        
+        <div class="sort-control">
+          <label class="form-label">Sort By</label>
+          <select 
+            class="form-select" 
+            [(ngModel)]="sortKey"
+            (change)="onSortChange()"
+          >
+            <option value="date-desc">Date (Newest)</option>
+            <option value="date-asc">Date (Oldest)</option>
+            <option value="score-desc">Score (High-Low)</option>
+            <option value="score-asc">Score (Low-High)</option>
+            <option value="pages-desc">Most Pages</option>
+            <option value="pages-asc">Fewest Pages</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports Section -->
+    <div *ngIf="!isLoading && getFilteredAndSortedReports().length > 0" class="reports-section">
       <h3>Reports</h3>
-      <div class="reports-grid">
-        <app-card 
-          *ngFor="let report of site.reports; trackBy: trackByReportId" 
-          [title]="report.name"
-          [subtitle]="'Created ' + formatDate(report.createdDate)"
-          [hover]="true"
-          [clickable]="report.status === 'completed'"
-          [showFooter]="true"
-          (cardClick)="onReportClick(report)"
-          class="fade-in"
+      
+      <div class="reports-list">
+        <div 
+          *ngFor="let report of getFilteredAndSortedReports(); trackBy: trackByReportId" 
+          class="report-item"
           [class.loading]="report.status === 'in-progress'"
+          (click)="onReportClick(report)"
         >
-          <div class="report-header-extra">
-            <app-badge 
-              [variant]="getStatusVariant(report.status)"
-              [icon]="getStatusIcon(report.status)"
-            >
-              {{ getStatusLabel(report.status) }}
-            </app-badge>
-          </div>
-
-          <div class="report-metrics" *ngIf="report.status === 'completed'">
-            <div class="score-section">
-              <div class="score-bar">
-                <div class="score-fill" [style.width.%]="report.averageScore"></div>
+          <div class="report-main">
+            <div class="report-info">
+              <div class="report-header">
+                <h4>{{ report.name }}</h4>
+                <app-badge 
+                  [variant]="getStatusVariant(report.status)"
+                  [icon]="getStatusIcon(report.status)"
+                >
+                  {{ getStatusLabel(report.status) }}
+                </app-badge>
               </div>
-              <span class="score-text">{{ report.averageScore }}% Score</span>
-            </div>
-
-            <div class="issues-summary">
-              <div class="issue-stat">
-                <span class="issue-count error">{{ report.totalIssues - report.fixedIssues - report.ignoredIssues }}</span>
-                <span class="issue-label">Pending</span>
-              </div>
-              <div class="issue-stat">
-                <span class="issue-count success">{{ report.fixedIssues }}</span>
-                <span class="issue-label">Fixed</span>
-              </div>
-              <div class="issue-stat">
-                <span class="issue-count muted">{{ report.ignoredIssues }}</span>
-                <span class="issue-label">Ignored</span>
+              <div class="report-meta">
+                <span class="report-date">{{ formatDate(report.createdDate) }}</span>
+                <span class="pages-count">{{ report.totalPages }} pages scanned</span>
               </div>
             </div>
+
+            <div class="report-metrics" *ngIf="report.status === 'completed'">
+              <div class="score-display">
+                <div class="score-bar">
+                  <div class="score-fill" [style.width.%]="report.averageScore"></div>
+                </div>
+                <span class="score-text">{{ report.averageScore }}%</span>
+              </div>
+
+              <div class="issues-inline">
+                <span class="issue-stat error">{{ report.totalIssues - report.fixedIssues - report.ignoredIssues }} pending</span>
+                <span class="issue-stat success">{{ report.fixedIssues }} fixed</span>
+                <span class="issue-stat muted">{{ report.ignoredIssues }} ignored</span>
+              </div>
+            </div>
           </div>
 
-          <div slot="footer" class="report-footer-content">
-            <span class="pages-count text-muted">
-              {{ report.totalPages }} pages scanned
-            </span>
-            <app-button 
-              variant="secondary" 
-              size="sm" 
+          <div class="report-action">
+            <button 
+              class="view-pages-btn"
               [disabled]="report.status !== 'completed'"
               (click)="onViewReport(report, $event)"
             >
               View Pages
-            </app-button>
+            </button>
           </div>
-        </app-card>
+        </div>
       </div>
+    </div>
+
+    <!-- No Results State -->
+    <div *ngIf="!isLoading && site.reports.length > 0 && getFilteredAndSortedReports().length === 0" class="no-results-state">
+      <app-card [elevated]="true" class="no-results-card">
+        <div class="no-results-content">
+          <div class="no-results-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+          </div>
+          <h4>No Reports Found</h4>
+          <p>No reports match your search criteria. Try adjusting your search terms.</p>
+          <button class="clear-search-btn" (click)="clearSearch()">
+            Clear Search
+          </button>
+        </div>
+      </app-card>
     </div>
   </div>
 </div>

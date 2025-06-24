@@ -1,7 +1,6 @@
-// src/app/core/csrf.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { ApiService } from './api.service';
 
 const CSRF_HEADER = 'X-CSRF-TOKEN';
 const STORAGE_KEY = 'X-CSRF-TOKEN';
@@ -10,21 +9,20 @@ const STORAGE_KEY = 'X-CSRF-TOKEN';
 export class CsrfService {
   private token: string | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private apiService: ApiService) {}
 
   /** Call once via APP_INITIALIZER */
   async init(): Promise<void> {
-    const t = await firstValueFrom(
-      this.http.get('/api/auth/csrf', {
-        responseType: 'text',
-        withCredentials: true
-      })
-    );
-
-    // responseType:'text' returns string | null | undefined
-    if (t) {
-      this.token = t;
-      sessionStorage.setItem(STORAGE_KEY, t);
+    try {
+      const token = await firstValueFrom(this.apiService.getCsrfToken());
+      
+      if (token) {
+        this.token = token;
+        sessionStorage.setItem(STORAGE_KEY, token);
+      }
+    } catch (error) {
+      console.warn('Failed to get CSRF token:', error);
+      // Continue without CSRF token in development/mock mode
     }
   }
 

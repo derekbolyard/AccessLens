@@ -1,4 +1,5 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ElementRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 declare global {
   interface Window {
@@ -8,8 +9,25 @@ declare global {
 
 @Component({
   selector: 'app-hcaptcha',
-  templateUrl: './hcaptcha-component.html',
-  styleUrls: ['./hcaptcha-component.scss']
+  standalone: true,
+  imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `<div #hcaptchaContainer></div>`,
+  styles: [`
+    :host {
+      display: block;
+    }
+
+    /* Style the hCaptcha container */
+    ::ng-deep .h-captcha {
+      margin: 0 auto;
+    }
+
+    /* Ensure proper spacing in forms */
+    :host {
+      margin: var(--space-4) 0;
+    }
+  `]
 })
 export class HCaptchaComponent implements OnInit, OnDestroy {
   @Input() siteKey!: string;
@@ -24,6 +42,7 @@ export class HCaptchaComponent implements OnInit, OnDestroy {
 
   private widgetId: string | null = null;
   private isScriptLoaded = false;
+  private scriptElement: HTMLScriptElement | null = null;
 
   ngOnInit(): void {
     this.loadHCaptchaScript().then(() => {
@@ -35,6 +54,11 @@ export class HCaptchaComponent implements OnInit, OnDestroy {
     if (this.widgetId && window.hcaptcha) {
       window.hcaptcha.remove(this.widgetId);
     }
+    
+    // Clean up script element if it exists
+    if (this.scriptElement && document.head.contains(this.scriptElement)) {
+      document.head.removeChild(this.scriptElement);
+    }
   }
 
   private async loadHCaptchaScript(): Promise<void> {
@@ -43,21 +67,21 @@ export class HCaptchaComponent implements OnInit, OnDestroy {
     }
 
     return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://js.hcaptcha.com/1/api.js';
-      script.async = true;
-      script.defer = true;
+      this.scriptElement = document.createElement('script');
+      this.scriptElement.src = 'https://js.hcaptcha.com/1/api.js';
+      this.scriptElement.async = true;
+      this.scriptElement.defer = true;
       
-      script.onload = () => {
+      this.scriptElement.onload = () => {
         this.isScriptLoaded = true;
         resolve();
       };
       
-      script.onerror = () => {
+      this.scriptElement.onerror = () => {
         reject(new Error('Failed to load hCaptcha script'));
       };
 
-      document.head.appendChild(script);
+      document.head.appendChild(this.scriptElement);
     });
   }
 

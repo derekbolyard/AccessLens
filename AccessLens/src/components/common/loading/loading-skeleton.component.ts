@@ -1,10 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-loading-skeleton',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="skeleton-container">
       <div 
@@ -15,29 +16,7 @@ import { CommonModule } from '@angular/common';
       ></div>
     </div>
   `,
-  styles: [`
-    .skeleton-container {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-    }
-
-    .skeleton-line {
-      background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
-      background-size: 200% 100%;
-      border-radius: var(--radius-sm);
-      animation: shimmer 1.5s infinite;
-    }
-
-    @keyframes shimmer {
-      0% {
-        background-position: -200% 0;
-      }
-      100% {
-        background-position: 200% 0;
-      }
-    }
-  `]
+  styleUrls: ['./loading-skeleton.component.scss']
 })
 export class LoadingSkeletonComponent {
   @Input() type: 'card' | 'list' | 'table' | 'custom' = 'card';

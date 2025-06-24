@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { delay, map, catchError, tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
+import { ApiService } from './api.service';
+import { MockBackendService } from '../mock/mock-backend.service';
+import { ErrorHandlerService } from './error-handler.service';
 
 export interface User {
   id: string;
@@ -27,9 +29,12 @@ export interface VerifyCodeResponse {
 export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(null);
   public user$ = this.userSubject.asObservable();
-  private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private apiService: ApiService,
+    private mockBackend: MockBackendService,
+    private errorHandler: ErrorHandlerService
+  ) {
     this.loadUserFromStorage();
   }
 
@@ -48,6 +53,12 @@ export class AuthService {
             provider: 'magic-link'
           };
           this.userSubject.next(user);
+          // Set user ID in mock backend for data filtering
+          this.mockBackend.setCurrentUserId(user.id);
+          // Set user context for error reporting
+          this.errorHandler.setUserContext(user.id, user.email);
+          // Notify branding service of user change
+          this.notifyBrandingService();
         } catch (error) {
           console.error('Failed to parse auth token:', error);
           localStorage.removeItem('auth_token');
@@ -60,12 +71,25 @@ export class AuthService {
         try {
           const user = JSON.parse(userData);
           this.userSubject.next(user);
+          // Set user ID in mock backend for data filtering
+          this.mockBackend.setCurrentUserId(user.id);
+          // Set user context for error reporting
+          this.errorHandler.setUserContext(user.id, user.email);
+          // Notify branding service of user change
+          this.notifyBrandingService();
         } catch (error) {
           console.error('Failed to parse user data from storage:', error);
           localStorage.removeItem('user');
         }
       }
     }
+  }
+
+  private notifyBrandingService(): void {
+    // Dynamically import to avoid circular dependency
+    import('../components/branding/branding.service').then(module => {
+      // This will be handled by the branding service's auth subscription
+    });
   }
 
   // OAuth Methods (old flow)
@@ -82,7 +106,17 @@ export class AuthService {
       provider: 'google'
     };
 
-    return of(mockUser).pipe(delay(1500));
+    return of(mockUser).pipe(
+      delay(1500),
+      tap(user => {
+        // Set user ID in mock backend for data filtering
+        this.mockBackend.setCurrentUserId(user.id);
+        // Set user context for error reporting
+        this.errorHandler.setUserContext(user.id, user.email);
+        // Notify branding service of user change
+        this.notifyBrandingService();
+      })
+    );
   }
 
   signInWithGitHub(): Observable<User> {
@@ -98,7 +132,17 @@ export class AuthService {
       provider: 'github'
     };
 
-    return of(mockUser).pipe(delay(1500));
+    return of(mockUser).pipe(
+      delay(1500),
+      tap(user => {
+        // Set user ID in mock backend for data filtering
+        this.mockBackend.setCurrentUserId(user.id);
+        // Set user context for error reporting
+        this.errorHandler.setUserContext(user.id, user.email);
+        // Notify branding service of user change
+        this.notifyBrandingService();
+      })
+    );
   }
 
   // Magic Link Methods (new flow)
@@ -106,18 +150,37 @@ export class AuthService {
     if (!environment.features.useMagicLinkAuth) {
       throw new Error('Magic link authentication is disabled.');
     }
-    return this.http.post<SendCodeResponse>(`${this.apiUrl}/auth/send-magic-link`, { email });
+    
+    return this.apiService.sendMagicLink(email).pipe(
+      map(response => ({ message: response.data.message })),
+      catchError(error => {
+        throw error;
+      })
+    );
   }
 
   verifyCode(email: string, code: string, hcaptchaToken?: string): Observable<VerifyCodeResponse> {
     if (!environment.features.useMagicLinkAuth) {
       throw new Error('Magic link authentication is disabled.');
     }
-    return this.http.post<VerifyCodeResponse>(`${this.apiUrl}/auth/verify`, {
-      email,
-      code,
-      hcaptchaToken
-    });
+    
+    return this.apiService.verifyMagicLink(email, code, hcaptchaToken).pipe(
+      map(response => {
+        // Store token and set user
+        localStorage.setItem('auth_token', response.data.token);
+        this.userSubject.next(response.data.user);
+        // Set user ID in mock backend for data filtering
+        this.mockBackend.setCurrentUserId(response.data.user.id);
+        // Set user context for error reporting
+        this.errorHandler.setUserContext(response.data.user.id, response.data.user.email);
+        // Notify branding service of user change
+        this.notifyBrandingService();
+        return { message: response.data.user.email };
+      }),
+      catchError(error => {
+        throw error;
+      })
+    );
   }
 
   handleAuthCallback(token: string): void {
@@ -131,6 +194,13 @@ export class AuthService {
   // Common methods
   setUser(user: User): void {
     this.userSubject.next(user);
+    // Set user ID in mock backend for data filtering
+    this.mockBackend.setCurrentUserId(user.id);
+    // Set user context for error reporting
+    this.errorHandler.setUserContext(user.id, user.email);
+    // Notify branding service of user change
+    this.notifyBrandingService();
+    
     if (environment.features.useMagicLinkAuth) {
       // For magic link, token is already stored
     } else {
@@ -140,11 +210,17 @@ export class AuthService {
 
   signOut(): Observable<boolean> {
     this.userSubject.next(null);
+    // Clear user ID from mock backend
+    this.mockBackend.setCurrentUserId(null);
+    // Clear user context from error reporting
+    this.errorHandler.clearUserContext();
+    
     if (environment.features.useMagicLinkAuth) {
       localStorage.removeItem('auth_token');
     } else {
       localStorage.removeItem('user');
     }
+    
     return of(true).pipe(delay(500));
   }
 

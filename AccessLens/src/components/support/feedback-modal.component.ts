@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../common/modal/modal.component';
@@ -6,6 +6,7 @@ import { ButtonComponent } from '../common/button/button.component';
 import { InputComponent } from '../common/input/input.component';
 import { AlertComponent } from '../common/alert/alert.component';
 import { SupportService, FeedbackSubmission } from '../../services/support.service';
+import { ToastService } from '../common/toast/toast.service';
 
 @Component({
   selector: 'app-feedback-modal',
@@ -14,7 +15,7 @@ import { SupportService, FeedbackSubmission } from '../../services/support.servi
   templateUrl: './feedback-modal.component.html',
   styleUrls: ['./feedback-modal.component.scss']
 })
-export class FeedbackModalComponent {
+export class FeedbackModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
 
@@ -30,16 +31,18 @@ export class FeedbackModalComponent {
   submitSuccess = false;
   submitError = '';
 
-  constructor(private supportService: SupportService) {}
+  constructor(
+    private supportService: SupportService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
-    // Reset form when modal opens
-    if (this.isOpen) {
-      this.resetForm();
-    }
+    // Reset form when component initializes
+    this.resetForm();
   }
 
   ngOnChanges(): void {
+    // Reset form when modal opens
     if (this.isOpen) {
       this.resetForm();
     }
@@ -61,6 +64,7 @@ export class FeedbackModalComponent {
         this.isSubmitting = false;
         if (success) {
           this.submitSuccess = true;
+          this.toastService.success('Thank you for your feedback!');
           setTimeout(() => {
             this.close.emit();
           }, 3000);
@@ -69,6 +73,7 @@ export class FeedbackModalComponent {
       error: (error) => {
         this.isSubmitting = false;
         this.submitError = 'Failed to submit feedback. Please try again or contact support directly.';
+        this.toastService.error(this.submitError);
         console.error('Feedback submission failed:', error);
       }
     });

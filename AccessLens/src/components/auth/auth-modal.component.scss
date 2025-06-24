@@ -30,3 +30,110 @@ p {
   color: var(--gray-600);
   font-size: var(--text-lg);
 }
+
+/* Ensure input component styles are applied in auth modal */
+::ng-deep .auth-content .input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+::ng-deep .auth-content .input-label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--slate-700);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+::ng-deep .auth-content .required-indicator {
+  color: var(--error-500);
+  font-weight: 900;
+}
+
+::ng-deep .auth-content .input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+::ng-deep .auth-content .input {
+  width: 100%;
+  padding: var(--space-3);
+  border: 3px solid var(--slate-900);
+  border-radius: var(--radius-brutal);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: all 0.2s ease;
+  background-color: white;
+  box-shadow: 2px 2px 0px 0px var(--slate-800);
+}
+
+::ng-deep .auth-content .input:focus {
+  outline: none;
+  border-color: var(--blue-600);
+  box-shadow: 3px 3px 0px 0px var(--blue-600);
+  transform: translate(-1px, -1px);
+}
+
+::ng-deep .auth-content .input:disabled {
+  background-color: var(--slate-100);
+  color: var(--slate-500);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+::ng-deep .auth-content .input-with-prefix {
+  padding-left: var(--space-10);
+}
+
+::ng-deep .auth-content .input-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--slate-500);
+  pointer-events: none;
+  z-index: 1;
+}
+
+::ng-deep .auth-content .input-prefix {
+  left: var(--space-3);
+}
+
+::ng-deep .auth-content .input-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+::ng-deep .auth-content .input-help {
+  font-size: var(--text-xs);
+  color: var(--slate-600);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+::ng-deep .auth-content .input-error {
+  font-size: var(--text-xs);
+  color: var(--error-600);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+::ng-deep .auth-content .has-error .input {
+  border-color: var(--error-600);
+  box-shadow: 2px 2px 0px 0px var(--error-600);
+}
+
+::ng-deep .auth-content .has-error .input:focus {
+  border-color: var(--error-600);
+  box-shadow: 3px 3px 0px 0px var(--error-600);
+}

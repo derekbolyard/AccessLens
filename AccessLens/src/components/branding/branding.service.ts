@@ -4,6 +4,7 @@ import { delay, map } from 'rxjs/operators';
 import { AuthService } from 'src/services/auth.service';
 import { CacheService } from 'src/services/cache.service';
 import { ErrorHandlerService } from 'src/services/error-handler.service';
+import { ToastService } from '../common/toast/toast.service';
 import { BrandingSettings, DEFAULT_BRANDING } from './branding.interface';
 
 @Injectable({
@@ -16,14 +17,30 @@ export class BrandingService {
   constructor(
     private authService: AuthService,
     private cacheService: CacheService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private toastService: ToastService
   ) {
     this.loadUserBranding();
+    
+    // Subscribe to auth changes to reload branding when user changes
+    this.authService.user$.subscribe(user => {
+      if (user) {
+        this.loadUserBranding();
+      } else {
+        this.brandingSubject.next(null);
+        this.removeBrandingFromDocument();
+      }
+    });
   }
 
   private loadUserBranding(): void {
-    // Load from localStorage or create default
-    const savedBranding = localStorage.getItem('user_branding');
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) return;
+
+    // Load from localStorage with user-specific key
+    const storageKey = `user_branding_${currentUser.id}`;
+    const savedBranding = localStorage.getItem(storageKey);
+    
     if (savedBranding) {
       try {
         const branding = JSON.parse(savedBranding);
@@ -31,6 +48,7 @@ export class BrandingService {
         this.applyBrandingToDocument(branding);
       } catch (error) {
         this.errorHandler.handleError(error, 'BrandingService.loadUserBranding');
+        this.toastService.error('Failed to load branding settings');
       }
     }
   }
@@ -42,40 +60,73 @@ export class BrandingService {
   updateBranding(branding: Partial<BrandingSettings>): Observable<boolean> {
     const currentUser = this.authService.currentUser;
     if (!currentUser) {
+      this.toastService.error('You must be logged in to save branding settings');
       return of(false);
     }
 
-    const currentBranding = this.brandingSubject.value;
-    const updatedBranding: BrandingSettings = {
-      id: currentBranding?.id || this.generateId(),
-      userId: currentUser.id,
-      ...DEFAULT_BRANDING,
-      ...currentBranding,
-      ...branding,
-      updatedDate: new Date(),
-      createdDate: currentBranding?.createdDate || new Date()
-    } as BrandingSettings;
-
     return of(true).pipe(
-      delay(500), // Simulate API call
+      delay(800), // Simulate API call
       map(() => {
-        this.brandingSubject.next(updatedBranding);
-        localStorage.setItem('user_branding', JSON.stringify(updatedBranding));
-        this.applyBrandingToDocument(updatedBranding);
-        this.cacheService.delete('branding'); // Invalidate cache
-        return true;
+        try {
+          const currentBranding = this.brandingSubject.value;
+          const updatedBranding: BrandingSettings = {
+            id: currentBranding?.id || this.generateId(),
+            userId: currentUser.id,
+            ...DEFAULT_BRANDING,
+            ...currentBranding,
+            ...branding,
+            updatedDate: new Date(),
+            createdDate: currentBranding?.createdDate || new Date()
+          } as BrandingSettings;
+
+          // Save to localStorage with user-specific key
+          const storageKey = `user_branding_${currentUser.id}`;
+          localStorage.setItem(storageKey, JSON.stringify(updatedBranding));
+          
+          // Update state and apply to document
+          this.brandingSubject.next(updatedBranding);
+          this.applyBrandingToDocument(updatedBranding);
+          
+          // Clear cache
+          this.cacheService.delete('branding');
+          
+          this.toastService.success('Branding settings saved successfully!');
+          return true;
+        } catch (error) {
+          this.errorHandler.handleError(error, 'BrandingService.updateBranding');
+          this.toastService.error('Failed to save branding settings');
+          return false;
+        }
       })
     );
   }
 
   resetBranding(): Observable<boolean> {
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) {
+      this.toastService.error('You must be logged in to reset branding settings');
+      return of(false);
+    }
+
     return of(true).pipe(
-      delay(300),
+      delay(500),
       map(() => {
-        this.brandingSubject.next(null);
-        localStorage.removeItem('user_branding');
-        this.removeBrandingFromDocument();
-        return true;
+        try {
+          // Remove from localStorage
+          const storageKey = `user_branding_${currentUser.id}`;
+          localStorage.removeItem(storageKey);
+          
+          // Reset state and remove from document
+          this.brandingSubject.next(null);
+          this.removeBrandingFromDocument();
+          
+          this.toastService.success('Branding reset to default settings');
+          return true;
+        } catch (error) {
+          this.errorHandler.handleError(error, 'BrandingService.resetBranding');
+          this.toastService.error('Failed to reset branding settings');
+          return false;
+        }
       })
     );
   }
@@ -92,6 +143,9 @@ export class BrandingService {
     root.style.setProperty('--primary-600', branding.primaryColor);
     root.style.setProperty('--primary-700', this.darkenColor(branding.primaryColor, 10));
     root.style.setProperty('--primary-500', this.lightenColor(branding.primaryColor, 10));
+    root.style.setProperty('--blue-600', branding.primaryColor);
+    root.style.setProperty('--blue-700', this.darkenColor(branding.primaryColor, 10));
+    root.style.setProperty('--blue-500', this.lightenColor(branding.primaryColor, 10));
     
     // Apply font family if specified
     if (branding.fontFamily && branding.fontFamily !== 'Inter') {
@@ -113,6 +167,9 @@ export class BrandingService {
     root.style.removeProperty('--primary-600');
     root.style.removeProperty('--primary-700');
     root.style.removeProperty('--primary-500');
+    root.style.removeProperty('--blue-600');
+    root.style.removeProperty('--blue-700');
+    root.style.removeProperty('--blue-500');
     
     // Reset font
     document.body.style.fontFamily = '';
@@ -123,26 +180,25 @@ export class BrandingService {
   }
 
   private darkenColor(color: string, percent: number): string {
-    // Simple color darkening - in production, use a proper color library
     const num = parseInt(color.replace('#', ''), 16);
     const amt = Math.round(2.55 * percent);
-    const R = (num >> 16) - amt;
-    const G = (num >> 8 & 0x00FF) - amt;
-    const B = (num & 0x0000FF) - amt;
-    return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-      (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+    const R = Math.max(0, Math.min(255, (num >> 16) - amt));
+    const G = Math.max(0, Math.min(255, (num >> 8 & 0x00FF) - amt));
+    const B = Math.max(0, Math.min(255, (num & 0x0000FF) - amt));
+    return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
   }
 
   private lightenColor(color: string, percent: number): string {
-    // Simple color lightening - in production, use a proper color library
     const num = parseInt(color.replace('#', ''), 16);
     const amt = Math.round(2.55 * percent);
-    const R = (num >> 16) + amt;
-    const G = (num >> 8 & 0x00FF) + amt;
-    const B = (num & 0x0000FF) + amt;
-    return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-      (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+    const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+    const G = Math.max(0, Math.min(255, (num >> 8 & 0x00FF) + amt));
+    const B = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
+    return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+  }
+
+  // Method to refresh branding when user changes
+  refreshBrandingForUser(): void {
+    this.loadUserBranding();
   }
 }
