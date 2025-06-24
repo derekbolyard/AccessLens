@@ -15,6 +15,7 @@
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
     <PackageReference Include="Google.Apis.Gmail.v1" Version="1.69.0.3742" />
     <PackageReference Include="Google.Cloud.Storage.V1" Version="4.13.0" />
+    <PackageReference Include="Handlebars.Net" Version="2.1.6" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.17" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
@@ -37,5 +38,13 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\axe-core-4.9.0.min.js" LogicalName="AccessLensApi.Assets.axe-core-4.9.0.min.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Features\Reports\Templates\report.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="reports\" />
   </ItemGroup>
 </Project>

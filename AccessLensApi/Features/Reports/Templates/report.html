@@ -1,0 +1,241 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{clientName}} Accessibility Report</title>
+    <!-- Preload common fonts (override dynamically if needed) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Inter, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+      background-color: white;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 40px 30px;
+      background: white;
+    }
+    header {
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header img {
+      height: 40px;
+    }
+    h1 {
+      color: {{primaryColor}};
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      color: #111827;
+    }
+    h3 {
+      font-size: 1.25rem;
+      color: {{primaryColor}};
+      margin-bottom: 0.25rem;
+    }
+    .summary-box {
+      display: flex;
+      justify-content: space-between;
+      background: {{secondaryColor}}10;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    .summary-box div {
+      text-align: center;
+    }
+    .summary-box strong {
+      display: block;
+      font-size: 1.25rem;
+      color: #111827;
+    }
+    .issue-card {
+      border-left: 6px solid {{primaryColor}};
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .issue-card h4 {
+      margin: 0 0 10px;
+      font-size: 1.1rem;
+    }
+    .severity-critical { border-color: #b91c1c; }
+    .severity-serious { border-color: #ea580c; }
+    .severity-moderate { border-color: #d97706; }
+    .severity-minor { border-color: #16a34a; }
+    footer {
+      font-size: 0.9rem;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 40px;
+      padding-top: 20px;
+      text-align: center;
+    }
+    ul.metric-list {
+      list-style: none;
+      padding: 0;
+      margin-top: 1rem;
+    }
+    ul.metric-list li {
+      padding: 6px 0;
+    }
+    </style>
+</head>
+<body>
+    <div class="container" style="page-break-after: always;">
+        <section style="text-align:center; margin-top: 120px;">
+            {{#if whiteLabel}}
+            <img src="{{clientLogoUrl}}" alt="Client Logo" style="max-height: 60px; margin-bottom: 2rem;" />
+            <h1 style="font-size: 2.5rem; color: {{primaryColor}};">{{clientName}} Accessibility Audit</h1>
+            {{else}}
+            <h1 style="font-size: 2.5rem; color: #2563eb;">Accessibility Audit Report</h1>
+            {{/if}}
+            <p style="font-size: 1.25rem; margin-top: 1rem;">Generated on {{scanDate}}</p>
+            <p style="font-size: 1rem; margin-top: 3rem; color: #6b7280;">Confidential – For internal use only</p>
+        </section>
+    </div>
+    <div class="container">
+        <header>
+            {{#if whiteLabel}}
+            <div>
+                <h1>{{clientName}} Accessibility Audit</h1>
+                <p><strong>Scanned URL:</strong> {{siteUrl}}</p>
+                <p><strong>Date:</strong> {{scanDate}}</p>
+                <p><strong>WCAG Level:</strong> WCAG 2.2 AA</p>
+            </div>
+            <div>
+                <img src="{{clientLogoUrl}}" alt="Client Logo" />
+            </div>
+            {{else}}
+            <div>
+                <h1>AccessLens Accessibility Audit</h1>
+                <p><strong>Scanned URL:</strong> {{siteUrl}}</p>
+                <p><strong>Date:</strong> {{scanDate}}</p>
+                <p><strong>WCAG Level:</strong> WCAG 2.2 AA</p>
+            </div>
+            {{/if}}
+        </header>
+
+        <section class="summary-box" style="margin-top: 2rem;">
+            <div>
+                <div style="background:#eef2ff;padding:12px 20px;border-radius:8px;display:inline-block;">
+                    <strong style="font-size:1.75rem; color:{{primaryColor}};">{{score}}</strong>
+                </div>
+                <div style="margin-top:0.5rem;">Score</div>
+            </div>
+            <div>
+                <strong>{{criticalCount}}</strong>
+                Critical
+            </div>
+            <div>
+                <strong>{{seriousCount}}</strong>
+                Serious
+            </div>
+            <div>
+                <strong>{{moderateCount}}</strong>
+                Moderate
+            </div>
+            <div>
+                <strong>{{minorCount}}</strong>
+                Minor
+            </div>
+        </section>
+
+        <section>
+            <h2>Executive Summary</h2>
+            <p>This audit identifies potential accessibility issues that may affect users with disabilities. Resolving them improves usability, legal compliance, and inclusivity.</p>
+            <ul class="metric-list">
+                <li><strong style="color:#b91c1c;">Top Issues:</strong> {{topIssues}}</li>
+                <li><strong>Legal Risk Estimate:</strong> {{legalRisk}}</li>
+                <li><strong>Common Violations:</strong> {{commonViolations}}</li>
+                <li><strong>Accessibility Tools Used:</strong> axe-core, WCAG 2.2 validator</li>
+                <li><strong>Follow-up Recommended:</strong> Full manual audit or remediation support</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Severity Key</h2>
+            <ul class="metric-list">
+                <li><span style="color:#b91c1c;">■</span> Critical – Blocks access, legal exposure</li>
+                <li><span style="color:#ea580c;">■</span> Serious – Major usability barrier</li>
+                <li><span style="color:#d97706;">■</span> Moderate – Noticeable but minor impact</li>
+                <li><span style="color:#16a34a;">■</span> Minor – Cosmetic or edge-case</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Visual Highlights</h2>
+            {{#each screenshots}}
+            <img src="{{src}}" alt="{{alt}}" style="width:100%;margin-bottom:1rem;border:1px solid #ccc;" />
+            {{/each}}
+        </section>
+
+        <section style="page-break-before: always;">
+            <h2>Issue Breakdown</h2>
+            {{#each pages}}
+            <h3>{{url}}</h3>
+            <div class="summary-box">
+                <div><strong>{{pageScore}}</strong><div>Score</div></div>
+                <div><div style="font-weight:600;">Critical</div><div><strong>{{criticalCount}}</strong></div></div>
+                <div><div style="font-weight:600;">Serious</div><div><strong>{{seriousCount}}</strong></div></div>
+                <div><div style="font-weight:600;">Moderate</div><div><strong>{{moderateCount}}</strong></div></div>
+                <div><div style="font-weight:600;">Minor</div><div><strong>{{minorCount}}</strong></div></div>
+            </div>
+            <div style="text-align:center;margin-bottom:20px;">
+                <img src="{{pageChartUrl}}" alt="Accessibility Score Chart"
+                     style="max-width:500px;width:100%;margin-top:1rem;" />
+            </div>
+            {{#each issues}}
+            <div class="issue-card severity-{{severity}}">
+                <h4>{{title}}</h4>
+                <p><strong>Description:</strong> {{description}}</p>
+                <p><strong>Fix:</strong> {{fix}}</p>
+                <p><strong>Rule:</strong> {{ruleId}}</p>
+                <p><strong>Target:</strong> {{target}}</p>
+            </div>
+            {{/each}}
+            {{/each}}
+
+            <section style="page-break-before: always;">
+                <h2>Glossary</h2>
+                <ul>
+                    <li><strong>WCAG:</strong> Web Content Accessibility Guidelines</li>
+                    <li><strong>Alt Text:</strong> Text that describes an image for screen readers</li>
+                    <li><strong>ARIA:</strong> Attributes that help assistive tech interpret UI</li>
+                    <li><strong>Contrast Ratio:</strong> The difference in brightness between foreground and background</li>
+                    <li><strong>Screen Reader:</strong> A tool that reads page content aloud to visually impaired users</li>
+                </ul>
+            </section>
+
+            <section style="page-break-before: always;">
+                <h2>Next Steps</h2>
+                <p>We recommend a full manual audit to catch remaining issues, followed by remediation support.</p>
+                <a href="{{consultationLink}}" style="display:inline-block;padding:12px 24px;background-color:{{primaryColor}};color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;margin-top:1rem;">
+                    Schedule a Consultation
+                </a>
+            </section>
+
+
+    </div>
+
+</body>
+</html>
