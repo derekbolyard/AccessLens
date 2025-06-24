@@ -10,6 +10,6 @@ export const environment = {
     maxFileUploadSize: 10 * 1024 * 1024,
     scanTimeout: 300000,
     useMagicLinkAuth: true,
-    useMockBackend: false, // ✅ Real backend in production
+    useMockBackend: true, // ✅ Real backend in production
   }
 };
