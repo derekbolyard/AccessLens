@@ -1,5 +1,5 @@
-﻿using AccessLensApi.Services;
-using AccessLensApi.Services.Interfaces;
+﻿using AccessLensApi.Services.Interfaces;
+using AccessLensApi.Services.Scanning;
 using AccessLensApi.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;

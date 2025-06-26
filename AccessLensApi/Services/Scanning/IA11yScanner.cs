@@ -2,7 +2,7 @@
 using AccessLensApi.Models.ScannerDtos;
 using System.Text.Json.Nodes;
 
-namespace AccessLensApi.Services.Interfaces
+namespace AccessLensApi.Services.Scanning
 {
     public interface IA11yScanner
     {

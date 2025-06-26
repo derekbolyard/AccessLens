@@ -1,4 +1,4 @@
-﻿using AccessLensApi.Services;
+﻿using AccessLensApi.Services.Scanning;
 using AccessLensApi.Storage;
 using AccessLensApi.Tests.Helpers;
 using Microsoft.Extensions.Logging.Abstractions;

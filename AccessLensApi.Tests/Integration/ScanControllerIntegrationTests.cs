@@ -2,6 +2,7 @@
 using AccessLensApi.Features.Scans.Models;
 using AccessLensApi.Middleware;
 using AccessLensApi.Services.Interfaces;
+using AccessLensApi.Services.Scanning;
 using AccessLensApi.Tests.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;

@@ -5,6 +5,7 @@ using AccessLensApi.Middleware;
 using AccessLensApi.Models;
 using AccessLensApi.Models.ScannerDtos;
 using AccessLensApi.Services.Interfaces;
+using AccessLensApi.Services.Scanning;
 using AccessLensApi.Utilities;
 using Google.Apis.Util;
 using Microsoft.AspNetCore.Authorization;

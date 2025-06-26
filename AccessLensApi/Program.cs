@@ -5,6 +5,7 @@ using AccessLensApi.Features.Reports;
 using AccessLensApi.Middleware;
 using AccessLensApi.Services;
 using AccessLensApi.Services.Interfaces;
+using AccessLensApi.Services.Scanning;
 using AccessLensApi.Storage;
 using Amazon;
 using Amazon.Runtime;
@@ -159,6 +160,9 @@ builder.Services.AddHostedService<BrowserWarmupService>();
 // 6️⃣  Domain services, rate lim, etc.
 // ------------------------------------------------------------------
 builder.Services.AddSingleton<IAxeScriptProvider, AxeScriptProvider>();
+builder.Services.AddSingleton<IUrlDiscoverer, UrlDiscoverer>();
+builder.Services.AddSingleton<IPageScanner, PageScanner>();
+builder.Services.AddSingleton<ITeaserGenerator, TeaserGenerator>();
 builder.Services.AddScoped<IA11yScanner, A11yScanner>();
 builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();

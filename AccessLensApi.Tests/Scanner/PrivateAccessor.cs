@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AccessLensApi.Services.Scanning;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -11,7 +12,7 @@ namespace AccessLensApi.Tests.Scanner
     internal static class PrivateAccessor
     {
         private static readonly Type _scanner =
-            typeof(AccessLensApi.Services.A11yScanner);
+            typeof(A11yScanner);
 
         public static string NormalizeUrl(Uri uri)
             => (string)_scanner
