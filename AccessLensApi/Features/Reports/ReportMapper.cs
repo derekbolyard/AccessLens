@@ -1,8 +1,5 @@
 ﻿using AccessLensApi.Features.Reports.Models;       // AccessibilityReport & friends
 using AccessLensApi.Models.ScannerDtos;            // A11yScanResult & friends
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace AccessLensApi.Features.Reports
 {
@@ -75,15 +72,20 @@ namespace AccessLensApi.Features.Reports
                         SeriousCount = seri,
                         ModerateCount = mod,
                         MinorCount = min,
-                        Issues = p.Issues.Select(i => new Models.Issue
-                        {
-                            Title = i.Code,                 // or something more human
-                            Description = i.Message,
-                            Fix = string.Empty,           // populate if you have fix text
-                            RuleId = i.Code,
-                            Target = i.ContextHtml,
-                            Severity = i.Type
-                        }).ToList()
+                        Issues = p.Issues
+                            .GroupBy(i => new { i.Code, i.Type })
+                            .Select(g => new Models.Issue
+                            {
+                                Title = g.Key.Code,
+                                Description = g.First().Message,
+                                Fix = string.Empty,                       // add later if you have it
+                                RuleId = g.Key.Code,
+                                Target = string.Join(", ", g.Take(3).Select(i => i.ContextHtml)) +
+                                                (g.Count() > 3 ? " …" : ""),
+                                Severity = g.Key.Type,
+                                InstanceCount = g.Count()                           // optional field for CSV/appendix
+                            })
+                            .ToList()
                     };
                 })
                 .ToList();
@@ -105,10 +107,14 @@ namespace AccessLensApi.Features.Reports
                 ConsultationLink = consultationLink,
                 LegalRisk = legalRisk,
                 CommonViolations = commonViolations,
-                TopIssues = scan.Teaser?.TopIssues is { Count: > 0 }
-                    ? string.Join(Environment.NewLine,
-                                  scan.Teaser.TopIssues.Select(t => $"• ({t.Severity}) {t.Text}"))
-                    : "",
+                TopIssues = scan.Teaser?.TopIssues?.Select(t =>
+                {
+                    return new Models.Issue
+                    {
+                        Title = t.Text,
+                        Severity = t.Severity
+                    };
+                })?.ToList() ?? [],
                 Screenshots = screenshots,
                 Pages = pages
             };

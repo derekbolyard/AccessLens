@@ -164,7 +164,22 @@
             <h2>Executive Summary</h2>
             <p>This audit identifies potential accessibility issues that may affect users with disabilities. Resolving them improves usability, legal compliance, and inclusivity.</p>
             <ul class="metric-list">
-                <li><strong style="color:#b91c1c;">Top Issues:</strong> {{topIssues}}</li>
+                <li>
+                    <strong>Top Issues:</strong>
+                    <ul style="margin-top:0.4rem;padding-left:1.1rem;">
+                        {{#each TopIssues}}
+                        <li>
+                            <span style="font-weight:bold;">
+                                {{#if (eq severity "Critical")}}🔴{{/if}}
+                                {{#if (eq severity "Serious")}}🟠{{/if}}
+                                {{#if (eq severity "Moderate")}}🟡{{/if}}
+                                {{#if (eq severity "Minor")}}🟢{{/if}}
+                            </span>
+                            {{Text}} <em>(on {{Count}} pages)</em>
+                        </li>
+                        {{/each}}
+                    </ul>
+                </li>
                 <li><strong>Legal Risk Estimate:</strong> {{legalRisk}}</li>
                 <li><strong>Common Violations:</strong> {{commonViolations}}</li>
                 <li><strong>Accessibility Tools Used:</strong> axe-core, WCAG 2.2 validator</li>

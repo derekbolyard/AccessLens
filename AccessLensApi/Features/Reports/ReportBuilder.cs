@@ -32,6 +32,16 @@ namespace AccessLensApi.Features.Reports
             }
 
             var handlebars = Handlebars.Create();
+            handlebars.RegisterHelper("eq", (writer, context, parameters) =>
+            {
+                // Expect exactly two params: {{eq a b}}
+                var isEqual = parameters.Length >= 2 && Equals(parameters[0], parameters[1]);
+
+                // Handlebars treats any non-empty output as “truthy” inside an #if,
+                // so write “true” for match, nothing for mismatch.
+                if (isEqual) writer.WriteSafeString("true");
+            });
+
             var compiled = handlebars.Compile(_template);
             return compiled(model);
         }
@@ -64,42 +74,53 @@ namespace AccessLensApi.Features.Reports
 
         private static string GeneratePageChartUrl(int critical, int serious, int moderate, int minor)
         {
-            var total = critical + serious + moderate + minor;
-            var chartData = new
+            // Build dynamic pie slices – severities with a value of 0 are removed
+            var rawValues = new[] { critical, serious, moderate, minor };
+            var rawLabels = new[] { "Critical", "Serious", "Moderate", "Minor" };
+
+            // WCAG-AA, print-friendly palette (override later if you need)
+            var colorPalette = new[] { "#B3261E", "#E88E00", "#D0A000", "#0B7C5C" };
+
+            var slices = rawValues
+                .Select((value, index) => new { value, label = rawLabels[index], color = colorPalette[index] })
+                .Where(s => s.value > 0)
+                .ToArray();
+
+            var chart = new
             {
                 type = "pie",
                 data = new
                 {
-                    labels = new[] { "Critical", "Serious", "Moderate", "Minor" },
+                    labels = slices.Select(s => s.label),
                     datasets = new[]
-          {
-            new
-            {
-                data = new[] { critical, serious, moderate, minor },
-                backgroundColor = new[] { "#b91c1c", "#ea580c", "#d97706", "#16a34a" }
+                    {
+                new
+                {
+                    data            = slices.Select(s => s.value),
+                    backgroundColor = slices.Select(s => s.color),
+                    borderWidth     = 2,
+                    borderColor     = "white"
+                }
             }
-        }
                 },
                 options = new
                 {
                     plugins = new
                     {
+                        legend = new { position = "bottom" },
                         datalabels = new
                         {
-                            formatter = "function(value, ctx) {\n  let sum = 0;\n  let dataArr = ctx.chart.data.datasets[0].data;\n  dataArr.map(data => sum += data);\n  let percentage = (value * 100 / sum).toFixed(1) + '%';\n  return percentage;\n}",
+                            formatter = "function(v){return v + '%';}",
                             color = "#000",
-                            font = new { weight = "bold", size = 14 }
-                        },
-                        legend = new { position = "bottom", labels = new { color = "#000" } }
+                            font = new { weight = "bold" }
+                        }
                     },
                     backgroundColor = "white"
                 }
             };
 
-            var json = System.Text.Json.JsonSerializer.Serialize(chartData);
+            var json = System.Text.Json.JsonSerializer.Serialize(chart);
             return $"https://quickchart.io/chart?c={Uri.EscapeDataString(json)}&plugins=datalabels";
         }
-
-
     }
 }

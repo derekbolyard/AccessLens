@@ -4,18 +4,19 @@ using AccessLensApi.Data;
 using AccessLensApi.Services.Interfaces;
 using System.Data;
 using Dapper;
+using System.Data.Common;
 
 namespace AccessLensApi.Services
 {
     public class CreditManager : ICreditManager
     {
         private readonly ApplicationDbContext _dbContext;
-        private readonly IDbConnection _dbConnection;
+        private readonly DbConnection _dbConnection;
 
         public CreditManager(ApplicationDbContext dbContext, IDbConnection dbConnection)
         {
             _dbContext = dbContext;
-            _dbConnection = dbConnection;
+            _dbConnection = dbConnection as DbConnection ?? throw new ArgumentNullException(nameof(dbConnection));
         }
 
         public async Task<bool> HasQuotaAsync(string email)
@@ -28,7 +29,8 @@ namespace AccessLensApi.Services
             if (hasSub)
                 return true;
 
-            // 2) Attempt atomic decrement of one SnapshotPass credit
+            if (_dbConnection.State == ConnectionState.Closed)
+                await _dbConnection.OpenAsync();
             const string sql = @"
                     UPDATE SnapshotPasses
                     SET    CreditsLeft = CreditsLeft - 1,

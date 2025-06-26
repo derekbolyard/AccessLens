@@ -13,7 +13,7 @@
         public string FooterText { get; set; }
         public string ContactEmail { get; set; }
         public string ClientWebsite { get; set; }
-        public string TopIssues { get; set; }
+        public List<Issue> TopIssues { get; set; }
         public string LegalRisk { get; set; }
         public string CommonViolations { get; set; }
         public string ConsultationLink { get; set; }
@@ -41,6 +41,7 @@
         public string RuleId { get; set; }
         public string Target { get; set; }
         public string Severity { get; set; }
+        public int InstanceCount { get; set; }
     }
 
     public class ReportImage

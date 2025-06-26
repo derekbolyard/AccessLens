@@ -5,7 +5,7 @@
     using System.Text.Json.Serialization;
 
     public record A11yScanResult(
-        [property: JsonPropertyName("pages")] IReadOnlyList<PageResult> Pages,
+        [property: JsonPropertyName("pages")] List<PageResult> Pages,
         [property: JsonPropertyName("teaser")] Teaser? Teaser,
         [property: JsonPropertyName("totalPages")] int TotalPages,
         [property: JsonPropertyName("scannedAt")] DateTime ScannedAtUtc,
@@ -14,7 +14,7 @@
 
     public record PageResult(
         [property: JsonPropertyName("pageUrl")] string PageUrl,
-        [property: JsonPropertyName("issues")] IReadOnlyList<Issue> Issues);
+        [property: JsonPropertyName("issues")] List<Issue> Issues);
 
     public record Issue(
         [property: JsonPropertyName("type")] string Type,   // critical | serious | …
@@ -24,7 +24,7 @@
 
     public record Teaser(
         [property: JsonPropertyName("url")] string? Url = null,
-        [property: JsonPropertyName("topIssues")] IReadOnlyList<TopIssue>? TopIssues = null);
+        [property: JsonPropertyName("topIssues")] List<TopIssue>? TopIssues = null);
 
     public record TopIssue(
         [property: JsonPropertyName("severity")] string Severity,

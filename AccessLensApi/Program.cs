@@ -112,12 +112,7 @@ builder.Services.AddAuthorization(o =>
 var sqliteConn = builder.Configuration.GetConnectionString("Sqlite");
 builder.Services
     .AddDbContext<ApplicationDbContext>(o => o.UseSqlite(sqliteConn))
-    .AddTransient<IDbConnection>(_ =>
-    {
-        var c = new SqliteConnection(sqliteConn);
-        c.Open();
-        return c;
-    });
+    .AddScoped<IDbConnection>(_ => new SqliteConnection(sqliteConn));
 
 // ------------------------------------------------------------------
 // 4️⃣  S3 / MinIO client
@@ -164,8 +159,8 @@ builder.Services.AddHostedService<BrowserWarmupService>();
 // 6️⃣  Domain services, rate lim, etc.
 // ------------------------------------------------------------------
 builder.Services.AddSingleton<IAxeScriptProvider, AxeScriptProvider>();
-builder.Services.AddSingleton<IA11yScanner, A11yScanner>();
-builder.Services.AddSingleton<IPdfService, PdfService>();
+builder.Services.AddScoped<IA11yScanner, A11yScanner>();
+builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();
 
 builder.Services.Configure<RateLimitingOptions>(builder.Configuration.GetSection("RateLimiting"));
