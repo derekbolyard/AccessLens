@@ -1,4 +1,7 @@
-﻿using System.Runtime.CompilerServices;
+﻿using AccessLensApi.Services.Scanning;
+using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 
 namespace AccessLensApi.Services.Scanning
@@ -19,112 +22,116 @@ namespace AccessLensApi.Services.Scanning
             Features.Scans.Models.ScanOptions opts,
             [EnumeratorCancellation] CancellationToken ct = default)
         {
-            var queued = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                root.ToString()   // always include the root page
-            };
+            // A simple queue so we can recurse through nested sitemaps.
+            var toExplore = new ConcurrentQueue<string>();
+            var yielded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 1️⃣ Optional sitemap / robots.txt discovery
-            if (opts.UseSitemap)
+            // seed
+            foreach (var c in GetRootCandidates(root))
+                toExplore.Enqueue(c);
+
+            while (toExplore.TryDequeue(out var next))
             {
-                foreach (var url in await DiscoverViaSitemapAsync(root, ct))
-                    if (queued.Add(url))
+                if (ct.IsCancellationRequested) yield break;
+
+                if (next.EndsWith("robots.txt", StringComparison.OrdinalIgnoreCase))
+                {
+                    foreach (var s in await ParseRobotsAsync(next, root, ct))
+                        toExplore.Enqueue(s);
+                    continue;
+                }
+
+                var found = await ParseSitemapAsync(next, root, ct);
+                foreach (var item in found.NestedSitemaps)
+                    toExplore.Enqueue(item);
+
+                foreach (var url in found.PageUrls)
+                    if (yielded.Add(url))
                         yield return url;
+
+                if (opts.MaxPages > 0 && yielded.Count >= opts.MaxPages)
+                    break;
             }
 
-            // 2️⃣ Fallback to just the root if nothing came back
-            if (queued.Count == 1)
+            // fall-back to the root page if nothing was discovered
+            if (yielded.Count == 0)
                 yield return root.ToString();
         }
 
-        /*────────── helpers ──────────*/
+        /*──────────── parsing helpers ────────────*/
 
-        private async Task<IReadOnlyCollection<string>> DiscoverViaSitemapAsync(
-            Uri root, CancellationToken ct)
+        private static IEnumerable<string> GetRootCandidates(Uri root)
         {
-            var list = new List<string>();
-            var candidates = new[]
-            {
-                $"{root.Scheme}://{root.Authority}/sitemap.xml",
-                $"{root.Scheme}://{root.Authority}/sitemap_index.xml",
-                $"{root.Scheme}://{root.Authority}/sitemaps.xml",
-                $"{root.Scheme}://{root.Authority}/robots.txt"
-            };
+            yield return $"{root.Scheme}://{root.Authority}/sitemap.xml";
+            yield return $"{root.Scheme}://{root.Authority}/sitemap_index.xml";
+            yield return $"{root.Scheme}://{root.Authority}/sitemaps.xml";
+            yield return $"{root.Scheme}://{root.Authority}/robots.txt";
+        }
 
-            foreach (var url in candidates)
+        private async Task<(IReadOnlyList<string> PageUrls, IReadOnlyList<string> NestedSitemaps)>
+            ParseSitemapAsync(string sitemapUrl, Uri root, CancellationToken ct)
+        {
+            var pages = new List<string>();
+            var sitemaps = new List<string>();
+
+            try
             {
-                try
+                using var res = await _http.GetAsync(sitemapUrl, ct);
+                if (!res.IsSuccessStatusCode) return (pages, sitemaps);
+
+                var xml = XDocument.Parse(await res.Content.ReadAsStringAsync(ct));
+                foreach (var loc in xml.Descendants()
+                                        .Where(e => e.Name.LocalName.Equals("loc", StringComparison.OrdinalIgnoreCase))
+                                        .Select(e => e.Value.Trim()))
                 {
-                    if (url.EndsWith("robots.txt", StringComparison.OrdinalIgnoreCase))
-                    {
-                        list.AddRange(await ParseRobotsAsync(url, root, ct));
-                        if (list.Count > 0) break;
+                    if (!Uri.TryCreate(loc, UriKind.Absolute, out var uri) ||
+                        !SameRegisteredDomain(uri.Host, root.Host))
                         continue;
-                    }
 
-                    using var res = await _http.GetAsync(url, ct);
-                    if (!res.IsSuccessStatusCode) continue;
-
-                    var xml = XDocument.Parse(await res.Content.ReadAsStringAsync(ct));
-                    var nodes = xml.Descendants()
-                                   .Where(e => e.Name.LocalName.Equals("loc", StringComparison.OrdinalIgnoreCase))
-                                   .Select(e => e.Value.Trim())
-                                   .Where(v => Uri.TryCreate(v, UriKind.Absolute, out var u) &&
-                                               SameRegisteredDomain(u!.Host, root.Host));
-
-                    list.AddRange(nodes);
-                    if (list.Count > 0) break;     // first valid sitemap is enough
-                }
-                catch (Exception ex)
-                {
-                    _log.LogDebug(ex, "Could not parse sitemap: {Url}", url);
+                    if (uri.AbsolutePath.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                        sitemaps.Add(uri.ToString());     // another sitemap -> queue it
+                    else
+                        pages.Add(uri.ToString());        // actual page
                 }
             }
+            catch (Exception ex)
+            {
+                _log.LogDebug(ex, "Failed to parse sitemap {Url}", sitemapUrl);
+            }
 
-            return list;
+            return (pages, sitemaps);
         }
 
         private async Task<IEnumerable<string>> ParseRobotsAsync(
             string robotsUrl, Uri root, CancellationToken ct)
         {
-            var urls = new List<string>();
-
             try
             {
                 using var res = await _http.GetAsync(robotsUrl, ct);
-                if (!res.IsSuccessStatusCode) return urls;
+                if (!res.IsSuccessStatusCode) return Enumerable.Empty<string>();
 
-                var lines = (await res.Content.ReadAsStringAsync(ct))
-                            .Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var raw in lines)
-                {
-                    var line = raw.Trim();
-                    if (!line.StartsWith("Sitemap:", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    var siteUrl = line[8..].Trim();
-                    if (!Uri.TryCreate(siteUrl, UriKind.Absolute, out var uri) ||
-                        !SameRegisteredDomain(uri.Host, root.Host))
-                        continue;
-
-                    // recurse once (don’t go crazy deep)
-                    urls.AddRange(await DiscoverViaSitemapAsync(uri, ct));
-                }
+                return (await res.Content.ReadAsStringAsync(ct))
+                        .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(l => l.Trim())
+                        .Where(l => l.StartsWith("Sitemap:", StringComparison.OrdinalIgnoreCase))
+                        .Select(l => l.Substring(8).Trim())
+                        .Where(u => Uri.TryCreate(u, UriKind.Absolute, out var uri) &&
+                                    SameRegisteredDomain(uri!.Host, root.Host))
+                        .ToArray();
             }
             catch (Exception ex)
             {
                 _log.LogDebug(ex, "Failed reading robots.txt {Url}", robotsUrl);
+                return Enumerable.Empty<string>();
             }
-
-            return urls;
         }
 
         private static bool SameRegisteredDomain(string a, string b)
         {
-            static string ClipWww(string h) =>
+            static string TrimWww(string h) =>
                 h.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? h[4..] : h;
 
-            return ClipWww(a).Equals(ClipWww(b), StringComparison.OrdinalIgnoreCase);
+            return TrimWww(a).Equals(TrimWww(b), StringComparison.OrdinalIgnoreCase);
         }
     }
 }
