@@ -22,6 +22,7 @@ using Microsoft.Playwright;
 using QuestPDF.Infrastructure;
 using Serilog;
 using Serilog.Events;
+using Stripe.Events;
 using System.Data;
 using System.Text;
 
@@ -171,6 +172,7 @@ builder.Services.Configure<RateLimitingOptions>(builder.Configuration.GetSection
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IRateLimiter, RateLimiterService>();
 builder.Services.AddScoped<ICreditManager, CreditManager>();
+builder.Services.AddTransient<IReportBuilder, ReportBuilder>();
 builder.Services.AddMemoryCache();
 
 // MVC, Swagger, CORS, Session
@@ -274,67 +276,6 @@ app.MapGet("/api/auth/csrf", (IAntiforgery anti, HttpContext ctx) =>
 });
 app.MapGet("/api/health", () => Results.Json(new { status = "ok" }));
 app.MapFallbackToFile("index.html");
-var report = new AccessibilityReport
-{
-    WhiteLabel = true,
-    ClientName = "Acme Agency",
-    ClientLogoUrl = "https://example.com/logo.png",
-    SiteUrl = "https://clientsite.com",
-    ScanDate = DateTime.UtcNow.ToString("yyyy-MM-dd"),
-    Score = "82",
-    PrimaryColor = "#2563eb",
-    SecondaryColor = "#facc15",
-    FooterText = "This report was prepared by Acme.",
-    ContactEmail = "contact@acme.com",
-    ClientWebsite = "https://acme.com",
-    TopIssues = "Missing labels, contrast failures",
-    LegalRisk = "High",
-    CommonViolations = "1.1.1, 1.3.1, 4.1.2",
-    ConsultationLink = "https://cal.com/acme/accessibility",
-    Screenshots = new List<ReportImage>
-    {
-        new() { Src = "https://example.com/screen1.png", Alt = "Missing alt text on banner image" }
-    },
-    Pages = new List<PageResult>
-    {
-        new()
-        {
-            Url = "https://clientsite.com",
-            PageScore = "76",
-            PageChartUrl = "https://quickchart.io/chart?...",
-            CriticalCount = 2,
-            SeriousCount = 3,
-            ModerateCount = 1,
-            MinorCount = 2,
-            Issues = new List<Issue>
-            {
-                new()
-                {
-                    Title = "Image missing alt",
-                    Description = "Image has no alt text",
-                    Fix = "Add a descriptive alt attribute",
-                    RuleId = "image-alt",
-                    Target = "img[src='/logo.png']",
-                    Severity = "critical"
-                }
-            }
-        }
-    }
-};
-
-app.MapGet("/api/test/report", async (HttpContext ctx) =>
-{
-    var builder = new ReportBuilder("Features/Reports/Templates/report.html");
-
-    var html = builder.RenderHtml(report); // from example model
-    File.WriteAllText("report.html", html);
-    await builder.GeneratePdfAsync(html, "report.pdf");
-    return Results.Ok(new
-    {
-        path = "reports/accessibility-report.pdf",
-        success = true
-    });
-});
 
 app.Run();
 

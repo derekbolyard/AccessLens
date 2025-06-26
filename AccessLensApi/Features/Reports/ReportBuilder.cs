@@ -1,15 +1,20 @@
-﻿using HandlebarsDotNet;
+﻿using AccessLensApi.Features.Reports.Models;
+using AccessLensApi.Storage;
+using HandlebarsDotNet;
 using Microsoft.Playwright;
 
 namespace AccessLensApi.Features.Reports
 {
-    public class ReportBuilder
+    public class ReportBuilder : IReportBuilder
     {
         private readonly string _template;
+        private const string TemplatePath = "Features/Reports/Templates/report.html";
+        private readonly IStorageService _storage;
 
-        public ReportBuilder(string templatePath)
+        public ReportBuilder(IStorageService storage)
         {
-            _template = File.ReadAllText(templatePath);
+            _template = File.ReadAllText(TemplatePath);
+            _storage = storage;
         }
 
         public string RenderHtml(AccessibilityReport model)
@@ -31,14 +36,15 @@ namespace AccessLensApi.Features.Reports
             return compiled(model);
         }
 
-        public async Task GeneratePdfAsync(string html, string outputPath)
+        public async Task<string> GeneratePdfAsync(string html)
         {
             using var playwright = await Microsoft.Playwright.Playwright.CreateAsync();
             var browser = await playwright.Chromium.LaunchAsync(new() { Headless = true });
             var page = await browser.NewPageAsync();
             await page.SetContentAsync(html);
             Directory.CreateDirectory("reports");
-            await page.PdfAsync(new PagePdfOptions
+
+            var pdf = await page.PdfAsync(new PagePdfOptions
             {
                 Path = "reports/accessibility-report.pdf",
                 Format = "A4",
@@ -47,9 +53,16 @@ namespace AccessLensApi.Features.Reports
                 Margin = new Margin { Bottom = "40px" },
                 PrintBackground = true
             });
+
+            string key = $"reports/{Guid.NewGuid()}.pdf";
+
+            await _storage.UploadAsync(key, pdf);
+
+            // 30-day presigned URL
+            return _storage.GetPresignedUrl(key, TimeSpan.FromDays(6.95));
         }
 
-        public static string GeneratePageChartUrl(int critical, int serious, int moderate, int minor)
+        private static string GeneratePageChartUrl(int critical, int serious, int moderate, int minor)
         {
             var total = critical + serious + moderate + minor;
             var chartData = new

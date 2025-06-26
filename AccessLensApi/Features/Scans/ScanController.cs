@@ -1,7 +1,9 @@
 ﻿using AccessLensApi.Data;
+using AccessLensApi.Features.Reports;
 using AccessLensApi.Features.Scans.Models;
 using AccessLensApi.Middleware;
 using AccessLensApi.Models;
+using AccessLensApi.Models.ScannerDtos;
 using AccessLensApi.Services.Interfaces;
 using AccessLensApi.Utilities;
 using Google.Apis.Util;
@@ -31,6 +33,7 @@ namespace AccessLensApi.Features.Scans
         private readonly IWebHostEnvironment _env;
         private readonly IConfiguration _config;
         private readonly IEmailService _emailService;
+        private readonly IReportBuilder _reportBuilder;
 
         public ScanController(
             ApplicationDbContext dbContext,
@@ -43,7 +46,8 @@ namespace AccessLensApi.Features.Scans
             IHttpClientFactory httpClientFactory,
             IWebHostEnvironment env,
             IConfiguration config,
-            IEmailService emailService)
+            IEmailService emailService,
+            IReportBuilder reportBuilder)
         {
             _dbContext = dbContext;
             _creditManager = creditManager;
@@ -56,6 +60,7 @@ namespace AccessLensApi.Features.Scans
             _env = env;
             _config = config;
             _emailService = emailService;
+            _reportBuilder = reportBuilder;
         }
 
         /// <summary>
@@ -116,7 +121,7 @@ namespace AccessLensApi.Features.Scans
                 await UpdateFirstScanAsync(user);
 
 
-                JsonObject scanResult;
+                A11yScanResult scanResult;
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_rateOptions.MaxScanDurationSeconds));
                 try
                 {
@@ -153,7 +158,21 @@ namespace AccessLensApi.Features.Scans
                 string pdfUrl;
                 try
                 {
-                    pdfUrl = await GeneratePdfUrlAsync(url, scanResult);
+                    var report = ReportMapper.ToAccessibilityReport(
+                        scanResult,
+                        siteUrl: url,
+                        whiteLabel: true,
+                        clientName: "Acme Corp",
+                        clientLogoUrl: "https://example.com/logo.svg",
+                        contactEmail: "hello@example.com",
+                        consultationLink: "https://calendly.com/accesslens/30min",
+                        legalRisk: "Missing WCAG 2.1 AA compliance exposes you to lawsuits …",
+                        commonViolations: "Color contrast, form labels, missing alt text"
+                    );
+
+                    var html = _reportBuilder.RenderHtml(report);
+                    pdfUrl = await _reportBuilder.GeneratePdfAsync(html);
+                    //pdfUrl = await GeneratePdfUrlAsync(url, scanResult);
                 }
                 catch (Exception ex)
                 {
@@ -161,9 +180,9 @@ namespace AccessLensApi.Features.Scans
                     return StatusCode(500, new { error = "PDF generation failed." });
                 }
 
-                var teaser = ExtractTeaser(scanResult);
+                var teaser = scanResult.Teaser;
 
-                await SaveReportAsync(scanResult, email, url, pdfUrl);
+                //await SaveReportAsync(scanResult, email, url, pdfUrl);
                 await _emailService.SendScanResultEmailAsync(email, pdfUrl, score, teaser?.Url);
 
                 return Ok(new { score, pdfUrl, teaser });
@@ -211,7 +230,7 @@ namespace AccessLensApi.Features.Scans
             if (!await _rateLimiter.TryAcquireFullScanAsync(ip, email))
                 return StatusCode(429, new { error = "Rate limit exceeded for full scans" });
 
-            JsonObject scanResult;
+            A11yScanResult scanResult;
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(req.Options?.PageTimeoutSeconds ?? 1800));
 
             try
@@ -249,10 +268,10 @@ namespace AccessLensApi.Features.Scans
             int overallScore = ComputeOverallScore(scanResult);
 
             // Generate comprehensive PDF report
-            string pdfUrl;
+            string pdfUrl = string.Empty;
             try
             {
-                pdfUrl = await GenerateFullSitePdfAsync(url, scanResult);
+                //pdfUrl = await GenerateFullSitePdfAsync(url, scanResult);
             }
             catch (Exception ex)
             {
@@ -260,10 +279,10 @@ namespace AccessLensApi.Features.Scans
                 return StatusCode(500, new { error = "PDF generation failed." });
             }
 
-            var teaserUrl = ExtractTeaser(scanResult);
-            var totalPages = scanResult["totalPages"]?.GetValue<int>() ?? 0;
+            var teaserUrl = scanResult.Teaser?.Url ?? string.Empty;
+            var totalPages = scanResult.TotalPages;
 
-            await SaveReportAsync(scanResult, email, url, pdfUrl);
+            //await SaveReportAsync(scanResult, email, url, pdfUrl);
 
             return Ok(new
             {
@@ -271,8 +290,8 @@ namespace AccessLensApi.Features.Scans
                 pdfUrl,
                 teaserUrl,
                 totalPages,
-                scannedAt = scanResult["scannedAt"]?.ToString(),
-                pages = scanResult["pages"] // Include detailed page results
+                scannedAt = scanResult.ScannedAtUtc.ToShortDateString(),
+                pages = scanResult.Pages // Include detailed page results
             });
         }
 
@@ -295,26 +314,27 @@ namespace AccessLensApi.Features.Scans
             return null;
         }
 
-        private int ComputeOverallScore(JsonObject scanResult)
+        private int ComputeOverallScore(A11yScanResult scanResult)
         {
-            if (!scanResult.TryGetPropertyValue("pages", out var pagesNode)
-                || pagesNode is not JsonArray pages
-                || pages.Count == 0)
-            {
-                throw new InvalidOperationException("Scan result did not contain any pages.");
-            }
+            return 0;
+            //if (!scanResult.TryGetPropertyValue("pages", out var pagesNode)
+            //    || pagesNode is not JsonArray pages
+            //    || pages.Count == 0)
+            //{
+            //    throw new InvalidOperationException("Scan result did not contain any pages.");
+            //}
 
-            // Calculate weighted average score across all pages
-            var scores = new List<int>();
-            foreach (var page in pages.Cast<JsonObject>())
-            {
-                if (page?["issues"] is JsonArray issues)
-                {
-                    scores.Add(A11yScore.From(page));
-                }
-            }
+            //// Calculate weighted average score across all pages
+            //var scores = new List<int>();
+            //foreach (var page in pages.Cast<JsonObject>())
+            //{
+            //    if (page?["issues"] is JsonArray issues)
+            //    {
+            //        scores.Add(A11yScore.From(page));
+            //    }
+            //}
 
-            return scores.Count > 0 ? (int)scores.Average() : 0;
+            //return scores.Count > 0 ? (int)scores.Average() : 0;
         }
 
         private async Task<string> GenerateFullSitePdfAsync(string url, JsonObject scanResult)
@@ -402,17 +422,18 @@ namespace AccessLensApi.Features.Scans
             await _dbContext.SaveChangesAsync();
         }
 
-        private int ComputeScore(JsonObject scanResult)
+        private int ComputeScore(A11yScanResult scanResult)
         {
-            if (!scanResult.TryGetPropertyValue("pages", out var pagesNode)
-                || pagesNode is not JsonArray pages
-                || pages.Count == 0
-                || pages[0] is not JsonObject firstPage)
-            {
-                throw new InvalidOperationException("Scan result did not contain any pages.");
-            }
+            return 0;
+            //if (!scanResult.TryGetPropertyValue("pages", out var pagesNode)
+            //    || pagesNode is not JsonArray pages
+            //    || pages.Count == 0
+            //    || pages[0] is not JsonObject firstPage)
+            //{
+            //    throw new InvalidOperationException("Scan result did not contain any pages.");
+            //}
 
-            return A11yScore.From(firstPage);
+            //return A11yScore.From(firstPage);
         }
 
         private async Task<string> GeneratePdfUrlAsync(string url, JsonObject scanResult)
@@ -423,17 +444,6 @@ namespace AccessLensApi.Features.Scans
 
             // Assume GenerateAndUploadPdf returns a public URL
             return await _pdf.GenerateAndUploadPdf(url, firstPage);
-        }
-
-        private Teaser? ExtractTeaser(JsonObject scanResult)
-        {
-            if (scanResult.TryGetPropertyValue("teaser", out var teaserNode)
-                && teaserNode is JsonObject teaserObj)
-            {
-                return teaserObj.Deserialize<Teaser>();
-            }
-
-            return null;   // or throw, or return a default Teaser – your call
         }
 
         private async Task SaveReportAsync(JsonObject result, string email, string siteName, string pdfUrl)
