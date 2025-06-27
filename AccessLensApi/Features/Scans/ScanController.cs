@@ -26,7 +26,6 @@ namespace AccessLensApi.Features.Scans
         private readonly ApplicationDbContext _dbContext;
         private readonly ICreditManager _creditManager;
         private readonly IA11yScanner _scanner;
-        private readonly IPdfService _pdf;
         private readonly ILogger<ScanController> _logger;
         private readonly IRateLimiter _rateLimiter;
         private readonly RateLimitingOptions _rateOptions;
@@ -40,7 +39,6 @@ namespace AccessLensApi.Features.Scans
             ApplicationDbContext dbContext,
             ICreditManager creditManager,
             IA11yScanner scanner,
-            IPdfService pdf,
             ILogger<ScanController> logger,
             IRateLimiter rateLimiter,
             IOptions<RateLimitingOptions> rateOptions,
@@ -53,7 +51,6 @@ namespace AccessLensApi.Features.Scans
             _dbContext = dbContext;
             _creditManager = creditManager;
             _scanner = scanner;
-            _pdf = pdf;
             _logger = logger;
             _rateLimiter = rateLimiter;
             _rateOptions = rateOptions.Value;
@@ -338,13 +335,6 @@ namespace AccessLensApi.Features.Scans
             //return scores.Count > 0 ? (int)scores.Average() : 0;
         }
 
-        private async Task<string> GenerateFullSitePdfAsync(string url, JsonObject scanResult)
-        {
-            // This would generate a comprehensive multi-page PDF report
-            // You might want to create a new service method for this
-            return await _pdf.GenerateAndUploadPdf(url, scanResult);
-        }
-
         // ---------- Private helper methods ----------
 
         private IActionResult? ValidateRequest(ScanRequest req)
@@ -435,16 +425,6 @@ namespace AccessLensApi.Features.Scans
             //}
 
             //return A11yScore.From(firstPage);
-        }
-
-        private async Task<string> GeneratePdfUrlAsync(string url, JsonObject scanResult)
-        {
-            var firstPage = ((JsonArray)scanResult["pages"]!)[0] as JsonObject;
-            if (firstPage == null)
-                throw new InvalidOperationException("First page JSON missing.");
-
-            // Assume GenerateAndUploadPdf returns a public URL
-            return await _pdf.GenerateAndUploadPdf(url, firstPage);
         }
 
         private async Task SaveReportAsync(JsonObject result, string email, string siteName, string pdfUrl)

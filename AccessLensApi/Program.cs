@@ -164,7 +164,6 @@ builder.Services.AddSingleton<IUrlDiscoverer, UrlDiscoverer>();
 builder.Services.AddSingleton<IPageScanner, PageScanner>();
 builder.Services.AddSingleton<ITeaserGenerator, TeaserGenerator>();
 builder.Services.AddScoped<IA11yScanner, A11yScanner>();
-builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddSingleton<IMagicTokenService, MagicTokenService>();
 
 builder.Services.Configure<RateLimitingOptions>(builder.Configuration.GetSection("RateLimiting"));
