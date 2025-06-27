@@ -14,8 +14,8 @@ jobs:
       # ▶ generate HTML + PDF ---------------------------------------------
       - name: Build solution
         run: dotnet build AccessLensCli.sln --configuration Release
-      - name: Download Playwright browsers
-        run: playwright install --with-deps 
+      - name: Install Playwright browsers
+        run: dotnet playwright install --with-deps
       
       - run: dotnet run --project AccessLensApi.Tools/GenerateSample --output /tmp/sample
 
