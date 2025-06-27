@@ -1,3 +1,5 @@
+using AccessLensApi.Common;
+using AccessLensApi.Common.Services;
 using AccessLensApi.Data;
 using AccessLensApi.Features.Core.Models;
 using AccessLensApi.Storage;
@@ -9,20 +11,18 @@ using Microsoft.EntityFrameworkCore;
 using System.IO;
 using AccessLensApi.Features.Auth.Models;
 
-namespace AccessLensApi.Controllers;
+namespace AccessLensApi.Features.Branding;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "Authenticated")]
-public class BrandingController : ControllerBase
+public class BrandingController : BaseController
 {
-    private readonly ApplicationDbContext _db;
-    private readonly IStorageService _storage;
+    private readonly IFileUploadService _fileUploadService;
 
-    public BrandingController(ApplicationDbContext db, IStorageService storage)
+    public BrandingController(ApplicationDbContext db, IFileUploadService fileUploadService) : base(db)
     {
-        _db = db;
-        _storage = storage;
+        _fileUploadService = fileUploadService;
     }
 
     [HttpGet]
@@ -35,7 +35,7 @@ public class BrandingController : ControllerBase
             .AsNoTracking()
             .Where(b => b.UserId == user.UserId)
             .ToListAsync();
-        return Ok(infos);
+        return Ok(ApiResponse<IEnumerable<BrandingInfo>>.SuccessResult(infos));
     }
 
     [HttpPost]
@@ -53,17 +53,26 @@ public class BrandingController : ControllerBase
 
         if (req.Logo != null && req.Logo.Length > 0)
         {
-            var ext = Path.GetExtension(req.Logo.FileName);
-            var key = $"branding/{branding.Id}{ext}";
-            using var ms = new MemoryStream();
-            await req.Logo.CopyToAsync(ms);
-            await _storage.UploadAsync(key, ms.ToArray());
-            branding.LogoUrl = _storage.GetPresignedUrl(key, TimeSpan.FromDays(365));
+            var uploadOptions = new FileUploadOptions
+            {
+                MaxFileSizeBytes = 5 * 1024 * 1024, // 5MB
+                ResizeMaxWidth = 800,
+                ResizeMaxHeight = 400
+            };
+
+            var uploadResult = await _fileUploadService.UploadImageAsync(req.Logo, "branding", uploadOptions);
+            if (!uploadResult.IsSuccess)
+            {
+                return BadRequest(ApiResponse.ErrorResult(uploadResult.ErrorMessage!));
+            }
+
+            branding.LogoUrl = uploadResult.Url!;
         }
 
         _db.BrandingInfos.Add(branding);
         await _db.SaveChangesAsync();
-        return CreatedAtAction(nameof(Get), new { userId = branding.UserId }, branding);
+        return CreatedAtAction(nameof(Get), new { userId = branding.UserId }, 
+            ApiResponse<BrandingInfo>.SuccessResult(branding, "Branding created successfully"));
     }
 
     [HttpPut("{id}")]
@@ -80,16 +89,24 @@ public class BrandingController : ControllerBase
 
         if (req.Logo != null && req.Logo.Length > 0)
         {
-            var ext = Path.GetExtension(req.Logo.FileName);
-            var key = $"branding/{branding.Id}{ext}";
-            using var ms = new MemoryStream();
-            await req.Logo.CopyToAsync(ms);
-            await _storage.UploadAsync(key, ms.ToArray());
-            branding.LogoUrl = _storage.GetPresignedUrl(key, TimeSpan.FromDays(365));
+            var uploadOptions = new FileUploadOptions
+            {
+                MaxFileSizeBytes = 5 * 1024 * 1024, // 5MB
+                ResizeMaxWidth = 800,
+                ResizeMaxHeight = 400
+            };
+
+            var uploadResult = await _fileUploadService.UploadImageAsync(req.Logo, "branding", uploadOptions);
+            if (!uploadResult.IsSuccess)
+            {
+                return BadRequest(ApiResponse.ErrorResult(uploadResult.ErrorMessage!));
+            }
+
+            branding.LogoUrl = uploadResult.Url!;
         }
 
         await _db.SaveChangesAsync();
-        return NoContent();
+        return Ok(ApiResponse.SuccessResult("Branding updated successfully"));
     }
 
     [HttpDelete("{id}")]
@@ -99,18 +116,11 @@ public class BrandingController : ControllerBase
         if (user == null) return Unauthorized();
 
         var branding = await _db.BrandingInfos.FirstOrDefaultAsync(b => b.Id == id && b.UserId == user.UserId);
-        if (branding == null) return NotFound();
+        if (branding == null) return NotFound(ApiResponse.ErrorResult("Branding not found"));
 
         _db.BrandingInfos.Remove(branding);
         await _db.SaveChangesAsync();
-        return NoContent();
-    }
-
-    private async Task<User?> GetCurrentUserAsync()
-    {
-        var email = User.FindFirstValue("email");
-        if (string.IsNullOrEmpty(email)) return null;
-        return await _db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        return Ok(ApiResponse.SuccessResult("Branding deleted successfully"));
     }
 }
 

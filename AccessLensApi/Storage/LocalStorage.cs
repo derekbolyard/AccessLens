@@ -39,6 +39,16 @@ public sealed class LocalStorage : IStorageService
         await File.WriteAllBytesAsync(filePath, bytes, ct);
     }
 
+    public Task DeleteAsync(string key, CancellationToken ct = default)
+    {
+        var filePath = Path.Combine(_basePath, Path.GetFileName(key));
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+        return Task.CompletedTask;
+    }
+
     public string GetPresignedUrl(string key, TimeSpan ttl)
         => $"{_baseUrl.TrimEnd('/')}/teasers/{Path.GetFileName(key)}";
 }
