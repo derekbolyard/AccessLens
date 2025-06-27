@@ -2,6 +2,7 @@
 using AccessLensApi.Storage;
 using HandlebarsDotNet;
 using Microsoft.Playwright;
+using System.Collections;
 
 namespace AccessLensApi.Features.Reports
 {
@@ -40,6 +41,35 @@ namespace AccessLensApi.Features.Reports
                 // Handlebars treats any non-empty output as “truthy” inside an #if,
                 // so write “true” for match, nothing for mismatch.
                 if (isEqual) writer.WriteSafeString("true");
+            });
+
+            handlebars.RegisterHelper("length", (writer, context, parameters) =>
+            {
+                if (parameters.Length > 0)
+                {
+                    var param = parameters[0];
+                    if (param is IEnumerable<object> enumerable)
+                    {
+                        writer.WriteSafeString(enumerable.Count().ToString());
+                    }
+                    else if (param is System.Collections.IEnumerable nonGenericEnumerable)
+                    {
+                        var count = 0;
+                        foreach (var item in nonGenericEnumerable)
+                        {
+                            count++;
+                        }
+                        writer.WriteSafeString(count.ToString());
+                    }
+                    else
+                    {
+                        writer.WriteSafeString("0");
+                    }
+                }
+                else
+                {
+                    writer.WriteSafeString("0");
+                }
             });
 
             var compiled = handlebars.Compile(_template);

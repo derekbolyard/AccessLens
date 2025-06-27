@@ -118,7 +118,8 @@
             {{#if whiteLabel}}
             <div>
                 <h1>{{clientName}} Accessibility Audit</h1>
-                <p><strong>Scanned URL:</strong> {{siteUrl}}</p>
+                <p><strong>Site:</strong> {{siteUrl}}</p>
+                <p><strong>Pages Scanned:</strong> {{length pages}}</p>
                 <p><strong>Date:</strong> {{scanDate}}</p>
                 <p><strong>WCAG Level:</strong> WCAG 2.2 AA</p>
             </div>
@@ -128,7 +129,8 @@
             {{else}}
             <div>
                 <h1>AccessLens Accessibility Audit</h1>
-                <p><strong>Scanned URL:</strong> {{siteUrl}}</p>
+                <p><strong>Site:</strong> {{siteUrl}}</p>
+                <p><strong>Pages Scanned:</strong> {{length pages}}</p>
                 <p><strong>Date:</strong> {{scanDate}}</p>
                 <p><strong>WCAG Level:</strong> WCAG 2.2 AA</p>
             </div>
@@ -137,26 +139,24 @@
 
         <section class="summary-box" style="margin-top: 2rem;">
             <div>
-                <div style="background:#eef2ff;padding:12px 20px;border-radius:8px;display:inline-block;">
-                    <strong style="font-size:1.75rem; color:{{primaryColor}};">{{score}}</strong>
-                </div>
-                <div style="margin-top:0.5rem;">Score</div>
+                <div style="font-weight:600;">Score</div>
+                <div><strong style="font-size:1.75rem; color:{{primaryColor}};">{{score}}</strong></div>
             </div>
             <div>
-                <strong>{{criticalCount}}</strong>
-                Critical
+                <div style="font-weight:600;">Critical</div>
+                <div><strong>{{criticalCount}}</strong></div>
             </div>
             <div>
-                <strong>{{seriousCount}}</strong>
-                Serious
+                <div style="font-weight:600;">Serious</div>
+                <div><strong>{{seriousCount}}</strong></div>
             </div>
             <div>
-                <strong>{{moderateCount}}</strong>
-                Moderate
+                <div style="font-weight:600;">Moderate</div>
+                <div><strong>{{moderateCount}}</strong></div>
             </div>
             <div>
-                <strong>{{minorCount}}</strong>
-                Minor
+                <div style="font-weight:600;">Minor</div>
+                <div><strong>{{minorCount}}</strong></div>
             </div>
         </section>
 
@@ -198,6 +198,20 @@
         </section>
 
         <section>
+            <h2>Scanned URLs</h2>
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <p style="margin-bottom: 15px; font-weight: 600; color: #374151;">The following {{length pages}} pages were scanned for accessibility issues:</p>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    {{#each pages}}
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; word-break: break-all;">
+                        <span style="color: #1d4ed8; font-family: monospace; font-size: 0.9rem;">{{url}}</span>
+                    </li>
+                    {{/each}}
+                </ul>
+            </div>
+        </section>
+
+        <section>
             <h2>Visual Highlights</h2>
             {{#each screenshots}}
             <img src="{{src}}" alt="{{alt}}" style="width:100%;margin-bottom:1rem;border:1px solid #ccc;" />
@@ -209,7 +223,7 @@
             {{#each pages}}
             <h3>{{url}}</h3>
             <div class="summary-box">
-                <div><strong>{{pageScore}}</strong><div>Score</div></div>
+                <div><div style="font-weight:600;">Score</div><div><strong>{{pageScore}}</strong></div></div>
                 <div><div style="font-weight:600;">Critical</div><div><strong>{{criticalCount}}</strong></div></div>
                 <div><div style="font-weight:600;">Serious</div><div><strong>{{seriousCount}}</strong></div></div>
                 <div><div style="font-weight:600;">Moderate</div><div><strong>{{moderateCount}}</strong></div></div>

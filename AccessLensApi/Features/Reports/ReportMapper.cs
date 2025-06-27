@@ -116,7 +116,13 @@ namespace AccessLensApi.Features.Reports
                     };
                 })?.ToList() ?? [],
                 Screenshots = screenshots,
-                Pages = pages
+                Pages = pages,
+                
+                // Calculate overall counts across all pages
+                CriticalCount = pages.Sum(p => p.CriticalCount),
+                SeriousCount = pages.Sum(p => p.SeriousCount),
+                ModerateCount = pages.Sum(p => p.ModerateCount),
+                MinorCount = pages.Sum(p => p.MinorCount)
             };
         }
     }

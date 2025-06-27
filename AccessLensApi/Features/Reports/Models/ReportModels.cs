@@ -19,6 +19,12 @@
         public string ConsultationLink { get; set; }
         public List<ReportImage> Screenshots { get; set; }
         public List<PageResult> Pages { get; set; }
+        
+        // Overall issue counts across all pages
+        public int CriticalCount { get; set; }
+        public int SeriousCount { get; set; }
+        public int ModerateCount { get; set; }
+        public int MinorCount { get; set; }
     }
 
     public class PageResult
