@@ -12,10 +12,20 @@ jobs:
         with: { dotnet-version: '8.0.x' }
 
       # ▶ generate HTML + PDF ---------------------------------------------
+      - name: Install Playwright CLI
+        run: |
+            dotnet tool install --global Microsoft.Playwright.CLI
+            echo "$HOME/.dotnet/tools" >> $GITHUB_PATH        # add shim dir to PATH
       - name: Build solution
         run: dotnet build AccessLensCli.sln --configuration Release
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-msplaywright-v1
+          
       - name: Install Playwright browsers
-        run: dotnet playwright install --with-deps
+        run: playwright install --with-deps
       
       - run: dotnet run --project AccessLensApi.Tools/GenerateSample --output /tmp/sample
 
