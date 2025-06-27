@@ -12,11 +12,8 @@ jobs:
         with: { dotnet-version: '8.0.x' }
 
       # ▶ generate HTML + PDF ---------------------------------------------
-      - name: Install Playwright CLI
-        run: dotnet tool update --global Microsoft.Playwright.CLI
-
-      - run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
+      - name: Build solution
+        run: dotnet build AccessLensCli.sln --configuration Release
       - name: Download Playwright browsers
         run: playwright install --with-deps 
       
