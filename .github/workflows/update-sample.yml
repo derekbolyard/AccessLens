@@ -12,9 +12,10 @@ jobs:
         with: { dotnet-version: '8.0.x' }
 
       # ▶ generate HTML + PDF ---------------------------------------------
-      - run: dotnet run --project Tools/GenerateSample
-        env:
-          OUTPUT_DIR: /tmp/sample                 # write .html/.pdf here
+      - name: Install Playwright headless browser
+        run: npx playwright install --with-deps
+        
+      - run: dotnet run --project AccessLensApi.Tools/GenerateSample --output /tmp/sample
 
       # ▶ check out marketing repo as second remote -----------------------
       - name: Checkout marketing site
