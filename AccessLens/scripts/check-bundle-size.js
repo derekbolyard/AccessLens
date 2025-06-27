@@ -1,13 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
-// Bundle size limits (in bytes)
+// Import constants from TypeScript (simplified for Node.js)
 const BUNDLE_LIMITS = {
-  'main': 500 * 1024,      // 500KB for main bundle
-  'polyfills': 100 * 1024,  // 100KB for polyfills
-  'styles': 50 * 1024,      // 50KB for styles
-  'vendor': 1000 * 1024,    // 1MB for vendor bundle
+  'main': 300 * 1024,      // 300KB for main bundle
+  'polyfills': 80 * 1024,   // 80KB for polyfills
+  'styles': 35 * 1024,      // 35KB for styles
+  'vendor': 800 * 1024,     // 800KB for vendor bundle
 };
+
+const TOTAL_LIMIT = 1500 * 1024; // 1.5MB total limit
 
 function checkBundleSize() {
   const statsPath = path.join(__dirname, '../dist/demo/stats.json');
@@ -51,7 +53,7 @@ function checkBundleSize() {
     .reduce((total, asset) => total + asset.size, 0);
   
   const totalSizeKB = Math.round(totalSize / 1024);
-  const totalLimit = 2000; // 2MB total limit
+  const totalLimit = TOTAL_LIMIT / 1024; // Convert to KB for display
   
   console.log(`\n📦 Total Bundle Size: ${totalSizeKB}KB`);
   

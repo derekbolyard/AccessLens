@@ -1,3 +1,5 @@
+@use '../../styles/abstracts/mixins' as mixins;
+
 /* Professional Brutalism Dashboard */
 .dashboard {
   padding: var(--space-8) 0;
@@ -9,8 +11,7 @@
   margin-top: var(--space-8);
   padding: var(--space-8);
   background: white;
-  border: 4px solid var(--slate-900);
-  box-shadow: var(--shadow-pro-brutal);
+  @include mixins.brutalist-card();
 }
 
 /* Empty Dashboard State */
@@ -147,20 +148,14 @@
   gap: var(--space-4);
   padding: var(--space-6);
   background: white;
-  border: 4px solid var(--slate-900);
-  box-shadow: var(--shadow-pro-brutal);
-  transition: all 0.2s ease;
-}
-
-.kpi-content:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: var(--shadow-pro-brutal-lg);
+  @include mixins.brutalist-card();
+  @include mixins.brutalist-hover();
 }
 
 .kpi-icon {
   width: 64px;
   height: 64px;
-  border: 4px solid var(--slate-900);
+  @include mixins.brutalist-card();
   display: flex;
   align-items: center;
   justify-content: center;
