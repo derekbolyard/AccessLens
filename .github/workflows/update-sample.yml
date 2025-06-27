@@ -12,9 +12,14 @@ jobs:
         with: { dotnet-version: '8.0.x' }
 
       # ▶ generate HTML + PDF ---------------------------------------------
-      - name: Install Playwright headless browser
-        run: npx playwright install --with-deps
-        
+      - name: Install Playwright CLI
+        run: dotnet tool update --global Microsoft.Playwright.CLI
+
+      - run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Download Playwright browsers
+        run: playwright install --with-deps 
+      
       - run: dotnet run --project AccessLensApi.Tools/GenerateSample --output /tmp/sample
 
       # ▶ check out marketing repo as second remote -----------------------
