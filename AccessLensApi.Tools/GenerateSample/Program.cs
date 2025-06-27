@@ -1,6 +1,7 @@
 ﻿using AccessLensApi.Features.Reports;
 using AccessLensApi.Storage;
 using GenerateSample;
+using System.Reflection.Metadata.Ecma335;
 
 var outDir = args.Length > 1 && args[0] == "--output"
              ? args[1]
@@ -37,7 +38,7 @@ sealed class LocalFolderStorage : IStorageService
     }
 
     public string GetPresignedUrl(string key, TimeSpan ttl) =>
-        throw new NotImplementedException("Not needed for local run");
+        string.Empty;
 
     public Task DeleteAsync(string key, CancellationToken ct = default)
     {
