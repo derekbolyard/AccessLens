@@ -1,5 +1,5 @@
-﻿using AccessLensApi.Models.Unified;               // Unified models
-using AccessLensApi.Models.ScannerDtos;            // A11yScanResult & friends
+﻿using AccessLensApi.Features.Core.Models;          // Unified models
+using AccessLensApi.Features.Scans.Models;        // A11yScanResult & friends
 
 namespace AccessLensApi.Features.Reports
 {

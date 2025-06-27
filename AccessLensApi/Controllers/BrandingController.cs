@@ -1,5 +1,5 @@
 using AccessLensApi.Data;
-using AccessLensApi.Models;
+using AccessLensApi.Features.Core.Models;
 using AccessLensApi.Storage;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
+using AccessLensApi.Features.Auth.Models;
 
 namespace AccessLensApi.Controllers;
 

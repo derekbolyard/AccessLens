@@ -1,5 +1,5 @@
 using AccessLensApi.Data;
-using AccessLensApi.Models;
+using AccessLensApi.Features.Reports.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

@@ -2,10 +2,11 @@
 using AccessLensApi.Data;
 using AccessLensApi.Features.Auth;
 using AccessLensApi.Features.Reports;
+using AccessLensApi.Features.Core.Interfaces;
+using AccessLensApi.Features.Core.Services;
+using AccessLensApi.Features.Scans.Services;
+using AccessLensApi.Features.Payments.Services;
 using AccessLensApi.Middleware;
-using AccessLensApi.Services;
-using AccessLensApi.Services.Interfaces;
-using AccessLensApi.Services.Scanning;
 using AccessLensApi.Storage;
 using Amazon;
 using Amazon.Runtime;

@@ -1,5 +1,5 @@
 ﻿
-using AccessLensApi.Models.Unified;
+using AccessLensApi.Features.Core.Models;
 
 namespace AccessLensApi.Features.Reports
 {
