@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using AccessLensApi.Models.Unified;
 
 namespace AccessLensApi.Models
 {
@@ -54,5 +55,22 @@ namespace AccessLensApi.Models
         
         public DateTime FirstDetected { get; set; } = DateTime.UtcNow;
         public DateTime LastSeen { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Convert this database Finding to a unified AccessibilityIssue
+        /// </summary>
+        public AccessibilityIssue ToAccessibilityIssue()
+        {
+            return new AccessibilityIssue
+            {
+                Code = Rule,
+                Title = Rule,
+                Message = Issue,
+                Severity = Severity.ToUpperInvariant(),
+                Status = Status,
+                Category = Category,
+                InstanceCount = 1
+            };
+        }
     }
 }

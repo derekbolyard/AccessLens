@@ -45,7 +45,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="NewFolder\" />
     <Folder Include="reports\" />
   </ItemGroup>
 </Project>

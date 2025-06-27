@@ -1,4 +1,4 @@
-﻿using AccessLensApi.Features.Reports.Models;
+﻿using AccessLensApi.Models.Unified;
 using AccessLensApi.Storage;
 using HandlebarsDotNet;
 using Microsoft.Playwright;

@@ -1,4 +1,4 @@
-﻿using AccessLensApi.Features.Reports.Models;       // AccessibilityReport & friends
+﻿using AccessLensApi.Models.Unified;               // Unified models
 using AccessLensApi.Models.ScannerDtos;            // A11yScanResult & friends
 
 namespace AccessLensApi.Features.Reports
@@ -42,17 +42,17 @@ namespace AccessLensApi.Features.Reports
             int overallScore = Math.Max(0, 100 - (int)weighted);
 
             // ─── screenshots (teaser, if present) ────────────────────────────
-            var screenshots = new List<ReportImage>();
+            var screenshots = new List<AccessibilityScreenshot>();
             if (!string.IsNullOrWhiteSpace(scan.Teaser?.Url))
             {
-                screenshots.Add(new ReportImage
+                screenshots.Add(new AccessibilityScreenshot
                 {
                     Src = scan.Teaser!.Url!,
                     Alt = "Accessibility scan teaser"
                 });
             }
 
-            // ─── map pages ───────────────────────────────────────────────────
+            // ─── map pages to unified format ─────────────────────────────────
             var pages = scan.Pages
                 .Select(p =>
                 {
@@ -63,32 +63,55 @@ namespace AccessLensApi.Features.Reports
 
                     int pageScore = Math.Max(0, 100 - (crit * 5 + seri * 3 + mod));
 
-                    return new Models.PageResult
+                    return new AccessibilityPageResult
                     {
                         Url = p.PageUrl,
-                        PageScore = pageScore.ToString(),
                         PageChartUrl = string.Empty,      // caller can populate later
-                        CriticalCount = crit,
-                        SeriousCount = seri,
-                        ModerateCount = mod,
-                        MinorCount = min,
                         Issues = p.Issues
                             .GroupBy(i => new { i.Code, i.Type })
-                            .Select(g => new Models.Issue
+                            .Select(g => new AccessibilityIssue
                             {
+                                Code = g.Key.Code,
                                 Title = g.Key.Code,
-                                Description = g.First().Message,
-                                Fix = string.Empty,                       // add later if you have it
-                                RuleId = g.Key.Code,
+                                Message = g.First().Message,
+                                Severity = g.Key.Type.ToUpperInvariant(),
                                 Target = string.Join(", ", g.Take(3).Select(i => i.ContextHtml)) +
                                                 (g.Count() > 3 ? " …" : ""),
-                                Severity = g.Key.Type,
-                                InstanceCount = g.Count()                           // optional field for CSV/appendix
+                                InstanceCount = g.Count(),
+                                Fix = string.Empty                       // add later if you have it
                             })
                             .ToList()
                     };
                 })
                 .ToList();
+
+            // ─── map top issues to unified format ───────────────────────────
+            var topIssues = scan.Teaser?.TopIssues?.Select(t =>
+            {
+                // Calculate how many times this issue appears across all pages
+                var issueCount = allIssues.Count(issue => 
+                    issue.Message.Contains(t.Text, StringComparison.OrdinalIgnoreCase) ||
+                    t.Text.Contains(issue.Message, StringComparison.OrdinalIgnoreCase));
+                
+                return new AccessibilityTopIssue
+                {
+                    Title = t.Text,
+                    Severity = t.Severity.ToUpperInvariant(),
+                    InstanceCount = issueCount
+                };
+            })?.ToList() ?? new List<AccessibilityTopIssue>();
+
+            // ─── create scan result ──────────────────────────────────────────
+            var scanResult = new AccessibilityScanResult
+            {
+                ScannedAt = scan.ScannedAtUtc,
+                SiteUrl = siteUrl,
+                DiscoveryMethod = scan.DiscoveryMethod,
+                Pages = pages,
+                TopIssues = topIssues,
+                Screenshots = screenshots,
+                TeaserImageUrl = scan.Teaser?.Url
+            };
 
             // ─── build report ────────────────────────────────────────────────
             return new AccessibilityReport
@@ -107,20 +130,10 @@ namespace AccessLensApi.Features.Reports
                 ConsultationLink = consultationLink,
                 LegalRisk = legalRisk,
                 CommonViolations = commonViolations,
-                TopIssues = scan.Teaser?.TopIssues?.Select(t =>
-                {
-                    // Calculate how many times this issue appears across all pages
-                    var issueCount = allIssues.Count(issue => 
-                        issue.Message.Contains(t.Text, StringComparison.OrdinalIgnoreCase) ||
-                        t.Text.Contains(issue.Message, StringComparison.OrdinalIgnoreCase));
-                    
-                    return new Models.Issue
-                    {
-                        Title = t.Text,
-                        Severity = t.Severity,
-                        InstanceCount = issueCount
-                    };
-                })?.ToList() ?? [],
+                ScanResult = scanResult,
+                
+                // Copy collections for direct template access
+                TopIssues = topIssues,
                 Screenshots = screenshots,
                 Pages = pages,
                 
