@@ -4,7 +4,7 @@ namespace AccessLensApi.Features.Scans.Services
 {
     public interface IPageScanner
     {
-        Task<PageScanResult?> ScanPageAsync(
+        Task<PageScanResult> ScanPageAsync(
             string url,
             bool captureScreenshot,
             CancellationToken ct = default);

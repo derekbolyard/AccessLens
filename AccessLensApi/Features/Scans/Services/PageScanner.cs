@@ -22,11 +22,13 @@ namespace AccessLensApi.Features.Scans.Services
             _log = log;
         }
 
-        public async Task<PageScanResult?> ScanPageAsync(
+        public async Task<PageScanResult> ScanPageAsync(
             string url,
             bool captureScreenshot,
             CancellationToken ct = default)
         {
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            
             var browser = await _provider.GetBrowserAsync();
             await using var ctx = await browser.NewContextAsync(new BrowserNewContextOptions
             {
@@ -47,10 +49,32 @@ namespace AccessLensApi.Features.Scans.Services
                     Timeout = 60_000
                 });
 
-                if (resp is null || resp.Status >= 400)
+                stopwatch.Stop();
+
+                if (resp is null)
                 {
-                    _log.LogWarning("Page {Url} responded {Status}", url, resp?.Status ?? 0);
-                    return null;
+                    _log.LogWarning("Page {Url} - no response received", url);
+                    return new PageScanResult(
+                        url, 
+                        null, 
+                        null, 
+                        null, 
+                        new ScanFailureInfo(ScanFailureReasons.LoadFailed, "No response received", null, null, stopwatch.Elapsed),
+                        stopwatch.Elapsed
+                    );
+                }
+
+                if (resp.Status >= 400)
+                {
+                    _log.LogWarning("Page {Url} responded {Status}", url, resp.Status);
+                    return new PageScanResult(
+                        url, 
+                        null, 
+                        null, 
+                        null, 
+                        new ScanFailureInfo(ScanFailureReasons.HttpError, $"HTTP {resp.Status}", resp.Status, null, stopwatch.Elapsed),
+                        stopwatch.Elapsed
+                    );
                 }
 
                 // run axe
@@ -68,12 +92,48 @@ namespace AccessLensApi.Features.Scans.Services
                 if (captureScreenshot)
                     screenshot = await page.ScreenshotAsync();
 
-                return new PageScanResult(url, pageResult, axeObj, screenshot);
+                _log.LogInformation("✓ {Url} ({Issues} issues, {Duration}ms)", url, pageResult.Issues.Count, stopwatch.ElapsedMilliseconds);
+
+                return new PageScanResult(url, pageResult, axeObj, screenshot, null, stopwatch.Elapsed);
+            }
+            catch (TimeoutException ex)
+            {
+                stopwatch.Stop();
+                _log.LogError(ex, "Timeout scanning {Url}", url);
+                return new PageScanResult(
+                    url, 
+                    null, 
+                    null, 
+                    null, 
+                    new ScanFailureInfo(ScanFailureReasons.Timeout, ex.Message, null, null, stopwatch.Elapsed),
+                    stopwatch.Elapsed
+                );
+            }
+            catch (PlaywrightException ex)
+            {
+                stopwatch.Stop();
+                _log.LogError(ex, "Browser error scanning {Url}", url);
+                return new PageScanResult(
+                    url, 
+                    null, 
+                    null, 
+                    null, 
+                    new ScanFailureInfo(ScanFailureReasons.BrowserError, ex.Message, null, null, stopwatch.Elapsed),
+                    stopwatch.Elapsed
+                );
             }
             catch (Exception ex)
             {
+                stopwatch.Stop();
                 _log.LogError(ex, "Scan failed for {Url}", url);
-                return null;
+                return new PageScanResult(
+                    url, 
+                    null, 
+                    null, 
+                    null, 
+                    new ScanFailureInfo(ScanFailureReasons.Unknown, ex.Message, null, null, stopwatch.Elapsed),
+                    stopwatch.Elapsed
+                );
             }
             finally
             {

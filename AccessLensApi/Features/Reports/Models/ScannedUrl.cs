@@ -15,13 +15,18 @@ namespace AccessLensApi.Features.Reports.Models
         public Guid ReportId { get; set; }
 
         [ForeignKey("ReportId")]
-        public Report Report { get; set; }
+        public Report Report { get; set; } = null!;
 
         [Required]
-        public string Url { get; set; }
+        public string Url { get; set; } = string.Empty;
 
-        public string ScanStatus { get; set; } = "Success"; // Success, Failed, Timeout
+        public string ScanStatus { get; set; } = "Success"; // Success, HttpError, Timeout, LoadFailed, ScriptError, BrowserError
+        public string? ErrorMessage { get; set; }
+        public int? HttpStatusCode { get; set; }
         public int? ResponseTime { get; set; }
+        public int? ScanDurationMs { get; set; }
+        public int RetryCount { get; set; } = 0;
+        public int MaxRetries { get; set; } = 2;
         public DateTime ScanTimestamp { get; set; } = DateTime.UtcNow;
 
         // New fields for frontend requirements
@@ -54,6 +59,6 @@ namespace AccessLensApi.Features.Reports.Models
             }
         }
 
-        public ICollection<Finding> Findings { get; set; }
+        public ICollection<Finding> Findings { get; set; } = new List<Finding>();
     }
 }
