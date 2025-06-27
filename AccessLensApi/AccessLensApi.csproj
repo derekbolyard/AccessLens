@@ -6,6 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>2512ab6a-9f46-4163-ac1c-ac781350e09f</UserSecretsId>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Features/Reports/Templates/report.html"
+                      LogicalName="AccessLensApi.Features.Reports.Templates.report.html" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="Amazon.S3" Version="0.34.0" />
@@ -40,11 +45,11 @@
     <EmbeddedResource Include="Assets\axe-core-4.9.0.min.js" LogicalName="AccessLensApi.Assets.axe-core-4.9.0.min.js" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="Features\Reports\Templates\report.html">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <Folder Include="reports\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="reports\" />
+    <Resource Include="Features\Reports\Templates\report.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 </Project>

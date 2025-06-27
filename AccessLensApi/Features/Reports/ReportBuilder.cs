@@ -2,19 +2,18 @@
 using AccessLensApi.Storage;
 using HandlebarsDotNet;
 using Microsoft.Playwright;
-using System.Collections;
+using System.Reflection;
 
 namespace AccessLensApi.Features.Reports
 {
     public class ReportBuilder : IReportBuilder
     {
         private readonly string _template;
-        private const string TemplatePath = "Features/Reports/Templates/report.html";
         private readonly IStorageService _storage;
 
         public ReportBuilder(IStorageService storage)
         {
-            _template = File.ReadAllText(TemplatePath);
+            _template = LoadTemplate();
             _storage = storage;
         }
 
@@ -156,6 +155,16 @@ namespace AccessLensApi.Features.Reports
 
             var json = System.Text.Json.JsonSerializer.Serialize(chart);
             return $"https://quickchart.io/chart?c={Uri.EscapeDataString(json)}&plugins=datalabels";
+        }
+
+        private static string LoadTemplate()
+        {
+            var asm = Assembly.GetExecutingAssembly();
+            const string resId = "AccessLensApi.Features.Reports.Templates.report.html"; // namespace + path
+            using var s = asm.GetManifestResourceStream(resId)
+                ?? throw new FileNotFoundException($"Embedded template {resId} not found.");
+            using var r = new StreamReader(s);
+            return r.ReadToEnd();
         }
     }
 }

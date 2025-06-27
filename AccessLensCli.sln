@@ -18,6 +18,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccessLensApi", "AccessLens
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{18C6A871-9D80-4078-BBD1-9469F3EC2875}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateSample", "AccessLensApi.Tools\GenerateSample\GenerateSample.csproj", "{40F13B07-2C2B-544A-69F1-5200DBD2902D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +32,16 @@ Global
 		{18882D72-59E4-4EB5-A3AD-DA0AFA004AE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18882D72-59E4-4EB5-A3AD-DA0AFA004AE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18882D72-59E4-4EB5-A3AD-DA0AFA004AE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40F13B07-2C2B-544A-69F1-5200DBD2902D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40F13B07-2C2B-544A-69F1-5200DBD2902D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40F13B07-2C2B-544A-69F1-5200DBD2902D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40F13B07-2C2B-544A-69F1-5200DBD2902D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{40F13B07-2C2B-544A-69F1-5200DBD2902D} = {18C6A871-9D80-4078-BBD1-9469F3EC2875}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B8B1EF7F-4381-4F43-93A3-DF623C5A7F28}

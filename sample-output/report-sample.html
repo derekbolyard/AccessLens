@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agency XYZ Accessibility Report</title>
+    <!-- Preload common fonts (override dynamically if needed) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Inter, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+      background-color: white;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 40px 30px;
+      background: white;
+    }
+    header {
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header img {
+      height: 40px;
+    }
+    h1 {
+      color: #2563eb;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      color: #111827;
+    }
+    h3 {
+      font-size: 1.25rem;
+      color: #2563eb;
+      margin-bottom: 0.25rem;
+    }
+    .summary-box {
+      display: flex;
+      justify-content: space-between;
+      background: #16a34a10;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      page-break-inside: avoid;
+    }
+    .summary-box div {
+      text-align: center;
+    }
+    .summary-box strong {
+      display: block;
+      font-size: 1.25rem;
+      color: #111827;
+    }
+    .issue-card {
+      border-left: 6px solid #2563eb;
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      page-break-inside: avoid;
+    }
+    .issue-card h4 {
+      margin: 0 0 10px;
+      font-size: 1.1rem;
+    }
+    .severity-critical { border-color: #b91c1c; }
+    .severity-serious { border-color: #ea580c; }
+    .severity-moderate { border-color: #d97706; }
+    .severity-minor { border-color: #16a34a; }
+    footer {
+      font-size: 0.9rem;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 40px;
+      padding-top: 20px;
+      text-align: center;
+    }
+    ul.metric-list {
+      list-style: none;
+      padding: 0;
+      margin-top: 1rem;
+    }
+    ul.metric-list li {
+      padding: 8px 0;
+      line-height: 1.6;
+    }
+    .executive-summary {
+      margin-bottom: 40px;
+    }
+    .executive-summary p {
+      font-size: 1.1rem;
+      line-height: 1.7;
+      margin-bottom: 25px;
+      color: #374151;
+    }
+    .top-issues-list {
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 4px solid #3b82f6;
+    }
+    .top-issues-list li {
+      padding: 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .page-section {
+      page-break-inside: avoid;
+    }
+    .page-group {
+      page-break-inside: avoid;
+      margin-bottom: 30px;
+    }
+    .new-page-section {
+      padding-top: 20px;
+    }
+    .issue-breakdown-header {
+      page-break-after: avoid;
+      margin-bottom: 20px;
+    }
+    </style>
+</head>
+<body>
+    <div class="container" style="page-break-after: always;">
+        <section style="text-align:center; margin-top: 120px;">
+            <h1 style="font-size: 2.5rem; color: #2563eb;">Accessibility Audit Report</h1>
+            <p style="font-size: 1.25rem; margin-top: 1rem;">Generated on 2025-06-25</p>
+            <p style="font-size: 1rem; margin-top: 3rem; color: #6b7280;">Confidential – For internal use only</p>
+        </section>
+    </div>
+    <div class="container">
+        <header>
+            <div>
+                <h1>AccessLens Accessibility Audit</h1>
+                <p><strong>Site:</strong> https://agency-xyz.com</p>
+                <p><strong>Pages Scanned:</strong> 3</p>
+                <p><strong>Date:</strong> 2025-06-25</p>
+                <p><strong>WCAG Level:</strong> WCAG 2.2 AA</p>
+            </div>
+        </header>
+
+        <section class="summary-box" style="margin-top: 2rem;">
+            <div>
+                <div style="font-weight:600;">Score</div>
+                <div><strong>75</strong></div>
+            </div>
+            <div>
+                <div style="font-weight:600;">Critical</div>
+                <div><strong>3</strong></div>
+            </div>
+            <div>
+                <div style="font-weight:600;">Serious</div>
+                <div><strong>3</strong></div>
+            </div>
+            <div>
+                <div style="font-weight:600;">Moderate</div>
+                <div><strong>1</strong></div>
+            </div>
+            <div>
+                <div style="font-weight:600;">Minor</div>
+                <div><strong>1</strong></div>
+            </div>
+        </section>
+
+        <section class="executive-summary">
+            <h2>Executive Summary</h2>
+            <p>This audit identifies potential accessibility issues that may affect users with disabilities. Resolving them improves usability, legal compliance, and inclusivity.</p>
+            
+            <div class="top-issues-list">
+                <strong style="font-size: 1.1rem; color: #1f2937; margin-bottom: 12px; display: block;">Top Issues:</strong>
+                <ul style="margin: 0; padding: 0; list-style: none;">
+                    <li style="margin-bottom: 8px;">
+                        <span style="font-weight: bold; margin-right: 8px;">
+                            🔴
+                            
+                            
+                            
+                        </span>
+                        <span>Low text/background contrast <em style="color: #6b7280;">(1 instances)</em></span>
+                    </li>
+                    <li style="margin-bottom: 8px;">
+                        <span style="font-weight: bold; margin-right: 8px;">
+                            🔴
+                            
+                            
+                            
+                        </span>
+                        <span>Language attribute missing <em style="color: #6b7280;">(1 instances)</em></span>
+                    </li>
+                    <li style="margin-bottom: 8px;">
+                        <span style="font-weight: bold; margin-right: 8px;">
+                            🔴
+                            
+                            
+                            
+                        </span>
+                        <span>Duplicate element id <em style="color: #6b7280;">(1 instances)</em></span>
+                    </li>
+                    <li style="margin-bottom: 8px;">
+                        <span style="font-weight: bold; margin-right: 8px;">
+                            
+                            
+                            
+                            🟢
+                        </span>
+                        <span>Skipped heading level <em style="color: #6b7280;">(1 instances)</em></span>
+                    </li>
+                    <li style="margin-bottom: 8px;">
+                        <span style="font-weight: bold; margin-right: 8px;">
+                            
+                            
+                            🟡
+                            
+                        </span>
+                        <span>Link has no accessible name <em style="color: #6b7280;">(1 instances)</em></span>
+                    </li>
+                    <li style="margin-bottom: 8px;">
+                        <span style="font-weight: bold; margin-right: 8px;">
+                            
+                            🟠
+                            
+                            
+                        </span>
+                        <span>Missing alternative text <em style="color: #6b7280;">(1 instances)</em></span>
+                    </li>
+                </ul>
+            </div>
+
+            <ul class="metric-list">
+                <li><strong>Legal Risk Estimate:</strong> Medium</li>
+                <li><strong>Common Violations:</strong> </li>
+                <li><strong>Accessibility Tools Used:</strong> axe-core, WCAG 2.2 validator</li>
+                <li><strong>Follow-up Recommended:</strong> Full manual audit or remediation support</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Severity Key</h2>
+            <ul class="metric-list">
+                <li><span style="color:#b91c1c;">■</span> Critical – Blocks access, legal exposure</li>
+                <li><span style="color:#ea580c;">■</span> Serious – Major usability barrier</li>
+                <li><span style="color:#d97706;">■</span> Moderate – Noticeable but minor impact</li>
+                <li><span style="color:#16a34a;">■</span> Minor – Cosmetic or edge-case</li>
+            </ul>
+        </section>
+
+        <section class="page-section">
+            <h2>Scanned URLs</h2>
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <p style="margin-bottom: 15px; font-weight: 600; color: #374151;">The following 3 pages were scanned for accessibility issues:</p>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; word-break: break-all;">
+                        <span style="color: #1d4ed8; font-family: monospace; font-size: 0.9rem;">https://agency-xyz.com/</span>
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; word-break: break-all;">
+                        <span style="color: #1d4ed8; font-family: monospace; font-size: 0.9rem;">https://agency-xyz.com/about</span>
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; word-break: break-all;">
+                        <span style="color: #1d4ed8; font-family: monospace; font-size: 0.9rem;">https://agency-xyz.com/contact</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Visual Highlights</h2>
+        </section>
+
+        <section style="page-break-before: always;">
+            <h2 class="issue-breakdown-header">Issue Breakdown</h2>
+            <div class="page-group">
+                <h3>https://agency-xyz.com/</h3>
+                <div class="summary-box">
+                    <div><div style="font-weight:600;">Score</div><div><strong>89</strong></div></div>
+                    <div><div style="font-weight:600;">Critical</div><div><strong>1</strong></div></div>
+                    <div><div style="font-weight:600;">Serious</div><div><strong>2</strong></div></div>
+                    <div><div style="font-weight:600;">Moderate</div><div><strong>0</strong></div></div>
+                    <div><div style="font-weight:600;">Minor</div><div><strong>1</strong></div></div>
+                </div>
+                <div style="text-align:center;margin-bottom:20px;">
+                    <img src="https://quickchart.io/chart?c=%7B%22type%22%3A%22pie%22%2C%22data%22%3A%7B%22labels%22%3A%5B%22Critical%22%2C%22Serious%22%2C%22Minor%22%5D%2C%22datasets%22%3A%5B%7B%22data%22%3A%5B1%2C2%2C1%5D%2C%22backgroundColor%22%3A%5B%22%23B3261E%22%2C%22%23E88E00%22%2C%22%230B7C5C%22%5D%2C%22borderWidth%22%3A2%2C%22borderColor%22%3A%22white%22%7D%5D%7D%2C%22options%22%3A%7B%22plugins%22%3A%7B%22legend%22%3A%7B%22position%22%3A%22bottom%22%7D%2C%22datalabels%22%3A%7B%22formatter%22%3A%22function%28v%29%7Breturn%20v%20%5Cu002B%20%5Cu0027%25%5Cu0027%3B%7D%22%2C%22color%22%3A%22%23000%22%2C%22font%22%3A%7B%22weight%22%3A%22bold%22%7D%7D%7D%2C%22backgroundColor%22%3A%22white%22%7D%7D&amp;plugins=datalabels" alt="Accessibility Score Chart"
+                         style="max-width:500px;width:100%;margin-top:1rem;" />
+                </div>
+                <div class="issue-card severity-CRITICAL">
+                    <h4>Low text/background contrast</h4>
+                    <p><strong>Description:</strong> The gray text on white background fails WCAG 2.2 AA 4.5:1 contrast.</p>
+                    <p><strong>Fix:</strong> Increase the text colour to #000000, or darken it until contrast &#8805; 4.5:1.</p>
+                    <p><strong>Rule:</strong> color-contrast</p>
+                    <p><strong>Target:</strong> .hero-tagline</p>
+                </div>
+                <div class="issue-card severity-SERIOUS">
+                    <h4>Missing alternative text</h4>
+                    <p><strong>Description:</strong> Decorative image lacks alt attribute.</p>
+                    <p><strong>Fix:</strong> Add alt=&quot;&quot; if decorative, or alt=&quot;Barista pouring coffee&quot; if informational.</p>
+                    <p><strong>Rule:</strong> image-alt</p>
+                    <p><strong>Target:</strong> img[src*=&quot;/banner/coffee.jpg&quot;]</p>
+                </div>
+                <div class="issue-card severity-SERIOUS">
+                    <h4>Form field has no label</h4>
+                    <p><strong>Description:</strong> Search form input is missing an associated label.</p>
+                    <p><strong>Fix:</strong> Add &lt;label for=&quot;q&quot;&gt;Search&lt;/label&gt; before the input.</p>
+                    <p><strong>Rule:</strong> label</p>
+                    <p><strong>Target:</strong> form.search input[name=q]</p>
+                </div>
+                <div class="issue-card severity-MINOR">
+                    <h4>Skipped heading level</h4>
+                    <p><strong>Description:</strong> Found &lt;h4&gt; immediately after &lt;h2&gt;.</p>
+                    <p><strong>Fix:</strong> Change to &lt;h3&gt; or re-nest headings correctly.</p>
+                    <p><strong>Rule:</strong> heading-order</p>
+                    <p><strong>Target:</strong> h4.section-tagline</p>
+                </div>
+            </div>
+            <div class="page-group">
+                <h3>https://agency-xyz.com/about</h3>
+                <div class="summary-box">
+                    <div><div style="font-weight:600;">Score</div><div><strong>94</strong></div></div>
+                    <div><div style="font-weight:600;">Critical</div><div><strong>1</strong></div></div>
+                    <div><div style="font-weight:600;">Serious</div><div><strong>0</strong></div></div>
+                    <div><div style="font-weight:600;">Moderate</div><div><strong>1</strong></div></div>
+                    <div><div style="font-weight:600;">Minor</div><div><strong>0</strong></div></div>
+                </div>
+                <div style="text-align:center;margin-bottom:20px;">
+                    <img src="https://quickchart.io/chart?c=%7B%22type%22%3A%22pie%22%2C%22data%22%3A%7B%22labels%22%3A%5B%22Critical%22%2C%22Moderate%22%5D%2C%22datasets%22%3A%5B%7B%22data%22%3A%5B1%2C1%5D%2C%22backgroundColor%22%3A%5B%22%23B3261E%22%2C%22%23D0A000%22%5D%2C%22borderWidth%22%3A2%2C%22borderColor%22%3A%22white%22%7D%5D%7D%2C%22options%22%3A%7B%22plugins%22%3A%7B%22legend%22%3A%7B%22position%22%3A%22bottom%22%7D%2C%22datalabels%22%3A%7B%22formatter%22%3A%22function%28v%29%7Breturn%20v%20%5Cu002B%20%5Cu0027%25%5Cu0027%3B%7D%22%2C%22color%22%3A%22%23000%22%2C%22font%22%3A%7B%22weight%22%3A%22bold%22%7D%7D%7D%2C%22backgroundColor%22%3A%22white%22%7D%7D&amp;plugins=datalabels" alt="Accessibility Score Chart"
+                         style="max-width:500px;width:100%;margin-top:1rem;" />
+                </div>
+                <div class="issue-card severity-CRITICAL">
+                    <h4>Language attribute missing</h4>
+                    <p><strong>Description:</strong> &lt;html&gt; element lacks a lang attribute.</p>
+                    <p><strong>Fix:</strong> Add lang=&quot;en&quot; (or appropriate language code) to &lt;html&gt;.</p>
+                    <p><strong>Rule:</strong> html-has-lang</p>
+                    <p><strong>Target:</strong> html</p>
+                </div>
+                <div class="issue-card severity-MODERATE">
+                    <h4>Link has no accessible name</h4>
+                    <p><strong>Description:</strong> Social icon link contains no text or aria-label.</p>
+                    <p><strong>Fix:</strong> Add aria-label=&quot;Twitter&quot; or visible text.</p>
+                    <p><strong>Rule:</strong> link-name</p>
+                    <p><strong>Target:</strong> a[href^=&quot;https://twitter.com&quot;]</p>
+                </div>
+            </div>
+            <div class="page-group">
+                <h3>https://agency-xyz.com/contact</h3>
+                <div class="summary-box">
+                    <div><div style="font-weight:600;">Score</div><div><strong>92</strong></div></div>
+                    <div><div style="font-weight:600;">Critical</div><div><strong>1</strong></div></div>
+                    <div><div style="font-weight:600;">Serious</div><div><strong>1</strong></div></div>
+                    <div><div style="font-weight:600;">Moderate</div><div><strong>0</strong></div></div>
+                    <div><div style="font-weight:600;">Minor</div><div><strong>0</strong></div></div>
+                </div>
+                <div style="text-align:center;margin-bottom:20px;">
+                    <img src="https://quickchart.io/chart?c=%7B%22type%22%3A%22pie%22%2C%22data%22%3A%7B%22labels%22%3A%5B%22Critical%22%2C%22Serious%22%5D%2C%22datasets%22%3A%5B%7B%22data%22%3A%5B1%2C1%5D%2C%22backgroundColor%22%3A%5B%22%23B3261E%22%2C%22%23E88E00%22%5D%2C%22borderWidth%22%3A2%2C%22borderColor%22%3A%22white%22%7D%5D%7D%2C%22options%22%3A%7B%22plugins%22%3A%7B%22legend%22%3A%7B%22position%22%3A%22bottom%22%7D%2C%22datalabels%22%3A%7B%22formatter%22%3A%22function%28v%29%7Breturn%20v%20%5Cu002B%20%5Cu0027%25%5Cu0027%3B%7D%22%2C%22color%22%3A%22%23000%22%2C%22font%22%3A%7B%22weight%22%3A%22bold%22%7D%7D%7D%2C%22backgroundColor%22%3A%22white%22%7D%7D&amp;plugins=datalabels" alt="Accessibility Score Chart"
+                         style="max-width:500px;width:100%;margin-top:1rem;" />
+                </div>
+                <div class="issue-card severity-CRITICAL">
+                    <h4>Duplicate element id</h4>
+                    <p><strong>Description:</strong> Multiple elements use id=&quot;submit-btn&quot;.</p>
+                    <p><strong>Fix:</strong> Ensure each id value is unique.</p>
+                    <p><strong>Rule:</strong> duplicate-id</p>
+                    <p><strong>Target:</strong> #submit-btn</p>
+                </div>
+                <div class="issue-card severity-SERIOUS">
+                    <h4>Accordion missing required children</h4>
+                    <p><strong>Description:</strong> Role=&quot;tablist&quot; lacks role=&quot;tab&quot; children.</p>
+                    <p><strong>Fix:</strong> Wrap each toggle button in role=&quot;tab&quot; and role=&quot;tabpanel&quot;.</p>
+                    <p><strong>Rule:</strong> aria-required-children</p>
+                    <p><strong>Target:</strong> div[role=tablist]</p>
+                </div>
+            </div>
+        </section>
+
+            <section class="new-page-section" style="page-break-before: always;">
+                <h2>Glossary</h2>
+                <ul>
+                    <li><strong>WCAG:</strong> Web Content Accessibility Guidelines</li>
+                    <li><strong>Alt Text:</strong> Text that describes an image for screen readers</li>
+                    <li><strong>ARIA:</strong> Attributes that help assistive tech interpret UI</li>
+                    <li><strong>Contrast Ratio:</strong> The difference in brightness between foreground and background</li>
+                    <li><strong>Screen Reader:</strong> A tool that reads page content aloud to visually impaired users</li>
+                </ul>
+            </section>
+
+            <section class="new-page-section" style="page-break-before: always;">
+                <h2>Next Steps</h2>
+                <p>We recommend a full manual audit to catch remaining issues, followed by remediation support.</p>
+                <a href="" style="display:inline-block;padding:12px 24px;background-color:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;margin-top:1rem;">
+                    Schedule a Consultation
+                </a>
+            </section>
+
+
+    </div>
+
+</body>
+</html>
