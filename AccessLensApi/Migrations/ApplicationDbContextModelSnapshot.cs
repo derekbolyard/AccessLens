@@ -44,6 +44,67 @@ namespace AccessLensApi.Migrations
                     b.ToTable("MagicLinkUsages");
                 });
 
+            modelBuilder.Entity("AccessLensApi.Features.Auth.Models.User", b =>
+                {
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EmailVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("FirstScan")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("ScanLimit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ScansUsed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Email");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Core.Models.BrandingInfo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LogoUrl")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PrimaryColor")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecondaryColor")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("BrandingInfos");
+                });
+
             modelBuilder.Entity("AccessLensApi.Features.Payments.Models.SnapshotPass", b =>
                 {
                     b.Property<Guid>("Id")
@@ -124,6 +185,204 @@ namespace AccessLensApi.Migrations
                     b.ToTable("Subscriptions");
                 });
 
+            modelBuilder.Entity("AccessLensApi.Features.Payments.Models.SubscriptionPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Features")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Interval")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsPopular")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("ScanLimit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StripeProductId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SubscriptionPlans");
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Reports.Models.Finding", b =>
+                {
+                    b.Property<Guid>("FindingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FirstDetected")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Issue")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastSeen")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Rule")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("StatusUpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StatusUpdatedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UrlId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserNotes")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("FindingId");
+
+                    b.HasIndex("ReportId");
+
+                    b.HasIndex("UrlId");
+
+                    b.ToTable("Findings");
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Reports.Models.Report", b =>
+                {
+                    b.Property<Guid>("ReportId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PageCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PdfKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RulesFailed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RulesPassed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ScanDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Score")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("SiteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SiteName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TotalRulesTested")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ReportId");
+
+                    b.HasIndex("Email");
+
+                    b.HasIndex("SiteId");
+
+                    b.ToTable("Reports");
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Reports.Models.ScannedUrl", b =>
+                {
+                    b.Property<Guid>("UrlId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("HttpStatusCode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MaxRetries")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ResponseTime")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ScanDurationMs")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ScanStatus")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ScanTimestamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UrlId");
+
+                    b.HasIndex("ReportId");
+
+                    b.ToTable("ScannedUrls");
+                });
+
             modelBuilder.Entity("AccessLensApi.Features.Scans.Models.Scan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -180,170 +439,7 @@ namespace AccessLensApi.Migrations
                     b.ToTable("Scans");
                 });
 
-            modelBuilder.Entity("AccessLensApi.Models.BrandingInfo", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("LogoUrl")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PrimaryColor")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("SecondaryColor")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("BrandingInfos");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.Finding", b =>
-                {
-                    b.Property<Guid>("FindingId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("FirstDetected")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Issue")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("LastSeen")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("ReportId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Rule")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Severity")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("StatusUpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("StatusUpdatedBy")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("UrlId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserNotes")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("FindingId");
-
-                    b.HasIndex("ReportId");
-
-                    b.HasIndex("UrlId");
-
-                    b.ToTable("Findings");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.Report", b =>
-                {
-                    b.Property<Guid>("ReportId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("PageCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("RulesFailed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("RulesPassed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("ScanDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("SiteId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("SiteName")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("TotalRulesTested")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("ReportId");
-
-                    b.HasIndex("Email");
-
-                    b.HasIndex("SiteId");
-
-                    b.ToTable("Reports");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.ScannedUrl", b =>
-                {
-                    b.Property<Guid>("UrlId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("ReportId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("ResponseTime")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ScanStatus")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("ScanTimestamp")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Title")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("UrlId");
-
-                    b.HasIndex("ReportId");
-
-                    b.ToTable("ScannedUrls");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.Site", b =>
+            modelBuilder.Entity("AccessLensApi.Features.Sites.Models.Site", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -378,118 +474,9 @@ namespace AccessLensApi.Migrations
                     b.ToTable("Sites");
                 });
 
-            modelBuilder.Entity("AccessLensApi.Models.SubscriptionPlan", b =>
+            modelBuilder.Entity("AccessLensApi.Features.Core.Models.BrandingInfo", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Features")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Interval")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsPopular")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<int>("ScanLimit")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("StripeProductId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SubscriptionPlans");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.User", b =>
-                {
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("EmailVerified")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(false);
-
-                    b.Property<bool>("FirstScan")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(true);
-
-                    b.Property<int>("ScanLimit")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ScansUsed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Email");
-
-                    b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Features.Payments.Models.SnapshotPass", b =>
-                {
-                    b.HasOne("AccessLensApi.Models.User", null)
-                        .WithMany("SnapshotPasses")
-                        .HasForeignKey("Email")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("AccessLensApi.Features.Payments.Models.Subscription", b =>
-                {
-                    b.HasOne("AccessLensApi.Models.User", null)
-                        .WithMany("Subscriptions")
-                        .HasForeignKey("Email")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AccessLensApi.Models.SubscriptionPlan", "Plan")
-                        .WithMany("Subscriptions")
-                        .HasForeignKey("PlanId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Plan");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Features.Scans.Models.Scan", b =>
-                {
-                    b.HasOne("AccessLensApi.Models.User", null)
-                        .WithMany("Scans")
-                        .HasForeignKey("Email")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.BrandingInfo", b =>
-                {
-                    b.HasOne("AccessLensApi.Models.User", "User")
+                    b.HasOne("AccessLensApi.Features.Auth.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .HasPrincipalKey("UserId")
@@ -499,15 +486,40 @@ namespace AccessLensApi.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AccessLensApi.Models.Finding", b =>
+            modelBuilder.Entity("AccessLensApi.Features.Payments.Models.SnapshotPass", b =>
                 {
-                    b.HasOne("AccessLensApi.Models.Report", "Report")
+                    b.HasOne("AccessLensApi.Features.Auth.Models.User", null)
+                        .WithMany("SnapshotPasses")
+                        .HasForeignKey("Email")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Payments.Models.Subscription", b =>
+                {
+                    b.HasOne("AccessLensApi.Features.Auth.Models.User", null)
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("Email")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AccessLensApi.Features.Payments.Models.SubscriptionPlan", "Plan")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Reports.Models.Finding", b =>
+                {
+                    b.HasOne("AccessLensApi.Features.Reports.Models.Report", "Report")
                         .WithMany("Findings")
                         .HasForeignKey("ReportId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AccessLensApi.Models.ScannedUrl", "ScannedUrl")
+                    b.HasOne("AccessLensApi.Features.Reports.Models.ScannedUrl", "ScannedUrl")
                         .WithMany("Findings")
                         .HasForeignKey("UrlId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -518,15 +530,15 @@ namespace AccessLensApi.Migrations
                     b.Navigation("ScannedUrl");
                 });
 
-            modelBuilder.Entity("AccessLensApi.Models.Report", b =>
+            modelBuilder.Entity("AccessLensApi.Features.Reports.Models.Report", b =>
                 {
-                    b.HasOne("AccessLensApi.Models.User", null)
+                    b.HasOne("AccessLensApi.Features.Auth.Models.User", null)
                         .WithMany()
                         .HasForeignKey("Email")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AccessLensApi.Models.Site", "Site")
+                    b.HasOne("AccessLensApi.Features.Sites.Models.Site", "Site")
                         .WithMany("Reports")
                         .HasForeignKey("SiteId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -534,9 +546,9 @@ namespace AccessLensApi.Migrations
                     b.Navigation("Site");
                 });
 
-            modelBuilder.Entity("AccessLensApi.Models.ScannedUrl", b =>
+            modelBuilder.Entity("AccessLensApi.Features.Reports.Models.ScannedUrl", b =>
                 {
-                    b.HasOne("AccessLensApi.Models.Report", "Report")
+                    b.HasOne("AccessLensApi.Features.Reports.Models.Report", "Report")
                         .WithMany("ScannedUrls")
                         .HasForeignKey("ReportId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -545,9 +557,18 @@ namespace AccessLensApi.Migrations
                     b.Navigation("Report");
                 });
 
-            modelBuilder.Entity("AccessLensApi.Models.Site", b =>
+            modelBuilder.Entity("AccessLensApi.Features.Scans.Models.Scan", b =>
                 {
-                    b.HasOne("AccessLensApi.Models.User", "User")
+                    b.HasOne("AccessLensApi.Features.Auth.Models.User", null)
+                        .WithMany("Scans")
+                        .HasForeignKey("Email")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Sites.Models.Site", b =>
+                {
+                    b.HasOne("AccessLensApi.Features.Auth.Models.User", "User")
                         .WithMany("Sites")
                         .HasForeignKey("Email")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -556,29 +577,7 @@ namespace AccessLensApi.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AccessLensApi.Models.Report", b =>
-                {
-                    b.Navigation("Findings");
-
-                    b.Navigation("ScannedUrls");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.ScannedUrl", b =>
-                {
-                    b.Navigation("Findings");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.Site", b =>
-                {
-                    b.Navigation("Reports");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.SubscriptionPlan", b =>
-                {
-                    b.Navigation("Subscriptions");
-                });
-
-            modelBuilder.Entity("AccessLensApi.Models.User", b =>
+            modelBuilder.Entity("AccessLensApi.Features.Auth.Models.User", b =>
                 {
                     b.Navigation("Scans");
 
@@ -587,6 +586,28 @@ namespace AccessLensApi.Migrations
                     b.Navigation("SnapshotPasses");
 
                     b.Navigation("Subscriptions");
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Payments.Models.SubscriptionPlan", b =>
+                {
+                    b.Navigation("Subscriptions");
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Reports.Models.Report", b =>
+                {
+                    b.Navigation("Findings");
+
+                    b.Navigation("ScannedUrls");
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Reports.Models.ScannedUrl", b =>
+                {
+                    b.Navigation("Findings");
+                });
+
+            modelBuilder.Entity("AccessLensApi.Features.Sites.Models.Site", b =>
+                {
+                    b.Navigation("Reports");
                 });
 #pragma warning restore 612, 618
         }

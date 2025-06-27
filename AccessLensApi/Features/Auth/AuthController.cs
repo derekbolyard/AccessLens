@@ -1,8 +1,7 @@
 ﻿using AccessLensApi.Data;
 using AccessLensApi.Features.Auth.Models;
+using AccessLensApi.Features.Core.Interfaces;
 using AccessLensApi.Middleware;
-using AccessLensApi.Models;
-using AccessLensApi.Services.Interfaces;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

@@ -28,5 +28,8 @@
 
         /// Whether to use sitemap for URL discovery (in addition to crawling)
         public bool UseSitemap { get; set; } = true;
+
+        /// Maximum number of retries for failed page scans
+        public int MaxRetries { get; set; } = 2;
     }
 }

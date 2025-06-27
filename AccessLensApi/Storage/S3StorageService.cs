@@ -34,6 +34,16 @@ public sealed class S3StorageService : IStorageService
         await _s3.PutObjectAsync(put, ct);
     }
 
+    public async Task DeleteAsync(string key, CancellationToken ct = default)
+    {
+        var deleteRequest = new Amazon.S3.Model.DeleteObjectRequest
+        {
+            BucketName = _bucket,
+            Key = key
+        };
+        await _s3.DeleteObjectAsync(deleteRequest, ct);
+    }
+
     public string GetPresignedUrl(string key, TimeSpan ttl)
     {
         if (ttl > TimeSpan.FromDays(7))

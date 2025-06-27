@@ -1,7 +1,9 @@
 ﻿using AccessLensApi.Features.Auth.Models;
+using AccessLensApi.Features.Core.Models;
 using AccessLensApi.Features.Payments.Models;
+using AccessLensApi.Features.Reports.Models;
 using AccessLensApi.Features.Scans.Models;
-using AccessLensApi.Models;
+using AccessLensApi.Features.Sites.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
