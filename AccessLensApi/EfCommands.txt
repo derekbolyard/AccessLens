@@ -1,12 +1,9 @@
-Add-Migration <MigrationName>
-dotnet ef migrations add <MigrationName>
+Add-Migration TrackUrlFailure
+dotnet ef migrations add TrackUrlFailure
 
 Update-Database
 dotnet ef database update 
 
-services:
-  mailhog:
-    image: mailhog/mailhog:latest
-    ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
+docker run --name mailhog \
+  -p 1025:1025 -p 8025:8025 \
+  -d mailhog/mailhog

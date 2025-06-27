@@ -116,11 +116,11 @@ namespace AccessLensApi.Extensions
             services.AddSingleton<IStorageService, S3StorageService>();
 
             // Email Service
-#if DEBUG
+        #if DEBUG
             services.AddSingleton<IEmailService, LocalEmailService>();
-#else
+         #else
             services.AddSingleton<IEmailService, SendGridEmailService>();
-#endif
+         #endif
 
             // Playwright
             services.AddSingleton<IPlaywright>(sp =>
