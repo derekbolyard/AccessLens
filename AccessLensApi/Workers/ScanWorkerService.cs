@@ -104,9 +104,9 @@ namespace AccessLensApi.Workers
                     SiteName = job.SiteName,
                     ScanDate = scanResult.ScannedAtUtc,
                     PageCount = scanResult.SuccessfulPages,  // Only count successful pages in main report
-                    RulesPassed = CalculatePassedRules(scanResult),
+                    RulesPassed = ScanResultMappingHelper.CalculatePassedRules(scanResult),
                     RulesFailed = totalIssues,
-                    TotalRulesTested = CalculateTotalRulesTested(scanResult),
+                    TotalRulesTested = ScanResultMappingHelper.CalculateTotalRulesTested(scanResult),
                     Status = "Completed",
                     SiteId = job.SiteId
                 };
@@ -123,7 +123,7 @@ namespace AccessLensApi.Workers
                         ReportId = report.ReportId,
                         Url = pageScan.Url,
                         ScanTimestamp = scanResult.ScannedAtUtc,
-                        Title = ExtractTitleFromUrl(pageScan.Url),
+                        Title = ScanResultMappingHelper.ExtractTitleFromUrl(pageScan.Url),
                         ScanDurationMs = (int)pageScan.ScanDuration.TotalMilliseconds
                     };
 
@@ -159,8 +159,8 @@ namespace AccessLensApi.Workers
                                 UrlId = scannedUrl.UrlId,
                                 Issue = issue.Message,
                                 Rule = issue.Code,
-                                Severity = MapSeverity(issue.Type),
-                                Category = MapViolationToCategory(issue.Code),
+                                Severity = ScanResultMappingHelper.MapSeverity(issue.Type),
+                                Category = ScanResultMappingHelper.MapViolationToCategory(issue.Code),
                                 FirstDetected = scanResult.ScannedAtUtc,
                                 LastSeen = scanResult.ScannedAtUtc
                             };
@@ -186,8 +186,7 @@ namespace AccessLensApi.Workers
                 
                 // Send failure notification
                 var notificationService = services.GetRequiredService<INotificationService>();
-                // TODO: Fix notification service ambiguity
-                // await notificationService.NotifyScanFailedAsync(job.UserEmail, job.SiteName, ex.Message);
+                await notificationService.NotifyScanFailedAsync(job.UserEmail, job.SiteName, ex.Message);
 
                 await _jobQueue.MarkJobFailedAsync(job.Id, ex.Message);
 
@@ -209,52 +208,6 @@ namespace AccessLensApi.Workers
             }
         }
 
-        private async Task<PageScanResult> ScanPageWithRetriesAsync(
-            IPageScanner scanner,
-            string url,
-            bool captureScreenshot,
-            int maxRetries = 2,
-            CancellationToken cancellationToken = default)
-        {
-            for (int attempt = 0; attempt <= maxRetries; attempt++)
-            {
-                var result = await scanner.ScanPageAsync(url, captureScreenshot, cancellationToken);
-                
-                if (result.IsSuccess)
-                {
-                    if (attempt > 0)
-                        _logger.LogInformation("✓ {Url} succeeded on retry {Attempt}/{MaxRetries}", url, attempt, maxRetries);
-                    return result;
-                }
-
-                // Don't retry if this is the last attempt
-                if (attempt == maxRetries)
-                {
-                    _logger.LogWarning("✗ {Url} failed after {Attempts} attempts: {Error}", 
-                        url, attempt + 1, result.FailureInfo?.ErrorMessage ?? "Unknown");
-                    return result;
-                }
-
-                // Check if we should retry this failure type
-                if (result.FailureInfo != null && !ScanResultHelper.ShouldRetry(result.FailureInfo, attempt, maxRetries))
-                {
-                    _logger.LogWarning("✗ {Url} failed with non-retryable error: {Error}", 
-                        url, result.FailureInfo.ErrorMessage);
-                    return result;
-                }
-
-                // Wait before retrying (exponential backoff)
-                var delay = ScanResultHelper.CalculateRetryDelay(attempt + 1);
-                _logger.LogInformation("⏳ {Url} failed (attempt {Attempt}), retrying in {Delay}ms: {Error}", 
-                    url, attempt + 1, delay.TotalMilliseconds, result.FailureInfo?.ErrorMessage ?? "Unknown");
-                
-                await Task.Delay(delay, cancellationToken);
-            }
-
-            // Should never reach here, but just in case
-            throw new InvalidOperationException("Retry loop completed unexpectedly");
-        }
-
         private async Task HandleScanNotificationAsync(
             ScanJob job, 
             Report report, 
@@ -271,8 +224,7 @@ namespace AccessLensApi.Workers
                     break;
 
                 case ScanNotificationType.Basic:
-                    // TODO: Fix notification service ambiguity
-                    // await notificationService.NotifyScanCompletedAsync(job.UserEmail, job.SiteName, report.ReportId.ToString());
+                    await notificationService.NotifyScanCompletedAsync(job.UserEmail, job.SiteName, report.ReportId.ToString());
                     break;
 
                 case ScanNotificationType.RichWithPdf:
@@ -281,8 +233,7 @@ namespace AccessLensApi.Workers
 
                 default:
                     // Fallback to basic notification
-                    // TODO: Fix notification service ambiguity
-                    // await notificationService.NotifyScanCompletedAsync(job.UserEmail, job.SiteName, report.ReportId.ToString());
+                    await notificationService.NotifyScanCompletedAsync(job.UserEmail, job.SiteName, report.ReportId.ToString());
                     break;
             }
         }
@@ -301,7 +252,7 @@ namespace AccessLensApi.Workers
                 var storageService = services.GetRequiredService<Storage.IStorageService>();
 
                 // Calculate score
-                var score = (int)CalculateAccessibilityScore(scanResult);
+                var score = (int)ScanResultMappingHelper.CalculateAccessibilityScore(scanResult);
 
                 // Generate PDF
                 var accessibilityReport = ConvertToAccessibilityReport(report, scanResult);
@@ -332,8 +283,7 @@ namespace AccessLensApi.Workers
                 
                 // Fallback to basic notification
                 var notificationService = services.GetRequiredService<INotificationService>();
-                // TODO: Fix notification service ambiguity
-                // await notificationService.NotifyScanCompletedAsync(job.UserEmail, job.SiteName, report.ReportId.ToString());
+                await notificationService.NotifyScanCompletedAsync(job.UserEmail, job.SiteName, report.ReportId.ToString());
             }
         }
 
@@ -349,7 +299,7 @@ namespace AccessLensApi.Workers
                     Title = issue.Code,
                     Message = issue.Message,
                     Severity = issue.Type.ToUpperInvariant(),
-                    Category = MapViolationToCategory(issue.Code),
+                    Category = ScanResultMappingHelper.MapViolationToCategory(issue.Code),
                     Status = "Open",
                     InstanceCount = 1
                 }).ToList()
@@ -370,102 +320,6 @@ namespace AccessLensApi.Workers
                 ScanDate = report.ScanDate.ToString("yyyy-MM-dd"),
                 ScanResult = scanResultModel
             };
-        }
-
-        private static int CalculatePassedRules(Features.Scans.Models.A11yScanResult scanResult)
-        {
-            // This is a simplified calculation - in reality you'd need to track rules that were tested but passed
-            // For now, we'll estimate based on the assumption that each page tests ~50 rules on average
-            return scanResult.TotalPages * 50 - scanResult.Pages.Sum(p => p.Issues.Count);
-        }
-
-        private static int CalculateTotalRulesTested(Features.Scans.Models.A11yScanResult scanResult)
-        {
-            // Estimated total rules tested across all pages
-            return scanResult.TotalPages * 50;
-        }
-
-        private static double CalculateAccessibilityScore(Features.Scans.Models.A11yScanResult scanResult)
-        {
-            var totalIssues = scanResult.Pages.Sum(p => p.Issues.Count);
-            var totalPages = scanResult.TotalPages;
-            
-            if (totalPages == 0) return 100.0;
-            
-            // Simple scoring: start at 100, subtract points for issues
-            var criticalIssues = scanResult.Pages.Sum(p => p.Issues.Count(i => i.Type == "critical"));
-            var seriousIssues = scanResult.Pages.Sum(p => p.Issues.Count(i => i.Type == "serious"));
-            var moderateIssues = scanResult.Pages.Sum(p => p.Issues.Count(i => i.Type == "moderate"));
-            var minorIssues = scanResult.Pages.Sum(p => p.Issues.Count(i => i.Type == "minor"));
-            
-            var penalty = (criticalIssues * 10) + (seriousIssues * 5) + (moderateIssues * 2) + (minorIssues * 1);
-            var score = Math.Max(0, 100 - (penalty / totalPages));
-            
-            return Math.Round((double)score, 1);
-        }
-
-        private static string MapSeverity(string issueType)
-        {
-            return issueType.ToLowerInvariant() switch
-            {
-                "critical" => "Critical",
-                "serious" => "Serious",
-                "moderate" => "Moderate",
-                "minor" => "Minor",
-                _ => "Minor"
-            };
-        }
-
-        private static string MapImpact(string issueType)
-        {
-            return issueType.ToLowerInvariant() switch
-            {
-                "critical" => "High",
-                "serious" => "High",
-                "moderate" => "Medium",
-                "minor" => "Low",
-                _ => "Low"
-            };
-        }
-
-        private static string MapViolationToCategory(string ruleCode)
-        {
-            // Map axe rule codes to our categories
-            return ruleCode switch
-            {
-                var code when code.Contains("color") => Features.Reports.Models.FindingCategories.Color,
-                var code when code.Contains("keyboard") => Features.Reports.Models.FindingCategories.Keyboard,
-                var code when code.Contains("focus") => Features.Reports.Models.FindingCategories.Focus,
-                var code when code.Contains("image") => Features.Reports.Models.FindingCategories.Images,
-                var code when code.Contains("form") => Features.Reports.Models.FindingCategories.Forms,
-                var code when code.Contains("navigation") || code.Contains("landmark") => Features.Reports.Models.FindingCategories.Navigation,
-                var code when code.Contains("structure") || code.Contains("heading") => Features.Reports.Models.FindingCategories.Structure,
-                var code when code.Contains("video") || code.Contains("audio") => Features.Reports.Models.FindingCategories.Multimedia,
-                _ => Features.Reports.Models.FindingCategories.Other
-            };
-        }
-
-        private static string ExtractTitleFromUrl(string url)
-        {
-            try
-            {
-                var uri = new Uri(url);
-                var path = uri.AbsolutePath.Trim('/');
-                if (string.IsNullOrEmpty(path))
-                    return "Home";
-                
-                // Convert path to a readable title
-                return path.Split('/').Last()
-                    .Replace("-", " ")
-                    .Replace("_", " ")
-                    .Replace(".html", "")
-                    .Replace(".php", "")
-                    .Replace(".aspx", "");
-            }
-            catch
-            {
-                return "Unknown Page";
-            }
         }
     }
 }
