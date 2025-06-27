@@ -109,10 +109,16 @@ namespace AccessLensApi.Features.Reports
                 CommonViolations = commonViolations,
                 TopIssues = scan.Teaser?.TopIssues?.Select(t =>
                 {
+                    // Calculate how many times this issue appears across all pages
+                    var issueCount = allIssues.Count(issue => 
+                        issue.Message.Contains(t.Text, StringComparison.OrdinalIgnoreCase) ||
+                        t.Text.Contains(issue.Message, StringComparison.OrdinalIgnoreCase));
+                    
                     return new Models.Issue
                     {
                         Title = t.Text,
-                        Severity = t.Severity
+                        Severity = t.Severity,
+                        InstanceCount = issueCount
                     };
                 })?.ToList() ?? [],
                 Screenshots = screenshots,

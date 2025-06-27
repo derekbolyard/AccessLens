@@ -57,6 +57,7 @@
       padding: 20px;
       border-radius: 8px;
       margin-bottom: 30px;
+      page-break-inside: avoid;
     }
     .summary-box div {
       text-align: center;
@@ -73,6 +74,7 @@
       border-radius: 6px;
       margin-bottom: 20px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      page-break-inside: avoid;
     }
     .issue-card h4 {
       margin: 0 0 10px;
@@ -96,7 +98,44 @@
       margin-top: 1rem;
     }
     ul.metric-list li {
+      padding: 8px 0;
+      line-height: 1.6;
+    }
+    .executive-summary {
+      margin-bottom: 40px;
+    }
+    .executive-summary p {
+      font-size: 1.1rem;
+      line-height: 1.7;
+      margin-bottom: 25px;
+      color: #374151;
+    }
+    .top-issues-list {
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 4px solid #3b82f6;
+    }
+    .top-issues-list li {
       padding: 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .page-section {
+      page-break-inside: avoid;
+    }
+    .page-group {
+      page-break-inside: avoid;
+      margin-bottom: 30px;
+    }
+    .new-page-section {
+      padding-top: 20px;
+    }
+    .issue-breakdown-header {
+      page-break-after: avoid;
+      margin-bottom: 20px;
     }
     </style>
 </head>
@@ -140,7 +179,7 @@
         <section class="summary-box" style="margin-top: 2rem;">
             <div>
                 <div style="font-weight:600;">Score</div>
-                <div><strong style="font-size:1.75rem; color:{{primaryColor}};">{{score}}</strong></div>
+                <div><strong>{{score}}</strong></div>
             </div>
             <div>
                 <div style="font-weight:600;">Critical</div>
@@ -160,26 +199,28 @@
             </div>
         </section>
 
-        <section>
+        <section class="executive-summary">
             <h2>Executive Summary</h2>
             <p>This audit identifies potential accessibility issues that may affect users with disabilities. Resolving them improves usability, legal compliance, and inclusivity.</p>
+            
+            <div class="top-issues-list">
+                <strong style="font-size: 1.1rem; color: #1f2937; margin-bottom: 12px; display: block;">Top Issues:</strong>
+                <ul style="margin: 0; padding: 0; list-style: none;">
+                    {{#each TopIssues}}
+                    <li style="margin-bottom: 8px;">
+                        <span style="font-weight: bold; margin-right: 8px;">
+                            {{#if (eq severity "CRITICAL")}}🔴{{/if}}
+                            {{#if (eq severity "SERIOUS")}}🟠{{/if}}
+                            {{#if (eq severity "MODERATE")}}🟡{{/if}}
+                            {{#if (eq severity "MINOR")}}🟢{{/if}}
+                        </span>
+                        <span>{{title}} <em style="color: #6b7280;">({{instanceCount}} instances)</em></span>
+                    </li>
+                    {{/each}}
+                </ul>
+            </div>
+
             <ul class="metric-list">
-                <li>
-                    <strong>Top Issues:</strong>
-                    <ul style="margin-top:0.4rem;padding-left:1.1rem;">
-                        {{#each TopIssues}}
-                        <li>
-                            <span style="font-weight:bold;">
-                                {{#if (eq severity "Critical")}}🔴{{/if}}
-                                {{#if (eq severity "Serious")}}🟠{{/if}}
-                                {{#if (eq severity "Moderate")}}🟡{{/if}}
-                                {{#if (eq severity "Minor")}}🟢{{/if}}
-                            </span>
-                            {{Text}} <em>(on {{Count}} pages)</em>
-                        </li>
-                        {{/each}}
-                    </ul>
-                </li>
                 <li><strong>Legal Risk Estimate:</strong> {{legalRisk}}</li>
                 <li><strong>Common Violations:</strong> {{commonViolations}}</li>
                 <li><strong>Accessibility Tools Used:</strong> axe-core, WCAG 2.2 validator</li>
@@ -197,7 +238,7 @@
             </ul>
         </section>
 
-        <section>
+        <section class="page-section">
             <h2>Scanned URLs</h2>
             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
                 <p style="margin-bottom: 15px; font-weight: 600; color: #374151;">The following {{length pages}} pages were scanned for accessibility issues:</p>
@@ -219,32 +260,35 @@
         </section>
 
         <section style="page-break-before: always;">
-            <h2>Issue Breakdown</h2>
+            <h2 class="issue-breakdown-header">Issue Breakdown</h2>
             {{#each pages}}
-            <h3>{{url}}</h3>
-            <div class="summary-box">
-                <div><div style="font-weight:600;">Score</div><div><strong>{{pageScore}}</strong></div></div>
-                <div><div style="font-weight:600;">Critical</div><div><strong>{{criticalCount}}</strong></div></div>
-                <div><div style="font-weight:600;">Serious</div><div><strong>{{seriousCount}}</strong></div></div>
-                <div><div style="font-weight:600;">Moderate</div><div><strong>{{moderateCount}}</strong></div></div>
-                <div><div style="font-weight:600;">Minor</div><div><strong>{{minorCount}}</strong></div></div>
-            </div>
-            <div style="text-align:center;margin-bottom:20px;">
-                <img src="{{pageChartUrl}}" alt="Accessibility Score Chart"
-                     style="max-width:500px;width:100%;margin-top:1rem;" />
-            </div>
-            {{#each issues}}
-            <div class="issue-card severity-{{severity}}">
-                <h4>{{title}}</h4>
-                <p><strong>Description:</strong> {{description}}</p>
-                <p><strong>Fix:</strong> {{fix}}</p>
-                <p><strong>Rule:</strong> {{ruleId}}</p>
-                <p><strong>Target:</strong> {{target}}</p>
+            <div class="page-group">
+                <h3>{{url}}</h3>
+                <div class="summary-box">
+                    <div><div style="font-weight:600;">Score</div><div><strong>{{pageScore}}</strong></div></div>
+                    <div><div style="font-weight:600;">Critical</div><div><strong>{{criticalCount}}</strong></div></div>
+                    <div><div style="font-weight:600;">Serious</div><div><strong>{{seriousCount}}</strong></div></div>
+                    <div><div style="font-weight:600;">Moderate</div><div><strong>{{moderateCount}}</strong></div></div>
+                    <div><div style="font-weight:600;">Minor</div><div><strong>{{minorCount}}</strong></div></div>
+                </div>
+                <div style="text-align:center;margin-bottom:20px;">
+                    <img src="{{pageChartUrl}}" alt="Accessibility Score Chart"
+                         style="max-width:500px;width:100%;margin-top:1rem;" />
+                </div>
+                {{#each issues}}
+                <div class="issue-card severity-{{severity}}">
+                    <h4>{{title}}</h4>
+                    <p><strong>Description:</strong> {{description}}</p>
+                    <p><strong>Fix:</strong> {{fix}}</p>
+                    <p><strong>Rule:</strong> {{ruleId}}</p>
+                    <p><strong>Target:</strong> {{target}}</p>
+                </div>
+                {{/each}}
             </div>
             {{/each}}
-            {{/each}}
+        </section>
 
-            <section style="page-break-before: always;">
+            <section class="new-page-section" style="page-break-before: always;">
                 <h2>Glossary</h2>
                 <ul>
                     <li><strong>WCAG:</strong> Web Content Accessibility Guidelines</li>
@@ -255,7 +299,7 @@
                 </ul>
             </section>
 
-            <section style="page-break-before: always;">
+            <section class="new-page-section" style="page-break-before: always;">
                 <h2>Next Steps</h2>
                 <p>We recommend a full manual audit to catch remaining issues, followed by remediation support.</p>
                 <a href="{{consultationLink}}" style="display:inline-block;padding:12px 24px;background-color:{{primaryColor}};color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;margin-top:1rem;">
