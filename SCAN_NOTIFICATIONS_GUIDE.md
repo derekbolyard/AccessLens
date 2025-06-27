@@ -164,21 +164,14 @@ const startPremiumScan = async (url: string) => {
 };
 ```
 
-### Legacy Controller Migration
+### Controller Consolidation
 
-The `LegacyScanController` can specify notification types for backward compatibility:
+**✅ COMPLETED**: All scan functionality has been consolidated into `ScansController`. The notification system now works seamlessly with:
 
-```csharp
-// Legacy free scan - gets rich email
-var scanJob = new ScanJob
-{
-    UserEmail = userEmail,
-    SiteUrl = request.Url,
-    ScanTier = "free",
-    NotificationType = ScanNotificationType.RichWithPdf,  // Force rich email
-    Options = new ScanOptions { MaxPages = 5 }
-};
-```
+- **`/api/scans/starter`**: Marketing scans with rich notifications (PDF + teaser)
+- **`/api/scans/start`**: Authenticated scans with appropriate notification levels
+
+All notification types are now properly configured automatically based on the scan context.
 
 ## Configuration ⚙️
 
