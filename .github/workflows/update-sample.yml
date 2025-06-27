@@ -13,7 +13,7 @@ jobs:
 
       # ▶ generate HTML + PDF ---------------------------------------------
       - name: Build solution
-        run: dotnet build AccessLensApi.sln --configuration Release
+        run: dotnet build AccessLensCli.sln --configuration Release
       - name: Download Playwright browsers
         run: playwright install --with-deps 
       
