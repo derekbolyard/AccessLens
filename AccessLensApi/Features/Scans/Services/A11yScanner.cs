@@ -50,15 +50,12 @@ namespace AccessLensApi.Features.Scans.Services
                 new ParallelOptions { MaxDegreeOfParallelism = opts.MaxConcurrency, CancellationToken = ct },
                 async (url, token) =>
                 {
-                    bool captureScreenshot = teaser is null && opts.GenerateTeaser;
+                    // Capture screenshot for the first URL (homepage) if teaser generation is enabled
+                    bool captureScreenshot = opts.GenerateTeaser && url == urls.First();
                     var scan = await ScanPageWithRetriesAsync(url, captureScreenshot, opts.MaxRetries, token);
                     
                     // Always add to bag - even if it failed
                     allScans.Add(scan);
-
-                    // Only process teaser for successful scans
-                    if (scan.IsSuccess && teaser is null && opts.GenerateTeaser)
-                        teaser = await _teaserGen.TryGenerateAsync(scan, token);
 
                     if (scan.IsSuccess)
                         _log.LogInformation("✓ {Url} ({Issues} issues)", url, scan.Result!.Issues.Count);
@@ -72,6 +69,50 @@ namespace AccessLensApi.Features.Scans.Services
 
             // Create Pages list from successful scans only (for backward compatibility)
             var pages = successfulScans.Select(s => s.Result!).ToList();
+
+            // Generate teaser AFTER all scans complete, using the first URL but with overall score
+            if (opts.GenerateTeaser && teaser is null)
+            {
+                var firstUrlScan = allScans.FirstOrDefault(s => s.Url == urls.First() && s.IsSuccess);
+                if (firstUrlScan != null)
+                {
+                    // Calculate overall score across all successful pages
+                    var overallScore = (int)ScanResultMappingHelper.CalculateAccessibilityScore(new A11yScanResult(
+                        Pages: pages,
+                        PageScans: orderedScans,
+                        Teaser: null,
+                        TotalPages: orderedScans.Count,
+                        SuccessfulPages: successfulScans.Count,
+                        FailedPages: failedScans.Count,
+                        ScannedAtUtc: DateTime.UtcNow,
+                        DiscoveryMethod: opts.UseSitemap ? "sitemap+crawling" : "crawling"
+                    ));
+
+                    teaser = await _teaserGen.TryGenerateAsync(firstUrlScan, pages, overallScore, ct);
+                    _log.LogInformation("Generated teaser from first URL: {Url} with overall score: {Score}", firstUrlScan.Url, overallScore);
+                }
+                else
+                {
+                    // Fallback: use any successful scan with a screenshot
+                    var anySuccessfulScan = allScans.FirstOrDefault(s => s.IsSuccess && s.Screenshot != null);
+                    if (anySuccessfulScan != null)
+                    {
+                        var overallScore = (int)ScanResultMappingHelper.CalculateAccessibilityScore(new A11yScanResult(
+                            Pages: pages,
+                            PageScans: orderedScans,
+                            Teaser: null,
+                            TotalPages: orderedScans.Count,
+                            SuccessfulPages: successfulScans.Count,
+                            FailedPages: failedScans.Count,
+                            ScannedAtUtc: DateTime.UtcNow,
+                            DiscoveryMethod: opts.UseSitemap ? "sitemap+crawling" : "crawling"
+                        ));
+
+                        teaser = await _teaserGen.TryGenerateAsync(anySuccessfulScan, pages, overallScore, ct);
+                        _log.LogInformation("Generated teaser from fallback URL: {Url} with overall score: {Score}", anySuccessfulScan.Url, overallScore);
+                    }
+                }
+            }
 
             _log.LogInformation("Scan completed: {Total} total, {Success} successful, {Failed} failed", 
                 orderedScans.Count, successfulScans.Count, failedScans.Count);
@@ -141,7 +182,6 @@ namespace AccessLensApi.Features.Scans.Services
             }
 
             // Should never reach here, but just in case
-            throw new InvalidOperationException("Retry loop completed unexpectedly");
-        }
+            throw new InvalidOperationException("Retry loop completed unexpectedly");        }
     }
 }

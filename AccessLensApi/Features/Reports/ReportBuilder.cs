@@ -78,6 +78,13 @@ namespace AccessLensApi.Features.Reports
 
         public async Task<string> GeneratePdfAsync(string html)
         {
+            // Use random GUID for backward compatibility
+            string key = $"reports/{Guid.NewGuid()}.pdf";
+            return await GeneratePdfAsync(html, key);
+        }
+
+        public async Task<string> GeneratePdfAsync(string html, string storageKey)
+        {
             using var playwright = await Microsoft.Playwright.Playwright.CreateAsync();
             var browser = await playwright.Chromium.LaunchAsync(new() { Headless = true });
             var page = await browser.NewPageAsync();
@@ -94,12 +101,10 @@ namespace AccessLensApi.Features.Reports
                 PrintBackground = true
             });
 
-            string key = $"reports/{Guid.NewGuid()}.pdf";
-
-            await _storage.UploadAsync(key, pdf);
+            await _storage.UploadAsync(storageKey, pdf);
 
             // 30-day presigned URL
-            return _storage.GetPresignedUrl(key, TimeSpan.FromDays(6.95));
+            return _storage.GetPresignedUrl(storageKey, TimeSpan.FromDays(6.95));
         }
 
         private static string GeneratePageChartUrl(int critical, int serious, int moderate, int minor)

@@ -26,6 +26,8 @@ namespace AccessLensApi.Features.Reports.Models
         public int RulesPassed { get; set; }
         public int RulesFailed { get; set; }
         public int TotalRulesTested { get; set; }
+        public int? Score { get; set; } // Overall accessibility score (0-100)
+        public string? PdfKey { get; set; } // Storage key for generated PDF report
         public string Status { get; set; } = "Completed"; // Completed, In Progress, Failed
 
         public Guid? SiteId { get; set; }
@@ -58,6 +60,20 @@ namespace AccessLensApi.Features.Reports.Models
 
                 var urlsWithScores = ScannedUrls.Where(u => u.Score.HasValue);
                 return urlsWithScores.Any() ? urlsWithScores.Average(u => u.Score!.Value) : null;
+            }
+        }
+
+        [NotMapped]
+        public string? PdfUrl
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(PdfKey))
+                    return null;
+                
+                // Note: In a real implementation, you'd inject IStorageService to generate the URL
+                // For now, this returns the key - the controller should generate the actual URL
+                return PdfKey;
             }
         }
 

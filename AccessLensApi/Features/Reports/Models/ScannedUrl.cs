@@ -47,12 +47,12 @@ namespace AccessLensApi.Features.Reports.Models
                     return 100; // Perfect score if all issues are fixed/ignored
 
                 var criticalIssues = openFindings.Count(f => f.Severity == "Critical");
-                var highIssues = openFindings.Count(f => f.Severity == "High");
-                var mediumIssues = openFindings.Count(f => f.Severity == "Medium");
-                var lowIssues = openFindings.Count(f => f.Severity == "Low");
+                var seriousIssues = openFindings.Count(f => f.Severity == "Serious");
+                var moderateIssues = openFindings.Count(f => f.Severity == "Moderate");
+                var minorIssues = openFindings.Count(f => f.Severity == "Minor");
 
-                // Weighted penalty system
-                var penalty = criticalIssues * 15 + highIssues * 8 + mediumIssues * 3 + lowIssues * 1;
+                // Use same weights as ScanResultMappingHelper for consistency
+                var penalty = criticalIssues * 10 + seriousIssues * 5 + moderateIssues * 2 + minorIssues * 1;
                 var score = Math.Max(0, 100 - penalty);
                 
                 return score;

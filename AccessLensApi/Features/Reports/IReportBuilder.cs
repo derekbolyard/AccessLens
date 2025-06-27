@@ -7,5 +7,6 @@ namespace AccessLensApi.Features.Reports
     {
         string RenderHtml(AccessibilityReport model);
         Task<string> GeneratePdfAsync(string html);
+        Task<string> GeneratePdfAsync(string html, string storageKey);
     }
 }

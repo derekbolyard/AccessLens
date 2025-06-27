@@ -6,6 +6,8 @@ namespace AccessLensApi.Features.Scans.Services
     {
         Task<TeaserDto?> TryGenerateAsync(
             PageScanResult firstPage,
+            List<PageResult> allPages,
+            int? overrideScore = null,
             CancellationToken ct = default);
     }
 }

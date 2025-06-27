@@ -3,9 +3,12 @@ using AccessLensApi.Common.Repositories;
 using AccessLensApi.Data;
 using AccessLensApi.Features.Reports.Models;
 using AccessLensApi.Features.Reports.Repositories;
+using AccessLensApi.Features.Core.Interfaces;
+using AccessLensApi.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Linq;
 using System;
 using System.Threading.Tasks;
@@ -71,6 +74,23 @@ namespace AccessLensApi.Features.Reports
         {
             var findings = await _reportRepository.GetFindingsByReportIdAsync(id);
             return Ok(ApiResponse<IEnumerable<Models.Finding>>.SuccessResult(findings));
+        }
+
+        [HttpGet("{id}/pdf")]
+        public async Task<IActionResult> GetPdfDownload(Guid id)
+        {
+            var report = await _reportRepository.GetReportWithDetailsAsync(id);
+            if (report == null) 
+                return NotFound(ApiResponse<Models.Report>.ErrorResult("Report not found"));
+                
+            if (string.IsNullOrEmpty(report.PdfKey))
+                return NotFound(ApiResponse<string>.ErrorResult("PDF not available for this report"));
+
+            // Generate presigned URL for PDF download
+            var storageService = HttpContext.RequestServices.GetRequiredService<AccessLensApi.Storage.IStorageService>();
+            var pdfUrl = storageService.GetPresignedUrl(report.PdfKey, TimeSpan.FromHours(1));
+            
+            return Ok(ApiResponse<string>.SuccessResult(pdfUrl));
         }
     }
 }

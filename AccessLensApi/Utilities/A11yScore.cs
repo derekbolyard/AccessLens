@@ -4,15 +4,15 @@ namespace AccessLensApi.Utilities;
 
 public static class A11yScore
 {
-    // tweak the weights here if you ever change your scoring model
+    // Use same weights as ScanResultMappingHelper for consistency
     private static readonly Dictionary<string, int> ImpactWeight =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["critical"] = 5,
-            ["serious"] = 3,
+            ["critical"] = 10,
+            ["serious"] = 5,
             ["moderate"] = 2,
-            ["warning"] = 1,
             ["minor"] = 1,
+            ["warning"] = 1,
             ["info"] = 1
         };
 

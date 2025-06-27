@@ -93,6 +93,9 @@ namespace AccessLensApi.Workers
                 var criticalIssues = scanResult.Pages.Sum(p => p.Issues.Count(i => i.Type == "critical"));
                 var seriousIssues = scanResult.Pages.Sum(p => p.Issues.Count(i => i.Type == "serious"));
 
+                // Calculate overall accessibility score
+                var overallScore = (int)ScanResultMappingHelper.CalculateAccessibilityScore(scanResult);
+
                 _logger.LogInformation("Scan completed: {Total} pages discovered, {Success} successful, {Failed} failed", 
                     scanResult.TotalPages, scanResult.SuccessfulPages, scanResult.FailedPages);
 
@@ -107,6 +110,7 @@ namespace AccessLensApi.Workers
                     RulesPassed = ScanResultMappingHelper.CalculatePassedRules(scanResult),
                     RulesFailed = totalIssues,
                     TotalRulesTested = ScanResultMappingHelper.CalculateTotalRulesTested(scanResult),
+                    Score = overallScore,  // Set the calculated score
                     Status = "Completed",
                     SiteId = job.SiteId
                 };
@@ -251,18 +255,27 @@ namespace AccessLensApi.Workers
                 var reportBuilder = services.GetRequiredService<Features.Reports.IReportBuilder>();
                 var storageService = services.GetRequiredService<Storage.IStorageService>();
 
-                // Calculate score
-                var score = (int)ScanResultMappingHelper.CalculateAccessibilityScore(scanResult);
+                // Use the score from the report (same calculation as stored in DB)
+                var score = report.Score ?? 0;
 
-                // Generate PDF
+                // Generate PDF with custom storage key
                 var accessibilityReport = ConvertToAccessibilityReport(report, scanResult);
+                
+                // Log the report data for debugging
+                _logger.LogInformation("Generating PDF for report {ReportId}: SiteUrl={SiteUrl}, Score={Score}, Pages={PageCount}, Issues={IssueCount}", 
+                    report.ReportId, accessibilityReport.SiteUrl, accessibilityReport.Score, 
+                    accessibilityReport.Pages.Count, accessibilityReport.Pages.Sum(p => p.Issues.Count));
+                
                 var html = reportBuilder.RenderHtml(accessibilityReport);
-                var pdfBytes = await reportBuilder.GeneratePdfAsync(html);
-
-                // Store PDF
                 var pdfKey = $"reports/{report.ReportId}/report.pdf";
-                await storageService.UploadAsync(pdfKey, System.Text.Encoding.UTF8.GetBytes(pdfBytes), cancellationToken);
-                var pdfUrl = storageService.GetPresignedUrl(pdfKey, TimeSpan.FromDays(30));
+                var pdfUrl = await reportBuilder.GeneratePdfAsync(html, pdfKey);
+
+                // Update the report with the PDF key
+                report.PdfKey = pdfKey;
+                
+                // Save the updated report with PDF key
+                var unitOfWork = services.GetRequiredService<IUnitOfWork>();
+                await unitOfWork.SaveChangesAsync(cancellationToken);
 
                 // Get teaser URL if available
                 string? teaserUrl = null;
@@ -296,14 +309,36 @@ namespace AccessLensApi.Workers
                 Issues = page.Issues.Select(issue => new Features.Core.Models.AccessibilityIssue
                 {
                     Code = issue.Code,
-                    Title = issue.Code,
+                    Title = GetIssueTitleFromCode(issue.Code),
                     Message = issue.Message,
                     Severity = issue.Type.ToUpperInvariant(),
+                    Target = string.Empty, // Target not available in current Issue model
+                    ContextHtml = issue.ContextHtml ?? string.Empty,
+                    Fix = GetFixRecommendation(issue.Code),
                     Category = ScanResultMappingHelper.MapViolationToCategory(issue.Code),
                     Status = "Open",
                     InstanceCount = 1
                 }).ToList()
             }).ToList();
+
+            // Generate top issues by grouping and counting across all pages
+            var allIssues = pages.SelectMany(p => p.Issues);
+            var topIssues = allIssues
+                .GroupBy(i => i.Code)
+                .Select(g => new Features.Core.Models.AccessibilityTopIssue
+                {
+                    Code = g.Key,
+                    Title = g.First().Title,
+                    Severity = g.First().Severity,
+                    InstanceCount = g.Count(),
+                    AffectedPages = g.Select(i => pages.First(p => p.Issues.Contains(i)).Url).Distinct().ToList(),
+                    ExampleMessage = g.First().Message,
+                    ExampleFix = g.First().Fix
+                })
+                .OrderByDescending(i => GetSeverityWeight(i.Severity))
+                .ThenByDescending(i => i.InstanceCount)
+                .Take(10)
+                .ToList();
 
             var scanResultModel = new Features.Core.Models.AccessibilityScanResult
             {
@@ -311,14 +346,91 @@ namespace AccessLensApi.Workers
                 SiteUrl = report.SiteName,
                 DiscoveryMethod = scanResult.DiscoveryMethod,
                 Pages = pages,
+                TopIssues = topIssues,
                 TeaserImageUrl = scanResult.Teaser?.Url
             };
 
-            return new Features.Core.Models.AccessibilityReport
+            var accessibilityReport = new Features.Core.Models.AccessibilityReport
             {
                 SiteUrl = report.SiteName,
                 ScanDate = report.ScanDate.ToString("yyyy-MM-dd"),
-                ScanResult = scanResultModel
+                Score = report.Score?.ToString() ?? "0",
+                ScanResult = scanResultModel,
+                ClientName = "AccessLens",
+                ContactEmail = "support@accesslens.com",
+                FooterText = "Generated by AccessLens - Web Accessibility Scanner",
+                PrimaryColor = "#2563eb",
+                SecondaryColor = "#16a34a"
+            };
+
+            // Populate from scan result to ensure all data is available
+            accessibilityReport.PopulateFromScanResult();
+
+            return accessibilityReport;
+        }
+
+        private static int GetSeverityWeight(string severity)
+        {
+            return severity.ToUpperInvariant() switch
+            {
+                "CRITICAL" => 4,
+                "SERIOUS" => 3,
+                "MODERATE" => 2,
+                "MINOR" => 1,
+                _ => 0
+            };
+        }
+
+        private static string GetIssueTitleFromCode(string code)
+        {
+            return code switch
+            {
+                "color-contrast" => "Color Contrast",
+                "image-alt" => "Image Alternative Text",
+                "label" => "Form Labels",
+                "link-name" => "Link Text",
+                "heading-order" => "Heading Structure",
+                "landmark-one-main" => "Main Landmark",
+                "region" => "Page Regions",
+                "page-has-heading-one" => "Page Heading",
+                "bypass" => "Skip Links",
+                "focus-order-semantics" => "Focus Order",
+                "keyboard" => "Keyboard Access",
+                "aria-label" => "ARIA Labels",
+                "aria-labelledby" => "ARIA Labelledby",
+                "aria-describedby" => "ARIA Describedby",
+                "form-field-multiple-labels" => "Multiple Form Labels",
+                "duplicate-id" => "Duplicate IDs",
+                "meta-viewport" => "Viewport Meta Tag",
+                _ => code.Replace("-", " ").Replace("_", " ")
+                    .Split(' ')
+                    .Select(w => char.ToUpper(w[0]) + w.Substring(1).ToLower())
+                    .Aggregate((a, b) => a + " " + b)
+            };
+        }
+
+        private static string GetFixRecommendation(string code)
+        {
+            return code switch
+            {
+                "color-contrast" => "Ensure text has sufficient contrast against background (4.5:1 for normal text, 3:1 for large text)",
+                "image-alt" => "Add descriptive alt text to images, or use alt='' for decorative images",
+                "label" => "Ensure all form inputs have associated labels",
+                "link-name" => "Provide descriptive text for links that explains their purpose",
+                "heading-order" => "Use headings in logical order (h1, h2, h3, etc.) without skipping levels",
+                "landmark-one-main" => "Include exactly one main landmark per page",
+                "region" => "Organize content into meaningful regions using landmarks",
+                "page-has-heading-one" => "Include exactly one h1 heading per page that describes the main content",
+                "bypass" => "Provide skip links to allow keyboard users to bypass repetitive content",
+                "focus-order-semantics" => "Ensure focus order follows a logical sequence",
+                "keyboard" => "Ensure all interactive elements are keyboard accessible",
+                "aria-label" => "Use aria-label to provide accessible names for elements",
+                "aria-labelledby" => "Use aria-labelledby to reference elements that label this element",
+                "aria-describedby" => "Use aria-describedby to reference elements that describe this element",
+                "form-field-multiple-labels" => "Ensure form fields have only one label",
+                "duplicate-id" => "Ensure all id attributes are unique on the page",
+                "meta-viewport" => "Include a proper viewport meta tag for responsive design",
+                _ => "Review and fix this accessibility issue according to WCAG guidelines"
             };
         }
     }
